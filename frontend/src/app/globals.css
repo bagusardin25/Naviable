@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* AbleMap pin: color + pattern + label (never color alone — doc §14) */
+.ablemap-pin {
+  background: transparent;
+  border: none;
+}
+.ablemap-pin span {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #1f2937;
+}
+/* UTUH: solid */
+.ablemap-pin[data-pattern="solid"] span {
+  background: var(--pin-color);
+}
+/* TERHALANG: dashed outline */
+.ablemap-pin[data-pattern="dashed"] span {
+  border-style: dashed;
+  background: var(--pin-color);
+}
+/* TIDAK_STANDAR: dotted outline, hollow */
+.ablemap-pin[data-pattern="dotted"] span {
+  border-style: dotted;
+  border-width: 3px;
+  background: white;
+}
+/* TIDAK_ADA: X mark */
+.ablemap-pin[data-pattern="cross"] span {
+  background:
+    linear-gradient(45deg, transparent 44%, #1f2937 44%, #1f2937 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #1f2937 44%, #1f2937 56%, transparent 56%),
+    white;
+}
+/* BELUM_DIKETAHUI: gray hollow */
+.ablemap-pin[data-pattern="empty"] span {
+  background: repeating-linear-gradient(45deg, #e5e7eb 0 4px, #f9fafb 4px 8px);
+}
