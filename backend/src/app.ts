@@ -6,7 +6,7 @@ import type { Config } from "./config.js";
 import type { Store, Report } from "./store.js";
 import { ApiError } from "./lib/errors.js";
 import { AnalyzeBody, decodePhoto, PlaceId, PlaceQuery, ReportBody } from "./lib/validation.js";
-import { summarizePlace, USER_PROFILES, type Place } from "./lib/types.js";
+import { CHAIN_ELEMENTS, ELEMENT_STATUSES, summarizePlace, USER_PROFILES, type Place } from "./lib/types.js";
 import { evidenceCsv, journeyHint, observatory } from "./lib/evidence.js";
 import { analyzeAccessPhoto } from "./lib/gemini.js";
 
@@ -114,7 +114,12 @@ export function createApp({ store, config, authenticate, analyze = analyzeAccess
   app.get("/api/observatory", async (req, res) => { const { places } = await filtered(req.query); res.json(observatory(places)); });
   app.get("/api/evidence.csv", async (req, res) => {
     const { places } = await filtered(req.query);
-    res.set({ "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="naviable-evidence-${new Date().toISOString().slice(0,10)}.csv"` }).send(evidenceCsv(places, config.publicUrl));
+    const filterQuery = z.object({
+      profile: z.enum(USER_PROFILES).optional(),
+      element: z.enum(CHAIN_ELEMENTS).optional(),
+      status: z.enum(ELEMENT_STATUSES).optional(),
+    }).parse(req.query);
+    res.set({ "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="naviable-evidence-${new Date().toISOString().slice(0,10)}.csv"` }).send(evidenceCsv(places, config.publicUrl, filterQuery));
   });
   app.get("/api/journey", async (req, res) => {
     const input = z.object({ from: PlaceId, to: PlaceId, profile: z.enum(USER_PROFILES).default("mobilitas") }).parse(req.query);

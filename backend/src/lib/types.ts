@@ -135,5 +135,16 @@ export function summarizePlace(place: Place, profile?: UserProfile) {
   const statuses = relevant.map(el => place.elements[el]?.lockedBy === "kontributor" ? place.elements[el]!.status : "BELUM_DIKETAHUI");
   const known = statuses.filter(s => s !== "BELUM_DIKETAHUI").length;
   const overall = (["TIDAK_ADA", "TERHALANG", "TIDAK_STANDAR", "BELUM_DIKETAHUI"] as const).find(s => statuses.includes(s)) ?? "UTUH";
-  return { ...place, score: profile ? chainScore(place.elements, profile) : null, summary: chainSummary(place.elements, profile), overall, coverage: { known, total: relevant.length } };
+  const bottlenecks = relevant.filter(el => {
+    const s = place.elements[el]?.status;
+    return s === "TERHALANG" || s === "TIDAK_STANDAR" || s === "TIDAK_ADA";
+  });
+  return {
+    ...place,
+    score: profile ? chainScore(place.elements, profile) : null,
+    summary: chainSummary(place.elements, profile),
+    overall,
+    bottlenecks,
+    coverage: { known, total: relevant.length }
+  };
 }

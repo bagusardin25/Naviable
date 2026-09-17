@@ -91,6 +91,10 @@ test('publish persists across restart; retries and concurrent corrections preser
     const csv = await f.get('/api/evidence.csv');
     assert.match(csv.headers.get('content-disposition')!, /attachment/);
     assert.match(await csv.text(), /Hambatan sudah dipindahkan/);
+    const filteredCsv = await f.get('/api/evidence.csv?element=E5_guiding_block&status=UTUH');
+    const filteredText = await filteredCsv.text();
+    assert.match(filteredText, /Hambatan sudah dipindahkan/);
+    assert.ok(!filteredText.includes('E1_door'));
   } finally { await f.close(); }
 });
 
