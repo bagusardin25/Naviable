@@ -9,6 +9,7 @@ type LeafletMapProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  activeNeed?: import('@/types').AccessibilityNeed;
 };
 
 const SURABAYA_CENTER: [number, number] = [-7.2758, 112.7483];
@@ -165,13 +166,13 @@ function UserLocationButton() {
   );
 }
 
-function createMarkerIcon(place: Place, isSelected: boolean) {
-  const meta = placeStatusMeta(place);
+function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import('@/types').AccessibilityNeed = 'Mobilitas') {
+  const meta = placeStatusMeta(place, activeNeed);
   const isSelectedClass = isSelected ? 'selected' : '';
-  const statusClass = place.reportCount ? ({ UTUH: 'yes', TERHALANG: 'limited', TIDAK_STANDAR: 'limited', TIDAK_ADA: 'no', BELUM_DIKETAHUI: 'unknown' }[place.overall]) : place.wheelchairStatus;
+  const statusClass = meta.status.toLowerCase();
   const marker = document.createElement('div');
   marker.className = `marker marker-${statusClass} ${isSelectedClass}`;
-  marker.title = `${place.name} — ${meta.label}`;
+  marker.title = `${place.name} — Profil ${activeNeed}: ${meta.label}`;
   const symbol = document.createElement('span');
   symbol.setAttribute('aria-hidden', 'true');
   symbol.textContent = meta.symbol;
@@ -187,7 +188,7 @@ function createMarkerIcon(place: Place, isSelected: boolean) {
   });
 }
 
-export default function LeafletMap({ places, selectedPlace, onSelectPlace }: LeafletMapProps) {
+export default function LeafletMap({ places, selectedPlace, onSelectPlace, activeNeed = 'Mobilitas' }: LeafletMapProps) {
   // CRITICAL: Filter only places with valid lat/lng and not marked as needsGeocoding
   const validPlaces = places.filter(
     (p): p is Place & { lat: number; lng: number } =>
@@ -218,8 +219,8 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace }: Lea
 
       {validPlaces.map((place) => {
         const isSelected = selectedPlace?.id === place.id;
-        const icon = createMarkerIcon(place, isSelected);
-        const meta = placeStatusMeta(place);
+        const icon = createMarkerIcon(place, isSelected, activeNeed);
+        const meta = placeStatusMeta(place, activeNeed);
 
         return (
           <Marker

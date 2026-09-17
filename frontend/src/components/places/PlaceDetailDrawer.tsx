@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Place, placeStatusMeta } from '@/types';
+import React, { useEffect, useState, useRef } from 'react';
+import { Place, placeStatusMeta, getEvidenceFreshness, detectConditionChanges, STATUS_META, AccessibilityNeed } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { AccessibilityChain } from './AccessibilityChain';
 import { CorrectionHistory } from './CorrectionHistory';
@@ -11,17 +11,55 @@ type PlaceDetailDrawerProps = {
   place: Place | null;
   onClose: () => void;
   onCorrectPlace: (place: Place) => void;
+  activeNeed?: AccessibilityNeed;
 };
 
 export function PlaceDetailDrawer({
   place,
   onClose,
   onCorrectPlace,
+  activeNeed = 'Mobilitas',
 }: PlaceDetailDrawerProps) {
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  // Focus trap & focus restoration
+  useEffect(() => {
+    if (place) {
+      previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+      // Focus close button after drawer renders
+      setTimeout(() => {
+        const closeBtn = document.getElementById('drawer-close-btn');
+        closeBtn?.focus();
+      }, 50);
+    }
+    return () => {
+      // Restore focus to previous trigger
+      previouslyFocusedRef.current?.focus();
+    };
+  }, [place]);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+      if (e.key === 'Tab' && drawerRef.current) {
+        const focusableElements = drawerRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusableElements.length) return;
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -51,22 +89,24 @@ export function PlaceDetailDrawer({
     };
   }, [placeId, reportCount, historyAttempt]);
 
-  // Deriving from the key keeps a previous place's trail (or a spinner) from flashing
-  // while the new request is in flight, and avoids setState inside the effect body.
   const historyKey = `${placeId}:${reportCount}:${historyAttempt}`;
   const historySettled = history?.key === historyKey;
   const historyState: 'idle' | 'loading' | 'error' = !historySettled ? 'loading' : history.error ? 'error' : 'idle';
 
   if (!place) return null;
 
-  const meta = placeStatusMeta(place);
+  const meta = placeStatusMeta(place, activeNeed);
+  const freshness = getEvidenceFreshness(place.updatedAt);
+  const conditionChanges = detectConditionChanges(historySettled ? history.reports : []);
   const unknownElements = place.elements.filter((element) => element.status === 'BELUM_DIKETAHUI').length;
 
   return (
     <section
+      ref={drawerRef}
       className="detail-drawer"
       aria-label={`Detail aksesibilitas ${place.name}`}
-      role="region"
+      role="dialog"
+      aria-modal="true"
     >
       <button
         id="drawer-close-btn"
@@ -80,9 +120,12 @@ export function PlaceDetailDrawer({
 
       <div className="detail-title">
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
-          <span className="eyebrow">Rantai akses</span>
+          <span className="eyebrow">Profil {activeNeed}</span>
           <span className={`status-badge ${meta.badgeClass}`}>
             <strong>{meta.symbol}</strong> {meta.label}
+          </span>
+          <span className={`freshness-badge ${freshness.badgeClass}`} title={`Kesegaran data: ${freshness.label}`}>
+            {freshness.symbol} {freshness.label}
           </span>
           {place.needsGeocoding ? (
             <span className="badge-needs-geocoding">Perlu Geocoding</span>
@@ -98,6 +141,40 @@ export function PlaceDetailDrawer({
         {place.address && <p className="detail-address">{place.address}</p>}
         <p className="detail-summary">{place.chainSummary}</p>
       </div>
+
+      {conditionChanges.length > 0 && (
+        <div
+          role="status"
+          style={{
+            margin: '10px 0',
+            padding: '10px 14px',
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '10px',
+            fontSize: '11px',
+            color: '#1e40af',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, marginBottom: '4px' }}>
+            <span>🔄</span>
+            <span>Perubahan Kondisi Terverifikasi (Immutable Trail):</span>
+          </div>
+          {conditionChanges.map((change, idx) => (
+            <div key={idx} style={{ marginTop: '4px', lineHeight: 1.4 }}>
+              <strong>{change.elementLabel}</strong> diperbarui dari{' '}
+              <span className="badge-status-change" style={{ background: '#fee2e2', color: '#991b1b', padding: '1px 6px', borderRadius: '4px' }}>
+                {STATUS_META[change.previousStatus].label}
+              </span>{' '}
+              ➔{' '}
+              <span className="badge-status-change" style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '4px' }}>
+                {STATUS_META[change.currentStatus].label}
+              </span>{' '}
+              oleh <em>{change.currentReporter}</em> ({new Date(change.currentDate).toLocaleDateString('id-ID')}).
+            </div>
+          ))}
+        </div>
+      )}
+
 
       {place.needsGeocoding && (
         <div className="geocoding-notice-box" role="alert">

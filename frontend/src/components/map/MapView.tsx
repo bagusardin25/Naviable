@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Place, WHEELCHAIR_STATUS_META } from '@/types';
+import { Place, AccessibilityNeed, placeStatusMeta } from '@/types';
 import { MapLegend } from './MapLegend';
 
 const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
@@ -19,9 +19,10 @@ type MapViewProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  activeNeed?: AccessibilityNeed;
 };
 
-export function MapView({ places, selectedPlace, onSelectPlace }: MapViewProps) {
+export function MapView({ places, selectedPlace, onSelectPlace, activeNeed = 'Mobilitas' }: MapViewProps) {
   const [mapMode, setMapMode] = useState<'osm' | 'canvas'>('osm');
 
   const geocodedPlaces = places.filter((p) => !p.needsGeocoding);
@@ -56,6 +57,7 @@ export function MapView({ places, selectedPlace, onSelectPlace }: MapViewProps) 
             places={places}
             selectedPlace={selectedPlace}
             onSelectPlace={onSelectPlace}
+            activeNeed={activeNeed}
           />
         </div>
       ) : (
@@ -73,17 +75,17 @@ export function MapView({ places, selectedPlace, onSelectPlace }: MapViewProps) 
           <span className="map-label label-b">Jl. Wonokromo</span>
           <span className="map-label label-c">Jl. Basuki Rahmat</span>
           {geocodedPlaces.map((p) => {
-            const meta = WHEELCHAIR_STATUS_META[p.wheelchairStatus] || WHEELCHAIR_STATUS_META.unknown;
+            const meta = placeStatusMeta(p, activeNeed);
             return (
               <button
                 key={p.id}
                 id={`marker-place-${p.id}`}
-                className={`marker marker-${p.wheelchairStatus} ${
+                className={`marker marker-${meta.status.toLowerCase()} ${
                   selectedPlace?.id === p.id ? 'selected' : ''
                 }`}
                 style={{ left: `${p.x}%`, top: `${p.y}%` }}
                 onClick={() => onSelectPlace(p)}
-                aria-label={`${p.name}. ${meta.label}. ${p.chainSummary}`}
+                aria-label={`${p.name}. Profil ${activeNeed}: ${meta.label}. ${p.chainSummary}`}
                 type="button"
               >
                 <span>{meta.symbol}</span>
