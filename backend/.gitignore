@@ -1,1 +1,34 @@
+# Environment & Secrets
 .env
+.env.*
+.env*.local
+!.env.example
+*.pem
+*.key
+*.cert
+*credentials*.json
+*service-account*.json
+
+# Local persistence, temporary database & uploads
+.local/
+photos/
+*.sqlite
+*.db
+*.tmp
+*.temp
+
+# Dependencies & Build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
