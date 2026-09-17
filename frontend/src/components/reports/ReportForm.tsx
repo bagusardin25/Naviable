@@ -1,21 +1,51 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Place, ChainElementCode, AccessibilityStatus, CHAIN_ELEMENT_MAP } from '@/types';
 import { analyzePhoto, submitReport, type ApiAnalysis, type ReportPayload } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
 import { AIDraftPanel } from './AIDraftPanel';
 import { HumanLockSelector } from './HumanLockSelector';
 
+type DraftData = {
+  placeId?: string;
+  reporterName?: string;
+  elementCode?: ChainElementCode;
+  status?: AccessibilityStatus;
+  note?: string;
+};
+
+function readLocalDraft(): DraftData | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('naviable_report_draft_v1');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 type ReportFormProps = { places: Place[]; defaultPlaceName?: string; onSubmitReport: (place: Place) => void };
 export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportFormProps) {
   const initial = places.find(p => p.name === defaultPlaceName) ?? places[0];
-  const [placeId, setPlaceId] = useState(String(initial?.id ?? ''));
-  const [reporterName, setReporterName] = useState('');
-  const [elementCode, setElementCode] = useState<ChainElementCode>('E5');
-  const [status, setStatus] = useState<AccessibilityStatus>('BELUM_DIKETAHUI');
-  const [note, setNote] = useState('');
+  const draft = readLocalDraft();
+
+  const [placeId, setPlaceId] = useState<string>(
+    draft?.placeId && places.some(p => String(p.id) === draft.placeId)
+      ? draft.placeId
+      : String(initial?.id ?? '')
+  );
+  const [reporterName, setReporterName] = useState<string>(draft?.reporterName ?? '');
+  const [elementCode, setElementCode] = useState<ChainElementCode>(
+    draft?.elementCode && CHAIN_ELEMENT_MAP[draft.elementCode] ? draft.elementCode : 'E5'
+  );
+  const [status, setStatus] = useState<AccessibilityStatus>(draft?.status ?? 'BELUM_DIKETAHUI');
+  const [note, setNote] = useState<string>(draft?.note ?? '');
+  const [draftRestored, setDraftRestored] = useState<boolean>(
+    Boolean(draft && (draft.reporterName || draft.note || draft.placeId))
+  );
   const [photo, setPhoto] = useState<{ image: string; mimeType: string } | null>(null);
+
   const [analysis, setAnalysis] = useState<ApiAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [reading, setReading] = useState(false);
@@ -25,6 +55,39 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
   const [submitting, setSubmitting] = useState(false);
   const attempt = useRef<{ signature: string; key: string } | null>(null);
   const busy = submitting || reading;
+
+
+  // Persist draft on edit
+  useEffect(() => {
+    if (!placeId && !reporterName && !note) return;
+    try {
+      localStorage.setItem(
+        'naviable_report_draft_v1',
+        JSON.stringify({
+          placeId,
+          reporterName,
+          elementCode,
+          status,
+          note,
+          savedAt: new Date().toISOString(),
+        })
+      );
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [placeId, reporterName, elementCode, status, note]);
+
+  function clearDraft() {
+    try {
+      localStorage.removeItem('naviable_report_draft_v1');
+    } catch {
+      // ignore
+    }
+    setReporterName('');
+    setNote('');
+    setStatus('BELUM_DIKETAHUI');
+    setDraftRestored(false);
+  }
 
   function readPhoto(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -54,13 +117,58 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
     const signature = JSON.stringify(payload);
     if (attempt.current?.signature !== signature) attempt.current = { signature, key: crypto.randomUUID() };
     setSubmitting(true); setError('');
-    try { const result = await submitReport(payload, attempt.current.key); onSubmitReport(result.place); }
+    try {
+      const result = await submitReport(payload, attempt.current.key);
+      try {
+        localStorage.removeItem('naviable_report_draft_v1');
+      } catch {
+        // ignore
+      }
+      onSubmitReport(result.place);
+    }
     catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum tersimpan. Coba lagi.'); }
     finally { setSubmitting(false); }
   }
   return (
     <div className="page-scroll">
       <div className="page-title"><div><span className="eyebrow">Pelaporan bukti lapangan</span><h1>Foto → Draf AI → Kunci Manusia</h1><p>AI membantu mengisi draf. Anda memeriksa kondisi lapangan dan mengunci status akhir.</p><p>Untuk layanan online, <a href="/login">masuk sebagai kontributor</a>.</p></div></div>
+      {draftRestored && (
+        <div
+          role="status"
+          style={{
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '8px',
+            padding: '8px 14px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '12px',
+            color: '#1e40af',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>💾</span>
+            <span>Draf laporan tersimpan otomatis dimuat dari perangkat Anda.</span>
+          </div>
+          <button
+            type="button"
+            onClick={clearDraft}
+            style={{
+              background: 'transparent',
+              border: '1px solid #93c5fd',
+              color: '#1d4ed8',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '11px',
+            }}
+          >
+            Hapus Draf
+          </button>
+        </div>
+      )}
       <form onSubmit={publish} className="report-grid" aria-busy={busy}>
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
           <h2>1. Bukti Lapangan</h2>
