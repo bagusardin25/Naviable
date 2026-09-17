@@ -19,7 +19,6 @@ id_ed25519*
 # ===== Local Data Store & Uploads =====
 **/.local/
 backend/.local/
-data/
 **/photos/
 *.sqlite
 *.sqlite3
