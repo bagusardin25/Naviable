@@ -1,4 +1,13 @@
-import { CHAIN_ELEMENTS, ELEMENT_STATUSES, summarizePlace, type Place, type UserProfile } from "./types.js";
+import {
+  CHAIN_ELEMENTS,
+  ELEMENT_STATUSES,
+  PROFILE_WEIGHTS,
+  summarizePlace,
+  type Place,
+  type UserProfile,
+  type ChainElement,
+  type ElementStatus,
+} from "./types.js";
 
 export function observatory(places: Place[]) {
   const summarize = (group: Place[]) => ({
