@@ -82,9 +82,7 @@ export function LoginForm() {
     }
     setPhoneError("");
     if (!authConfigured) {
-      // Mock demonstration OTP for testing without backend
-      setSentTo(normalized);
-      setMessage(`Mode Demo: Kode verifikasi demo telah dikirim ke ${normalized}. Gunakan kode: 123456`);
+      setMessage(unavailableMessage);
       return;
     }
     setPending(channel);
@@ -119,8 +117,7 @@ export function LoginForm() {
     setMessage("");
 
     if (!authConfigured) {
-      // Demo validation: accept any 6-digit code in demo mode
-      router.replace("/");
+      setMessage(unavailableMessage);
       return;
     }
 

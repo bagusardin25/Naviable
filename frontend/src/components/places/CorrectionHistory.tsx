@@ -1,0 +1,139 @@
+'use client';
+
+import React from 'react';
+import Image from 'next/image';
+import { ApiReport, mediaUrl } from '@/lib/api';
+import {
+  AccessibilityStatus,
+  CHAIN_ELEMENT_MAP,
+  ChainElementCode,
+  STATUS_META,
+} from '@/types';
+
+const CODE_BY_NAME = Object.fromEntries(
+  (Object.entries(CHAIN_ELEMENT_MAP) as [ChainElementCode, (typeof CHAIN_ELEMENT_MAP)[ChainElementCode]][]).map(
+    ([code, meta]) => [meta.codeName, code]
+  )
+) as Record<string, ChainElementCode>;
+
+function elementLabel(name: string): string {
+  const code = CODE_BY_NAME[name];
+  return code ? `${code} · ${CHAIN_ELEMENT_MAP[code].label}` : name;
+}
+
+function statusText(status: AccessibilityStatus): string {
+  return STATUS_META[status]?.label ?? status;
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+type CorrectionHistoryProps = {
+  reports: ApiReport[];
+  total: number;
+  state: 'idle' | 'loading' | 'error';
+  onRetry: () => void;
+};
+
+/**
+ * Report trail for one location. Renders who locked which element and when, so a
+ * superseded report stays visible instead of being silently replaced (konsep §11,
+ * "crowdsource + sanggahan foto"). Status is always spelled out in text — colour and
+ * symbol are decoration, never the only carrier of meaning.
+ */
+export function CorrectionHistory({ reports, total, state, onRetry }: CorrectionHistoryProps) {
+  if (state === 'loading') {
+    return <p role="status" style={{ fontSize: '12px', color: '#475569' }}>Memuat riwayat koreksi…</p>;
+  }
+
+  if (state === 'error') {
+    return (
+      <p role="alert" style={{ fontSize: '12px', color: '#b91c1c' }}>
+        Riwayat koreksi gagal dimuat.{' '}
+        <button type="button" onClick={onRetry} style={{ textDecoration: 'underline' }}>
+          Coba lagi
+        </button>
+      </p>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <p style={{ fontSize: '12px', color: '#475569' }}>
+        Belum ada laporan lapangan untuk lokasi ini. Rantai di atas masih dari indikasi pra-survei.
+      </p>
+    );
+  }
+
+  const shown = reports.length;
+
+  return (
+    <section aria-label={`Riwayat koreksi, ${total} laporan`}>
+      <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '16px 0 8px', color: '#1e293b' }}>
+        Riwayat laporan &amp; koreksi ({total})
+      </h3>
+      <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '10px' }}>
+        {reports.map((report) => {
+          const labels = report.elements.map((e) => elementLabel(e.element));
+          return (
+            <li
+              key={report.id}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 12px', background: '#f8fafc' }}
+            >
+              <div style={{ fontSize: '11px', color: '#475569', marginBottom: '6px' }}>
+                <strong style={{ color: '#1e293b' }}>{report.reporterName}</strong> · {formatDate(report.createdAt)}
+              </div>
+
+              <ul style={{ listStyle: 'none', margin: '0 0 8px', padding: 0, display: 'grid', gap: '4px' }}>
+                {report.elements.map((evidence) => {
+                  const meta = STATUS_META[evidence.status];
+                  return (
+                    <li key={evidence.element} style={{ fontSize: '12px', color: '#1e293b' }}>
+                      <span aria-hidden="true" style={{ color: meta?.color ?? '#7d8798', fontWeight: 800 }}>
+                        {meta?.symbol ?? '?'}
+                      </span>{' '}
+                      <strong>{elementLabel(evidence.element)}</strong>:{' '}
+                      <span>{statusText(evidence.status)}</span>
+                      {evidence.note ? <span style={{ color: '#475569' }}> — {evidence.note}</span> : null}
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <a
+                href={mediaUrl(report.photoUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}
+              >
+                <Image
+                  src={mediaUrl(report.photoUrl)}
+                  alt={`Foto bukti dari ${report.reporterName} pada ${formatDate(report.createdAt)} untuk ${labels.join(', ')}`}
+                  width={72}
+                  height={54}
+                  unoptimized
+                  style={{ objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                />
+                Lihat foto bukti
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+      {total > shown && (
+        <p style={{ fontSize: '11px', color: '#475569', marginTop: '6px' }}>
+          Menampilkan {shown} laporan terbaru dari {total}. Ekspor CSV berisi seluruh riwayat.
+        </p>
+      )}
+    </section>
+  );
+}

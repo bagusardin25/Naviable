@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { ElementItem } from '@/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
@@ -24,6 +25,8 @@ export function AccessibilityChain({ elements }: AccessibilityChainProps) {
             )}
           </div>
           <p className="element-note">{e.note}</p>
+          {e.photoUrl && <a href={e.photoUrl} target="_blank" rel="noopener noreferrer"><Image src={e.photoUrl} alt={`Bukti ${e.label}`} width={240} height={135} unoptimized style={{ width: '100%', objectFit: 'contain' }} /></a>}
+          {e.lockedBy === 'kontributor' && <small>Dikonfirmasi kontributor</small>}
         </article>
       ))}
     </div>

@@ -1,185 +1,84 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Place, ChainElementCode, AccessibilityStatus, CHAIN_ELEMENT_MAP } from '@/types';
+import { analyzePhoto, submitReport, type ApiAnalysis, type ReportPayload } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
 import { AIDraftPanel } from './AIDraftPanel';
 import { HumanLockSelector } from './HumanLockSelector';
 
-type ReportFormProps = {
-  places: Place[];
-  defaultPlaceName?: string;
-  onSubmitReport: (
-    placeName: string,
-    elementCode: ChainElementCode,
-    status: AccessibilityStatus,
-    note: string,
-    photoUrl: string | null
-  ) => void;
-};
-
-export function ReportForm({
-  places,
-  defaultPlaceName,
-  onSubmitReport,
-}: ReportFormProps) {
-  const [placeName, setPlaceName] = useState(defaultPlaceName ?? places[0]?.name ?? '');
+type ReportFormProps = { places: Place[]; defaultPlaceName?: string; onSubmitReport: (place: Place) => void };
+export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportFormProps) {
+  const initial = places.find(p => p.name === defaultPlaceName) ?? places[0];
+  const [placeId, setPlaceId] = useState(String(initial?.id ?? ''));
+  const [reporterName, setReporterName] = useState('');
   const [elementCode, setElementCode] = useState<ChainElementCode>('E5');
-  const [status, setStatus] = useState<AccessibilityStatus>('TERHALANG');
+  const [status, setStatus] = useState<AccessibilityStatus>('BELUM_DIKETAHUI');
   const [note, setNote] = useState('');
-  const [aiDraftReady, setAiDraftReady] = useState(false);
-  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [photo, setPhoto] = useState<{ image: string; mimeType: string } | null>(null);
+  const [analysis, setAnalysis] = useState<ApiAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [error, setError] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const attempt = useRef<{ signature: string; key: string } | null>(null);
+  const busy = submitting || reading;
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setUploadedPhotoUrl(url);
-      setAiDraftReady(true);
+  function readPhoto(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    setAnalysis(null); setAiError(''); setConfirmed(false); setError(''); setPhoto(null);
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setError('Gunakan foto JPG, PNG, atau WebP maksimal 5 MB.'); return;
     }
+    setReading(true);
+    const reader = new FileReader();
+    reader.onload = () => { setPhoto({ image: String(reader.result), mimeType: file.type }); setReading(false); };
+    reader.onerror = () => { setError('Foto tidak dapat dibaca. Silakan pilih ulang.'); setReading(false); };
+    reader.readAsDataURL(file);
   }
-
-  function handleUploadBoxClick() {
-    setAiDraftReady(true);
-    fileInputRef.current?.click();
+  async function analyze() {
+    if (!photo || analyzing) return;
+    setAnalyzing(true); setAiError('');
+    try { setAnalysis(await analyzePhoto(photo.image, photo.mimeType)); }
+    catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : 'AI tidak tersedia. Checklist manual tetap dapat digunakan.'); }
+    finally { setAnalyzing(false); }
   }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    onSubmitReport(placeName, elementCode, status, note, uploadedPhotoUrl);
-    setIsSuccess(true);
+  async function publish(event: React.FormEvent) {
+    event.preventDefault();
+    if (submitting) return;
+    if (!photo || !confirmed) { setError('Unggah foto dan konfirmasi checklist terlebih dahulu.'); return; }
+    const payload: ReportPayload = { placeId, reporterName, ...photo, humanConfirmed: true, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
+    const signature = JSON.stringify(payload);
+    if (attempt.current?.signature !== signature) attempt.current = { signature, key: crypto.randomUUID() };
+    setSubmitting(true); setError('');
+    try { const result = await submitReport(payload, attempt.current.key); onSubmitReport(result.place); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum tersimpan. Coba lagi.'); }
+    finally { setSubmitting(false); }
   }
-
-  const selectedElementLabel = CHAIN_ELEMENT_MAP[elementCode]?.label ?? 'Elemen';
-
   return (
     <div className="page-scroll">
-      <div className="page-title">
-        <div>
-          <span className="eyebrow">Flagship Loop Pelaporan</span>
-          <h1>Foto → Draf AI → Kunci Manusia</h1>
-          <p>
-            Laporkan kondisi riil fasilitas aksesibilitas di Surabaya. AI membantu identifikasi objek; keputusan kelayakan dan keamanan selalu dikunci oleh kontributor manusia.
-          </p>
-        </div>
-        <div className="safety-note" role="note">
-          <Icon name="shield" />
-          <span>
-            Tidak ada pengukuran cm sudut atau vonis kelayakan legal dari satu foto. Manusia adalah kunci kebenaran data.
-          </span>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="report-grid">
-        {/* Kolom 1: Bukti Lapangan */}
-        <section className="card form-card" aria-label="1. Form bukti lapangan">
+      <div className="page-title"><div><span className="eyebrow">Pelaporan bukti lapangan</span><h1>Foto → Draf AI → Kunci Manusia</h1><p>AI membantu mengisi draf. Anda memeriksa kondisi lapangan dan mengunci status akhir.</p><p>Untuk layanan online, <a href="/login">masuk sebagai kontributor</a>.</p></div></div>
+      <form onSubmit={publish} className="report-grid" aria-busy={busy}>
+        <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
           <h2>1. Bukti Lapangan</h2>
-
-          <label htmlFor="report-location-select">
-            Lokasi Fasilitas
-            <select
-              id="report-location-select"
-              value={placeName}
-              onChange={(e) => setPlaceName(e.target.value)}
-              required
-            >
-              {places.map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name} ({p.district})
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label htmlFor="report-element-select">
-            Elemen Aksesibilitas (Rantai 8 Elemen)
-            <select
-              id="report-element-select"
-              value={elementCode}
-              onChange={(e) => setElementCode(e.target.value as ChainElementCode)}
-              required
-            >
-              {(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map((code) => (
-                <option key={code} value={code}>
-                  {code} — {CHAIN_ELEMENT_MAP[code].label} ({CHAIN_ELEMENT_MAP[code].full})
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div>
-            <span className="field-label-text">Foto Bukti Lapangan</span>
-            <input
-              type="file"
-              ref={fileInputRef}
-              id="file-upload-input"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handlePhotoUpload}
-            />
-            <div
-              id="report-upload-box"
-              className="upload-box"
-              onClick={handleUploadBoxClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleUploadBoxClick();
-                }
-              }}
-              aria-label="Pilih foto bukti dari perangkat atau klik untuk simulasi analisis AI"
-            >
-              <Icon name="camera" size={34} />
-              <strong>Unggah Foto Fasilitas</strong>
-              <span>Klik untuk memilih file foto nyata atau simulasi deteksi AI</span>
-              <small>Format JPG/PNG · Formulir tetap dapat diisi mandiri jika AI gagal</small>
-            </div>
-          </div>
-
-          <label htmlFor="report-notes">
-            Catatan Penggunaan Lapangan
-            <textarea
-              id="report-notes"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Contoh: Guiding block tertutup oleh dua sepeda motor parkir di depan pintu masuk sisi timur halte."
-              rows={4}
-            />
-          </label>
-        </section>
-
-        {/* Kolom 2: AI Vision Draft & Kunci Manusia */}
-        <section className="card ai-card" aria-label="2. Analisis AI dan penguncian manusia">
-          <AIDraftPanel
-            isDraftReady={aiDraftReady}
-            uploadedPhotoUrl={uploadedPhotoUrl}
-            detectedElementLabel={selectedElementLabel}
-          />
-
-          <HumanLockSelector
-            currentStatus={status}
-            onSelectStatus={setStatus}
-          />
-
-          <button
-            id="btn-submit-report"
-            type="submit"
-            className="primary-action"
-            style={{ width: '100%', marginTop: '20px' }}
-          >
-            Publish Setelah Konfirmasi Manusia
-          </button>
-
-          {isSuccess && (
-            <div className="success-toast" role="status">
-              ✓ Laporan berhasil disimpan! Status lokasi pada peta Surabaya telah diperbarui.
-            </div>
-          )}
+          <label htmlFor="report-location-select">Lokasi Fasilitas<select id="report-location-select" value={placeId} onChange={e => { setPlaceId(e.target.value); setConfirmed(false); }} required><option value="" disabled>Pilih lokasi</option>{places.map(p => <option key={p.id} value={String(p.id)}>{p.name} ({p.district})</option>)}</select></label>
+          <label htmlFor="reporter-name">Nama publik kontributor<input id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} required autoComplete="name" /></label>
+          <label htmlFor="report-element-select">Elemen yang dilaporkan<select id="report-element-select" value={elementCode} onChange={e => { setElementCode(e.target.value as ChainElementCode); setStatus('BELUM_DIKETAHUI'); setConfirmed(false); }} required>{(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => <option key={code} value={code}>{code} — {CHAIN_ELEMENT_MAP[code].label}</option>)}</select></label>
+          <label htmlFor="file-upload-input">Foto Bukti Lapangan<input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required /><small>JPG, PNG, WebP · maksimal 5 MB. Gunakan foto fasilitas tanpa identitas pribadi.</small></label>
+          <label htmlFor="report-notes">Catatan Lapangan<textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder="Jelaskan kondisi yang Anda amati di lokasi." rows={4} /></label>
+        </fieldset>
+        <section className="card ai-card" aria-label="Analisis dan konfirmasi manusia">
+          <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} uploadedPhotoUrl={photo?.image ?? null} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
+          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Menganalisis…' : 'Bantu isi draf dengan AI (opsional)'}</button>
+          <fieldset disabled={busy || analyzing} style={{ border: 0, padding: 0, minWidth: 0 }}>
+            <HumanLockSelector currentStatus={status} onSelectStatus={s => { setStatus(s); setConfirmed(false); }} />
+            <label style={{ display: 'flex', gap: '8px', marginTop: '16px' }}><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required />Saya telah memeriksa foto dan kondisi lapangan serta mengonfirmasi status elemen yang dipilih.</label>
+          </fieldset>
+          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || !placeId}>{submitting ? 'Menyimpan laporan…' : 'Publish Setelah Konfirmasi Manusia'}</button>
+          {error && <p role="alert">{error}</p>}
         </section>
       </form>
     </div>

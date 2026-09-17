@@ -1,77 +1,97 @@
-/**
- * Typed client for the AbleMap Express backend.
- * Base URL from NEXT_PUBLIC_API_URL (default http://localhost:4000).
- */
+import type { AccessibilityStatus, Place } from '@/types';
+import { CHAIN_ELEMENT_MAP } from '@/types';
+import { adaptSeedRecords } from './places/seedAdapter';
+import { supabaseBrowser } from './supabase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 export type ApiPlace = {
-  id: string;
-  name: string;
-  category: string;
-  lat: number;
-  lng: number;
-  kelurahan: string | null;
-  kecamatan: string | null;
-  elements: Record<string, { status: string; lockedBy: string; photoUrl?: string | null; note?: string | null }>;
-  score: number | null;
-  summary: string;
+  id: string; name: string; category: string; lat: number | null; lng: number | null;
+  address: string | null; kecamatan: string | null; kelurahan: string | null;
+  preSurvey: Record<string, unknown>; sources: { name?: string; url?: string; license?: string; retrieved_at?: string }[];
+  evidenceLevel: string; verifiedByTeam: boolean; needsGeocoding: boolean;
+  elements: Record<string, { status: AccessibilityStatus; lockedBy: 'kontributor'; photoUrl?: string | null; note?: string | null }>;
+  score: number | null; summary: string; overall: AccessibilityStatus; coverage: { known: number; total: number };
+  updatedAt: string | null; photoCount: number; reportCount: number;
 };
-
 export type ApiAnalysis = {
-  drafts: { element: string; status: string; confidence: string; reason: string }[];
-  needsMorePhotos: string[];
-  disclaimer: string;
-  /** present when AI failed → contributor fills checklist manually (doc §7.3) */
-  fallback?: "manual_checklist";
+  drafts: { element: string; status: AccessibilityStatus; confidence: string; reason: string }[];
+  needsMorePhotos: string[]; disclaimer: string; fallback?: 'manual_checklist'; error?: string;
 };
+export type ApiReport = { id: string; placeId: string; reporterName: string; createdAt: string; photoUrl: string; elements: { element: string; status: AccessibilityStatus; note?: string }[] };
 
-export async function fetchPlaces(profile?: string): Promise<ApiPlace[]> {
-  const url = new URL("/api/places", API_URL);
-  if (profile) url.searchParams.set("profile", profile);
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`fetchPlaces failed: ${res.status}`);
-  const json = (await res.json()) as { places: ApiPlace[] };
-  return json.places;
+// WORKAROUND: Construct absolute media URL dynamically using backend API_URL
+// so Next.js Image component works across both local dev (http://127.0.0.1:4000)
+// and production deployments without hardcoded hostnames.
+export const mediaUrl = (path: string) => new URL(path, API_URL).toString();
+
+// WHY: Transform raw backend ApiPlace into UI Place model.
+// When contributor evidence exists, it overrides baseline pre-survey claims for that element,
+// while untouched elements retain their baseline pre-survey state.
+// WARNING: A citizen report must NEVER automatically flip verifiedByTeam to true.
+export function toUiPlace(p: ApiPlace): Place {
+  const base = adaptSeedRecords([{ id: p.id, name: p.name, category: p.category, address: p.address,
+    lat: p.lat, lng: p.lng, needs_geocoding: p.needsGeocoding, verified_by_team: p.verifiedByTeam,
+    pre_survey: p.preSurvey, sources: p.sources, evidence_level: p.evidenceLevel }])[0];
+  return { ...base, district: p.kecamatan ?? 'Belum diketahui', overall: p.overall,
+    chainSummary: p.summary, photos: p.photoCount, reportCount: p.reportCount, score: p.score, coverage: p.coverage,
+    updated: p.updatedAt ? new Date(p.updatedAt).toLocaleString('id-ID') : 'Belum ada laporan lapangan',
+    elements: base.elements.map(el => {
+      const evidence = p.elements[CHAIN_ELEMENT_MAP[el.code].codeName];
+      return evidence ? { ...el, ...evidence, note: evidence.note ?? '', photoUrl: evidence.photoUrl ? mediaUrl(evidence.photoUrl) : null, isPreSurveyEvidence: false } : el;
+    }),
+  };
 }
-
-export async function fetchPlace(id: string): Promise<ApiPlace> {
-  const res = await fetch(`${API_URL}/api/places/${id}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`fetchPlace failed: ${res.status}`);
-  const json = (await res.json()) as { place: ApiPlace };
-  return json.place;
-}
-
-export async function analyzePhoto(
-  imageBase64: string,
-  mimeType: "image/jpeg" | "image/png" | "image/webp"
-): Promise<ApiAnalysis> {
-  const res = await fetch(`${API_URL}/api/analyze`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image: imageBase64, mimeType }),
-  });
-  const json = (await res.json()) as ApiAnalysis;
-  return json;
-}
-
-export type ReportPayload = {
-  placeId: string;
-  reporterName: string;
-  image?: string;
-  mimeType?: "image/jpeg" | "image/png" | "image/webp";
-  elements: { element: string; status: string; note?: string }[];
-};
-
-export async function submitReport(payload: ReportPayload): Promise<{ ok: boolean; reportId: string; photoUrl: string | null }> {
-  const res = await fetch(`${API_URL}/api/reports`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const json = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(json.error ?? `submitReport failed: ${res.status}`);
+async function headers() {
+  const result: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const { data } = await supabaseBrowser().auth.getSession();
+    if (data.session) result.Authorization = `Bearer ${data.session.access_token}`;
   }
-  return res.json();
+  return result;
+}
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { cache: 'no-store', signal: AbortSignal.timeout(35_000), ...init });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? `Permintaan gagal (${res.status})`);
+  return body as T;
+}
+export async function fetchPlaces(profile?: string): Promise<Place[]> {
+  const result: Place[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const query = new URLSearchParams({ limit: '100', offset: String(offset) });
+    if (profile) query.set('profile', profile);
+    const page = await request<{ places: ApiPlace[]; total: number }>(`/api/places?${query}`);
+    result.push(...page.places.map(toUiPlace));
+    if (result.length >= page.total || page.places.length === 0) return result;
+  }
+}
+export async function fetchPlace(id: string, profile?: string) {
+  const data = await request<{ place: ApiPlace; reports: ApiReport[] }>(`/api/places/${encodeURIComponent(id)}${profile ? `?profile=${profile}` : ''}`);
+  return { place: toUiPlace(data.place), reports: data.reports };
+}
+/**
+ * Correction trail for one place, newest first. Every report is kept, including the ones
+ * a later correction superseded, so the drawer can show who changed which element and when.
+ */
+export async function fetchPlaceReports(id: string, limit = 20) {
+  return request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
+    `/api/places/${encodeURIComponent(id)}/reports?limit=${limit}`
+  );
+}
+export async function analyzePhoto(image: string, mimeType: string): Promise<ApiAnalysis> {
+  return request('/api/analyze', { method: 'POST', headers: await headers(), body: JSON.stringify({ image, mimeType }) });
+}
+export type ReportPayload = {
+  placeId: string; reporterName: string; image: string; mimeType: string; humanConfirmed: true;
+  elements: { element: string; status: AccessibilityStatus; note?: string }[];
+};
+export async function submitReport(payload: ReportPayload, requestKey: string) {
+  const result = await request<{ reportId: string; place: ApiPlace }>('/api/reports', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
+  return { ...result, place: toUiPlace(result.place) };
+}
+export async function fetchHealth() {
+  return request<{ storage: 'local' | 'supabase'; authRequired: boolean; aiConfigured: boolean }>('/api/health');
+}
+export async function fetchContributions() {
+  return request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
 }

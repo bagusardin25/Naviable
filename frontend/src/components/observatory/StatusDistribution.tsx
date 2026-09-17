@@ -5,7 +5,7 @@ type StatusDistributionProps = {
   places: Place[];
 };
 
-const OBSERVED_CODES: ChainElementCode[] = ['E1', 'E2', 'E3', 'E5', 'E8'];
+const OBSERVED_CODES: ChainElementCode[] = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'];
 
 export function StatusDistribution({ places }: StatusDistributionProps) {
   return (
@@ -30,7 +30,7 @@ export function StatusDistribution({ places }: StatusDistributionProps) {
             ).length;
 
           const label = CHAIN_ELEMENT_MAP[code]?.label ?? code;
-          const percentage = Math.max(10, Math.round((brokenOccurrences / places.length) * 100));
+          const percentage = places.length ? Math.round((brokenOccurrences / places.length) * 100) : 0;
 
           return (
             <div className="bar-row" key={code}>

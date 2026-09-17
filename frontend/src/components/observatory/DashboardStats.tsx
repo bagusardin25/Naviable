@@ -6,7 +6,7 @@ type DashboardStatsProps = {
 };
 
 export function DashboardStats({ places }: DashboardStatsProps) {
-  const brokenCount = places.filter((p) => p.overall !== 'UTUH').length;
+  const brokenCount = places.filter((p) => ['TERHALANG', 'TIDAK_STANDAR', 'TIDAK_ADA'].includes(p.overall)).length;
   const unknownCount = places
     .flatMap((p) => p.elements)
     .filter((e) => e.status === 'BELUM_DIKETAHUI').length;

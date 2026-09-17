@@ -1,5 +1,5 @@
 import React from 'react';
-import { Place, STATUS_META, WHEELCHAIR_STATUS_META } from '@/types';
+import { Place, STATUS_META, placeStatusMeta } from '@/types';
 
 type PlaceCardProps = {
   place: Place;
@@ -8,7 +8,12 @@ type PlaceCardProps = {
 };
 
 export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
-  const meta = WHEELCHAIR_STATUS_META[place.wheelchairStatus] || WHEELCHAIR_STATUS_META.unknown;
+  const meta = placeStatusMeta(place);
+  // Screen readers must not hear "pre-survey" once contributor evidence exists: the
+  // accessible name has to match what the card is actually claiming.
+  const statusDescription = place.reportCount
+    ? `status dari bukti kontributor: ${STATUS_META[place.overall].label}`
+    : `status pre-survey: ${meta.label}`;
 
   return (
     <button
@@ -16,7 +21,7 @@ export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
       type="button"
       className={`place-card ${isSelected ? 'active' : ''}`}
       onClick={onSelect}
-      aria-label={`Pilih lokasi ${place.name}, status pre-survey: ${meta.label}`}
+      aria-label={`Pilih lokasi ${place.name}, ${statusDescription}`}
     >
       <div className="place-title-row">
         <div>
@@ -34,7 +39,7 @@ export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
               Perlu Geocoding
             </span>
           ) : (
-            <span className="badge-presurvey">PRE-SURVEY</span>
+            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
           )}
         </div>
       </div>
@@ -55,7 +60,7 @@ export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
           <i
             key={e.code}
             className={`chain-cell cell-${e.status.toLowerCase()}`}
-            title={`${e.code} ${e.label}: ${STATUS_META[e.status].label} (${e.isPreSurveyEvidence ? 'Pre-survey evidence' : 'Belum diverifikasi'})`}
+            title={`${e.code} ${e.label}: ${STATUS_META[e.status].label} (${e.lockedBy === 'kontributor' ? 'Dikonfirmasi kontributor' : e.isPreSurveyEvidence ? 'Pre-survey evidence' : 'Belum diverifikasi'})`}
             aria-label={`${e.code} ${e.label}: ${STATUS_META[e.status].label}`}
           >
             {e.code.replace('E', '')}

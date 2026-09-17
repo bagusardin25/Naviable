@@ -68,6 +68,9 @@ export type Place = {
   chainSummary: string;
   updated: string;
   photos: number;
+  reportCount?: number;
+  score?: number | null;
+  coverage?: { known: number; total: number };
   elements: ElementItem[];
 };
 
@@ -165,6 +168,12 @@ export const WHEELCHAIR_STATUS_META: Record<PreSurveyWheelchairStatus, Wheelchai
     badgeClass: 'status-belum_diketahui',
   },
 };
+
+export function placeStatusMeta(place: Place): WheelchairStatusMeta {
+  if (!place.reportCount) return WHEELCHAIR_STATUS_META[place.wheelchairStatus];
+  const meta = STATUS_META[place.overall];
+  return { ...meta, label: `Bukti kontributor: ${meta.label}`, ariaLabel: meta.label, badgeClass: `status-${place.overall.toLowerCase()}` };
+}
 
 export const CHAIN_ELEMENT_MAP: Record<ChainElementCode, { label: string; full: string; codeName: string }> = {
   E1: { label: 'Pintu / akses masuk', full: 'Entrance / Door Access', codeName: 'E1_door' },

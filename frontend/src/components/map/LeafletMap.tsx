@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Place, WHEELCHAIR_STATUS_META } from '@/types';
+import { Place, placeStatusMeta } from '@/types';
 
 type LeafletMapProps = {
   places: Place[];
@@ -141,18 +141,21 @@ function UserLocationButton() {
 }
 
 function createMarkerIcon(place: Place, isSelected: boolean) {
-  const meta = WHEELCHAIR_STATUS_META[place.wheelchairStatus] || WHEELCHAIR_STATUS_META.unknown;
+  const meta = placeStatusMeta(place);
   const isSelectedClass = isSelected ? 'selected' : '';
-  const statusClass = `marker-${place.wheelchairStatus}`;
-
+  const statusClass = place.reportCount ? ({ UTUH: 'yes', TERHALANG: 'limited', TIDAK_STANDAR: 'limited', TIDAK_ADA: 'no', BELUM_DIKETAHUI: 'unknown' }[place.overall]) : place.wheelchairStatus;
+  const marker = document.createElement('div');
+  marker.className = `marker marker-${statusClass} ${isSelectedClass}`;
+  marker.title = `${place.name} — ${meta.label}`;
+  const symbol = document.createElement('span');
+  symbol.setAttribute('aria-hidden', 'true');
+  symbol.textContent = meta.symbol;
+  const label = document.createElement('b');
+  label.textContent = place.name;
+  marker.append(symbol, label);
   return L.divIcon({
     className: 'custom-leaflet-pin',
-    html: `
-      <div class="marker ${statusClass} ${isSelectedClass}" title="${place.name} — ${meta.label}">
-        <span aria-hidden="true">${meta.symbol}</span>
-        <b>${place.name}</b>
-      </div>
-    `,
+    html: marker,
     iconSize: [44, 44],
     iconAnchor: [22, 22],
     popupAnchor: [0, -22],
@@ -190,7 +193,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace }: Lea
       {validPlaces.map((place) => {
         const isSelected = selectedPlace?.id === place.id;
         const icon = createMarkerIcon(place, isSelected);
-        const meta = WHEELCHAIR_STATUS_META[place.wheelchairStatus] || WHEELCHAIR_STATUS_META.unknown;
+        const meta = placeStatusMeta(place);
 
         return (
           <Marker
@@ -212,7 +215,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace }: Lea
                   <span className={`status-badge ${meta.badgeClass}`}>
                     {meta.symbol} {meta.label}
                   </span>
-                  <span className="badge-presurvey">PRE-SURVEY</span>
+                  <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
                 </div>
 
                 {place.address && (

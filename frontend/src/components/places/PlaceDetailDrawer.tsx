@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { Place, WHEELCHAIR_STATUS_META } from '@/types';
+import React, { useEffect, useState } from 'react';
+import { Place, placeStatusMeta } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { AccessibilityChain } from './AccessibilityChain';
+import { CorrectionHistory } from './CorrectionHistory';
+import { fetchPlaceReports, type ApiReport } from '@/lib/api';
 
 type PlaceDetailDrawerProps = {
   place: Place | null;
@@ -26,9 +28,39 @@ export function PlaceDetailDrawer({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  const placeId = place ? String(place.id) : null;
+  const reportCount = place?.reportCount ?? 0;
+  const [history, setHistory] = useState<{ key: string; error: boolean; reports: ApiReport[]; total: number } | null>(null);
+  const [historyAttempt, setHistoryAttempt] = useState(0);
+
+  // Loaded per place, and refreshed when a new report lands so a correction appears
+  // immediately instead of only after a full page reload.
+  useEffect(() => {
+    if (placeId === null) return;
+    let active = true;
+    const key = `${placeId}:${reportCount}:${historyAttempt}`;
+    fetchPlaceReports(placeId)
+      .then((page) => {
+        if (active) setHistory({ key, error: false, reports: page.reports, total: page.total });
+      })
+      .catch(() => {
+        if (active) setHistory({ key, error: true, reports: [], total: 0 });
+      });
+    return () => {
+      active = false;
+    };
+  }, [placeId, reportCount, historyAttempt]);
+
+  // Deriving from the key keeps a previous place's trail (or a spinner) from flashing
+  // while the new request is in flight, and avoids setState inside the effect body.
+  const historyKey = `${placeId}:${reportCount}:${historyAttempt}`;
+  const historySettled = history?.key === historyKey;
+  const historyState: 'idle' | 'loading' | 'error' = !historySettled ? 'loading' : history.error ? 'error' : 'idle';
+
   if (!place) return null;
 
-  const meta = WHEELCHAIR_STATUS_META[place.wheelchairStatus] || WHEELCHAIR_STATUS_META.unknown;
+  const meta = placeStatusMeta(place);
+  const unknownElements = place.elements.filter((element) => element.status === 'BELUM_DIKETAHUI').length;
 
   return (
     <section
@@ -55,7 +87,7 @@ export function PlaceDetailDrawer({
           {place.needsGeocoding ? (
             <span className="badge-needs-geocoding">Perlu Geocoding</span>
           ) : (
-            <span className="badge-presurvey">PRE-SURVEY</span>
+            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
           )}
         </div>
 
@@ -69,19 +101,34 @@ export function PlaceDetailDrawer({
 
       {place.needsGeocoding && (
         <div className="geocoding-notice-box" role="alert">
-          <strong>⚠️ Belum Memiliki Koordinat Presisi:</strong> Lokasi ini tercantum dalam dataset awal tetapi belum memiliki titik koordinat GPS. Gunakan menu Koreksi untuk melengkapi titik lokasi.
+          <strong>⚠️ Belum Memiliki Koordinat Presisi:</strong> Lokasi ini tercantum dalam dataset awal tetapi belum memiliki titik koordinat GPS. Koordinat perlu dilengkapi oleh pengelola dataset sebelum ditampilkan pada peta.
         </div>
       )}
 
-      <div className="presurvey-notice-box" role="note">
-        <span style={{ fontSize: '16px' }}>ℹ️</span>
-        <div>
-          <strong>Status Pre-Survey (Belum Terverifikasi Lapangan)</strong>
-          <div style={{ fontSize: '10px', marginTop: '2px', color: '#15803d' }}>
-            Data ini bersumber dari indikasi publik dan belum diaudit langsung oleh tim Naviable. Kontribusi bukti foto diperlukan untuk verifikasi mandiri.
+      {place.reportCount ? (
+        <div className="presurvey-notice-box" role="note">
+          <span style={{ fontSize: '16px' }}>📷</span>
+          <div>
+            <strong>Bukti lapangan dari kontributor</strong>
+            <div style={{ fontSize: '10px', marginTop: '2px', color: '#15803d' }}>
+              Sudah ada {place.reportCount} laporan warga
+              {place.coverage ? `; ${place.coverage.known} dari ${place.coverage.total} elemen relevan punya status terkonfirmasi` : ''}.
+              {' '}Status elemen di bawah berasal dari konfirmasi kontributor dan menggantikan indikasi pra-survei pada elemen yang sudah dikunci.
+              {unknownElements > 0 ? ` ${unknownElements} elemen masih belum diketahui dan menunggu bukti foto.` : ' Seluruh elemen relevan sudah punya bukti.'}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="presurvey-notice-box" role="note">
+          <span style={{ fontSize: '16px' }}>ℹ️</span>
+          <div>
+            <strong>Status Pre-Survey (Belum Terverifikasi Lapangan)</strong>
+            <div style={{ fontSize: '10px', marginTop: '2px', color: '#15803d' }}>
+              Data ini bersumber dari indikasi publik dan belum diaudit langsung oleh tim Naviable. Kontribusi bukti foto diperlukan untuk verifikasi mandiri.
+            </div>
+          </div>
+        </div>
+      )}
 
       {place.features && place.features.length > 0 && (
         <div style={{ margin: '12px 0', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
@@ -105,7 +152,7 @@ export function PlaceDetailDrawer({
         </div>
         <div>
           <span style={{ color: '#64748b' }}>Lisensi:</span>{' '}
-          <strong>{place.sourceLicense || 'ODbL 1.0'}</strong>
+          <strong>{place.sourceLicense || 'Tidak dicantumkan'}</strong>
         </div>
         <div>
           <span style={{ color: '#64748b' }}>Tingkat Bukti:</span>{' '}
@@ -134,6 +181,13 @@ export function PlaceDetailDrawer({
         Kondisi 8 Rantai Aksesibilitas
       </h3>
       <AccessibilityChain elements={place.elements} />
+
+      <CorrectionHistory
+        reports={historySettled ? history.reports : []}
+        total={historySettled ? history.total : 0}
+        state={historyState}
+        onRetry={() => setHistoryAttempt((value) => value + 1)}
+      />
 
       <div className="journey-hint" role="note">
         <Icon name="route" />

@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Place,
   Screen,
   AccessibilityNeed,
-  ChainElementCode,
-  AccessibilityStatus,
   PreSurveyFilter,
 } from '@/types';
-import { loadSeedPlaces } from '@/lib/places/seedAdapter';
+import { fetchPlaces, fetchHealth } from '@/lib/api';
 import { useAccessibility } from '@/hooks/useAccessibility';
 
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -28,11 +26,12 @@ import { AccessibilityModal } from '@/components/accessibility/AccessibilityModa
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('map');
-  const [places, setPlaces] = useState<Place[]>(() => loadSeedPlaces());
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(() => {
-    const seed = loadSeedPlaces();
-    return seed[0] ?? null;
-  });
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState('');
+  const [storage, setStorage] = useState('');
+  const [reload, setReload] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
   const [statusFilter, setStatusFilter] = useState<PreSurveyFilter>('all');
@@ -48,6 +47,20 @@ export default function Home() {
     setDyslexia,
     resetSettings,
   } = useAccessibility();
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchPlaces(need.toLowerCase()), fetchHealth()]).then(([next, health]) => {
+      if (!active) return;
+      setPlaces(next);
+      setSelectedPlace(current => current ? next.find(p => p.id === current.id) ?? null : null);
+      setStorage(health.storage);
+      setApiError('');
+    }).catch(error => {
+      if (active) setApiError(error instanceof Error ? error.message : 'Gagal memuat data API');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [need, reload]);
 
   // Dynamic unique categories
   const availableCategories = useMemo(() => {
@@ -107,66 +120,11 @@ export default function Home() {
     setScreen('report');
   }
 
-  function handleSubmitReport(
-    placeName: string,
-    elementCode: ChainElementCode,
-    newStatus: AccessibilityStatus,
-    note: string,
-    photoUrl: string | null
-  ) {
-    const target = places.find((p) => p.name === placeName);
-    if (!target) return;
-
-    const nextPlaces = places.map((p) => {
-      if (p.id !== target.id) return p;
-
-      const updatedElements = p.elements.map((el) => {
-        if (el.code === elementCode) {
-          return {
-            ...el,
-            status: newStatus,
-            note: note.trim() || 'Status dikonfirmasi kontributor dari verifikasi lapangan terkini.',
-            photoUrl: photoUrl ?? el.photoUrl,
-            lockedBy: 'kontributor' as const,
-            isPreSurveyEvidence: false,
-          };
-        }
-        return el;
-      });
-
-      // Recalculate overall status based on worst status
-      const statuses = updatedElements.map((e) => e.status);
-      let severe: AccessibilityStatus = 'UTUH';
-      if (statuses.includes('TIDAK_ADA')) severe = 'TIDAK_ADA';
-      else if (statuses.includes('TERHALANG')) severe = 'TERHALANG';
-      else if (statuses.includes('TIDAK_STANDAR')) severe = 'TIDAK_STANDAR';
-      else if (statuses.includes('BELUM_DIKETAHUI')) severe = 'BELUM_DIKETAHUI';
-
-      const brokenLabels = updatedElements
-        .filter((e) => ['TERHALANG', 'TIDAK_STANDAR', 'TIDAK_ADA'].includes(e.status))
-        .map((e) => e.label.toLowerCase());
-
-      const summary = brokenLabels.length
-        ? `Rantai perlu perhatian pada ${brokenLabels.slice(0, 2).join(' dan ')}.`
-        : 'Rantai akses terkonfirmasi utuh dan mandiri.';
-
-      return {
-        ...p,
-        elements: updatedElements,
-        overall: severe,
-        chainSummary: summary,
-        updated: 'Baru saja (Diverifikasi kontributor)',
-        photos: photoUrl ? p.photos + 1 : p.photos,
-      };
-    });
-
-    setPlaces(nextPlaces);
-    const updatedTarget = nextPlaces.find((p) => p.id === target.id) ?? null;
-    setSelectedPlace(updatedTarget);
-
-    setTimeout(() => {
-      setScreen('map');
-    }, 1000);
+  function handleSubmitReport(updated: Place) {
+    setPlaces(current => current.map(p => p.id === updated.id ? updated : p));
+    setSelectedPlace(updated);
+    setReload(value => value + 1);
+    setScreen('map');
   }
 
   const appClassName = [
@@ -193,6 +151,9 @@ export default function Home() {
           onOpenAccessibility={() => setShowA11y(true)}
         />
 
+        {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat lokasi dari server…</p>}
+        {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>Coba lagi</button></div>}
+        {storage === 'local' && <p role="note" style={{ padding: '6px 20px', background: '#fffbeb', fontSize: '12px' }}>Mode lokal · Laporan tersimpan di perangkat ini. Data awal tetap pra-survei.</p>}
         {screen === 'map' && (
           <div className="map-layout">
             <h1 className="visually-hidden">Naviable — Peta Aksesibilitas Kota Surabaya</h1>
@@ -326,6 +287,7 @@ export default function Home() {
         {screen === 'report' && (
           <ReportForm
             places={places}
+            key={reportTargetPlaceName ?? "new-report"}
             defaultPlaceName={reportTargetPlaceName}
             onSubmitReport={handleSubmitReport}
           />
@@ -336,7 +298,7 @@ export default function Home() {
             <div className="page-title">
               <div>
                 <span className="eyebrow">Civic Observatory</span>
-                <h1>Evidence Pack Surabaya (Seed Data)</h1>
+                <h1>Evidence Pack Surabaya</h1>
                 <p>
                   Ringkasan aksesibilitas ruang publik untuk komunitas disabilitas, kampus, NGO advokasi, dan perencana kota — bukan sistem penghukuman pemerintah.
                 </p>

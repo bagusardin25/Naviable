@@ -1,43 +1,24 @@
-import React from 'react';
+'use client';
+import { useEffect, useState } from 'react';
+import { fetchContributions, type ApiReport } from '@/lib/api';
+import { supabaseBrowser } from '@/lib/supabase';
 
 export function ContributorProfile() {
-  return (
-    <div className="page-scroll profile-page">
-      <section className="profile-hero" aria-label="Informasi profil kontributor">
-        <div className="avatar large" aria-hidden="true">
-          AR
-        </div>
-        <div>
-          <span className="eyebrow">Kontributor Komunitas</span>
-          <h1>Ahmad Rizki</h1>
-          <p>Kontributor Terverifikasi · Kota Surabaya</p>
-        </div>
-      </section>
-
-      <div className="profile-grid">
-        <article className="card">
-          <h2>Kontribusi Terverifikasi</h2>
-          <strong className="big-number">14</strong>
-          <p>
-            Laporan bukti foto terstruktur. Validasi langsung pada rantai 8 elemen aksesibilitas ruang publik kota Surabaya, bukan sekadar penambahan pin tanpa konteks.
-          </p>
-        </article>
-
-        <article className="card">
-          <h2>Prinsip Komunitas Naviable</h2>
-          <ul className="principles-list">
-            <li>
-              <strong>Foto Nyata & Objektif:</strong> Bukti foto harus jelas menunjukkan kondisi fisik fasilitas di lapangan.
-            </li>
-            <li>
-              <strong>Kunci Manusia:</strong> AI hanya alat bantu pendeteksi awal; penentu status aman/tidaknya fasilitas selalu dikonfirmasi manusia.
-            </li>
-            <li>
-              <strong>Koreksi Terbuka:</strong> Kondisi lapangan dinamis. Setiap pengguna dapat mengajukan koreksi bukti jika ada renovasi atau hambatan baru.
-            </li>
-          </ul>
-        </article>
-      </div>
-    </div>
-  );
+  const [data, setData] = useState<{ mode: string; total: number; reports: ApiReport[] } | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    fetchContributions().then(value => { if (active) setData(value); }).catch(e => { if (active) setError(e.message); });
+    return () => { active = false; };
+  }, []);
+  async function signOut() {
+    await supabaseBrowser().auth.signOut();
+    setData(null); setError('Anda telah keluar.');
+  }
+  return <div className="page-scroll profile-page">
+    <section className="profile-hero"><div><span className="eyebrow">Kontributor Komunitas</span><h1>{data?.mode === 'local' ? 'Kontribusi perangkat lokal' : 'Kontribusi saya'}</h1><p>Riwayat laporan yang tersimpan di server.</p></div></section>
+    {error && <p role="alert">{error} <a href="/login">Masuk</a></p>}
+    {!data && !error && <p role="status">Memuat kontribusi…</p>}
+    {data && <div className="profile-grid"><article className="card"><h2>Laporan tersimpan</h2><strong className="big-number">{data.total}</strong><p>Konfirmasi kontributor tidak sama dengan audit tim atau kepatuhan hukum.</p>{data.mode === 'supabase' && <button type="button" onClick={signOut}>Keluar</button>}</article><article className="card"><h2>50 laporan terbaru</h2>{data.reports.length ? data.reports.map(r => <p key={r.id}>{r.reporterName} · {new Date(r.createdAt).toLocaleString('id-ID')} · {r.elements.map(e => e.status).join(', ')}</p>) : <p>Belum ada laporan. Mulai dengan foto fasilitas dan checklist lapangan.</p>}</article></div>}
+  </div>;
 }

@@ -199,7 +199,10 @@ function generateChainSummary(wheelchair: PreSurveyWheelchairStatus, hasCoords: 
 }
 
 export function loadSeedPlaces(): Place[] {
-  const records = rawSeedData.records as RawSeedRecord[];
+  return adaptSeedRecords(rawSeedData.records as RawSeedRecord[]);
+}
+
+export function adaptSeedRecords(records: RawSeedRecord[]): Place[] {
 
   return records.map((record: RawSeedRecord, index: number) => {
     const lat = typeof record.lat === 'number' && !isNaN(record.lat) ? record.lat : null;
@@ -222,10 +225,7 @@ export function loadSeedPlaces(): Place[] {
       ? 'verified'
       : 'pre-survey';
 
-    let overall: AccessibilityStatus = 'BELUM_DIKETAHUI';
-    if (wheelchairStatus === 'yes') overall = 'UTUH';
-    else if (wheelchairStatus === 'limited') overall = 'TERHALANG';
-    else if (wheelchairStatus === 'no') overall = 'TIDAK_ADA';
+    const overall: AccessibilityStatus = 'BELUM_DIKETAHUI';
 
     const rawCategory = record.category ?? 'general';
     const category = normalizeCategory(rawCategory);
@@ -237,7 +237,7 @@ export function loadSeedPlaces(): Place[] {
 
     const sourceName = record.source?.name ?? record.sources?.[0]?.name ?? 'OpenStreetMap';
     const sourceUrl = record.source?.url ?? record.sources?.[0]?.url ?? undefined;
-    const sourceLicense = record.source?.license ?? 'ODbL 1.0';
+    const sourceLicense = record.source?.license ?? record.sources?.[0]?.license ?? 'Tidak dicantumkan';
     const retrievedAt = record.source?.retrieved_at ?? record.sources?.[0]?.retrieved_at ?? '2026-09-13';
 
     const evidenceLevel = record.evidence_level ?? 'community_reported';
