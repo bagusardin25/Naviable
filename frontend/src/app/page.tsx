@@ -38,6 +38,7 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showA11y, setShowA11y] = useState(false);
   const [reportTargetPlaceName, setReportTargetPlaceName] = useState<string | undefined>(undefined);
+  const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
 
   const {
     settings,
@@ -155,133 +156,155 @@ export default function Home() {
         {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>Coba lagi</button></div>}
         {storage === 'local' && <p role="note" style={{ padding: '6px 20px', background: '#fffbeb', fontSize: '12px' }}>Mode lokal · Laporan tersimpan di perangkat ini. Data awal tetap pra-survei.</p>}
         {screen === 'map' && (
-          <div className="map-layout">
-            <h1 className="visually-hidden">Naviable — Peta Aksesibilitas Kota Surabaya</h1>
-
-            <section className="map-panel" aria-label="Peta interaktif aksesibilitas Surabaya">
-              <div className="map-toolbar">
-                <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <select
-                    id="category-filter-select"
-                    className="filter-select"
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    aria-label="Filter berdasarkan kategori lokasi"
-                  >
-                    <option value="all">Semua Kategori ({places.length})</option>
-                    {availableCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat} ({places.filter((p) => p.category === cat).length})
-                      </option>
-                    ))}
-                  </select>
-
-                  {hasActiveFilters && (
-                    <button
-                      type="button"
-                      className="status-pill-btn"
-                      style={{ color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2' }}
-                      onClick={() => {
-                        setStatusFilter('all');
-                        setCategoryFilter('all');
-                        setSearchQuery('');
-                      }}
-                      title="Reset semua filter"
-                    >
-                      ✕ Reset Filter
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Status Filter Bar for Pre-Survey Indicators */}
-              <div
-                className="status-filter-bar"
-                style={{
-                  padding: '8px 20px',
-                  background: '#f8fafc',
-                  borderBottom: '1px solid var(--line)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  overflowX: 'auto',
-                  zIndex: 3,
-                  position: 'relative',
-                }}
+          <>
+            <div className="mobile-view-tabs" role="tablist" aria-label="Beralih tampilan peta atau daftar">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mobileTab === 'map'}
+                className={`mobile-view-btn ${mobileTab === 'map' ? 'active' : ''}`}
+                onClick={() => setMobileTab('map')}
               >
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
-                  Status Pre-Survey:
-                </span>
-                <button
-                  type="button"
-                  className={`status-pill-btn ${statusFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('all')}
-                >
-                  Semua ({statusCounts.all})
-                </button>
-                <button
-                  type="button"
-                  className={`status-pill-btn ${statusFilter === 'yes' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('yes')}
-                >
-                  ✓ Akses Dilaporkan ({statusCounts.yes})
-                </button>
-                <button
-                  type="button"
-                  className={`status-pill-btn ${statusFilter === 'limited' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('limited')}
-                >
-                  ▲ Akses Terbatas ({statusCounts.limited})
-                </button>
-                <button
-                  type="button"
-                  className={`status-pill-btn ${statusFilter === 'no' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('no')}
-                >
-                  ✕ Tidak Aksesibel ({statusCounts.no})
-                </button>
-                <button
-                  type="button"
-                  className={`status-pill-btn ${statusFilter === 'unknown' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('unknown')}
-                >
-                  ? Belum Diketahui ({statusCounts.unknown})
-                </button>
-                <button
-                  type="button"
-                  className={`status-pill-btn ${statusFilter === 'needs-geocoding' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('needs-geocoding')}
-                  style={
-                    statusFilter === 'needs-geocoding'
-                      ? {}
-                      : { borderColor: '#fde68a', background: '#fffbeb', color: '#92400e' }
-                  }
-                >
-                  📍 Perlu Geocoding ({statusCounts['needs-geocoding']})
-                </button>
-              </div>
+                🗺️ Tampilan Peta
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mobileTab === 'list'}
+                className={`mobile-view-btn ${mobileTab === 'list' ? 'active' : ''}`}
+                onClick={() => setMobileTab('list')}
+              >
+                📋 Daftar Tempat ({filteredPlaces.length})
+              </button>
+            </div>
 
-              <MapView
+            <div className="map-layout">
+              <h1 className="visually-hidden">Naviable — Peta Aksesibilitas Kota Surabaya</h1>
+
+              <section
+                className={`map-panel ${mobileTab !== 'map' ? 'mobile-hidden' : 'mobile-active'}`}
+                aria-label="Peta interaktif aksesibilitas Surabaya"
+              >
+                <div className="map-toolbar">
+                  <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <select
+                      id="category-filter-select"
+                      className="filter-select"
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      aria-label="Filter berdasarkan kategori lokasi"
+                    >
+                      <option value="all">Semua Kategori ({places.length})</option>
+                      {availableCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat} ({places.filter((p) => p.category === cat).length})
+                        </option>
+                      ))}
+                    </select>
+
+                    {hasActiveFilters && (
+                      <button
+                        type="button"
+                        className="status-pill-btn"
+                        style={{ color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2' }}
+                        onClick={() => {
+                          setStatusFilter('all');
+                          setCategoryFilter('all');
+                          setSearchQuery('');
+                        }}
+                        title="Reset semua filter"
+                      >
+                        ✕ Reset Filter
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status Filter Bar for Pre-Survey Indicators */}
+                <div className="status-filter-bar">
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
+                    Status Pre-Survey:
+                  </span>
+                  <button
+                    type="button"
+                    className={`status-pill-btn ${statusFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('all')}
+                  >
+                    Semua ({statusCounts.all})
+                  </button>
+                  <button
+                    type="button"
+                    className={`status-pill-btn ${statusFilter === 'yes' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('yes')}
+                  >
+                    ✓ Akses Dilaporkan ({statusCounts.yes})
+                  </button>
+                  <button
+                    type="button"
+                    className={`status-pill-btn ${statusFilter === 'limited' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('limited')}
+                  >
+                    ▲ Akses Terbatas ({statusCounts.limited})
+                  </button>
+                  <button
+                    type="button"
+                    className={`status-pill-btn ${statusFilter === 'no' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('no')}
+                  >
+                    ✕ Tidak Aksesibel ({statusCounts.no})
+                  </button>
+                  <button
+                    type="button"
+                    className={`status-pill-btn ${statusFilter === 'unknown' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('unknown')}
+                  >
+                    ? Belum Diketahui ({statusCounts.unknown})
+                  </button>
+                  <button
+                    type="button"
+                    className={`status-pill-btn ${statusFilter === 'needs-geocoding' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('needs-geocoding')}
+                    style={
+                      statusFilter === 'needs-geocoding'
+                        ? {}
+                        : { borderColor: '#fde68a', background: '#fffbeb', color: '#92400e' }
+                    }
+                  >
+                    📍 Perlu Geocoding ({statusCounts['needs-geocoding']})
+                  </button>
+                </div>
+
+                <MapView
+                  places={filteredPlaces}
+                  selectedPlace={selectedPlace}
+                  onSelectPlace={handleSelectPlace}
+                />
+              </section>
+
+              <PlaceList
                 places={filteredPlaces}
                 selectedPlace={selectedPlace}
                 onSelectPlace={handleSelectPlace}
+                className={mobileTab !== 'list' ? 'mobile-hidden' : ''}
               />
-            </section>
 
-            <PlaceList
-              places={filteredPlaces}
-              selectedPlace={selectedPlace}
-              onSelectPlace={handleSelectPlace}
-            />
+              {selectedPlace && (
+                <div
+                  className="drawer-backdrop"
+                  onClick={() => setSelectedPlace(null)}
+                  aria-hidden="true"
+                />
+              )}
 
-            <PlaceDetailDrawer
-              place={selectedPlace}
-              onClose={() => setSelectedPlace(null)}
-              onCorrectPlace={handleCorrectPlace}
-            />
-          </div>
+              <PlaceDetailDrawer
+                place={selectedPlace}
+                onClose={() => setSelectedPlace(null)}
+                onCorrectPlace={handleCorrectPlace}
+              />
+            </div>
+          </>
         )}
 
         {screen === 'report' && (
