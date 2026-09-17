@@ -1,4 +1,4 @@
-import type { AccessibilityStatus, Place } from '@/types';
+import type { AccessibilityStatus, Place, JourneyResponse } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
 import { adaptSeedRecords } from './places/seedAdapter';
 import { supabaseBrowser } from './supabase';
@@ -11,7 +11,7 @@ export type ApiPlace = {
   evidenceLevel: string; verifiedByTeam: boolean; needsGeocoding: boolean;
   elements: Record<string, { status: AccessibilityStatus; lockedBy: 'kontributor'; photoUrl?: string | null; note?: string | null }>;
   score: number | null; summary: string; overall: AccessibilityStatus; coverage: { known: number; total: number };
-  updatedAt: string | null; photoCount: number; reportCount: number;
+  updatedAt: string | null; photoCount: number; reportCount: number; bottlenecks?: string[];
 };
 export type ApiAnalysis = {
   drafts: { element: string; status: AccessibilityStatus; confidence: string; reason: string }[];
@@ -35,6 +35,8 @@ export function toUiPlace(p: ApiPlace): Place {
   return { ...base, district: p.kecamatan ?? 'Belum diketahui', overall: p.overall,
     chainSummary: p.summary, photos: p.photoCount, reportCount: p.reportCount, score: p.score, coverage: p.coverage,
     updated: p.updatedAt ? new Date(p.updatedAt).toLocaleString('id-ID') : 'Belum ada laporan lapangan',
+    updatedAt: p.updatedAt,
+    bottlenecks: p.bottlenecks ?? [],
     elements: base.elements.map(el => {
       const evidence = p.elements[CHAIN_ELEMENT_MAP[el.code].codeName];
       return evidence ? { ...el, ...evidence, note: evidence.note ?? '', photoUrl: evidence.photoUrl ? mediaUrl(evidence.photoUrl) : null, isPreSurveyEvidence: false } : el;
@@ -94,4 +96,28 @@ export async function fetchHealth() {
 }
 export async function fetchContributions() {
   return request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
+}
+
+export async function fetchJourney(from: string, to: string, profile = 'mobilitas'): Promise<JourneyResponse> {
+  const query = new URLSearchParams({ from, to, profile });
+  return request<JourneyResponse>(`/api/journey?${query}`);
+}
+
+export function exportEvidenceCsvUrl(filters?: {
+  profile?: string;
+  element?: string;
+  status?: string;
+  kecamatan?: string;
+  category?: string;
+  search?: string;
+}) {
+  const query = new URLSearchParams();
+  if (filters?.profile && filters.profile !== 'all') query.set('profile', filters.profile);
+  if (filters?.element && filters.element !== 'all') query.set('element', filters.element);
+  if (filters?.status && filters.status !== 'all') query.set('status', filters.status);
+  if (filters?.kecamatan && filters.kecamatan !== 'all') query.set('kecamatan', filters.kecamatan);
+  if (filters?.category && filters.category !== 'all') query.set('category', filters.category);
+  if (filters?.search && filters.search.trim()) query.set('search', filters.search.trim());
+  const queryString = query.toString();
+  return `${API_URL}/api/evidence.csv${queryString ? `?${queryString}` : ''}`;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Place } from '@/types';
+import { Place, AccessibilityNeed } from '@/types';
 import { PlaceCard } from './PlaceCard';
 
 type PlaceListProps = {
@@ -7,9 +7,10 @@ type PlaceListProps = {
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
   className?: string;
+  activeNeed?: AccessibilityNeed;
 };
 
-export function PlaceList({ places, selectedPlace, onSelectPlace, className = '' }: PlaceListProps) {
+export function PlaceList({ places, selectedPlace, onSelectPlace, className = '', activeNeed = 'Mobilitas' }: PlaceListProps) {
   const geocodedCount = places.filter((p) => !p.needsGeocoding).length;
   const unlocatedCount = places.filter((p) => p.needsGeocoding).length;
 
@@ -39,6 +40,7 @@ export function PlaceList({ places, selectedPlace, onSelectPlace, className = ''
               place={place}
               isSelected={selectedPlace?.id === place.id}
               onSelect={() => onSelectPlace(place)}
+              activeNeed={activeNeed}
             />
           ))
         )}

@@ -1,19 +1,17 @@
 import React from 'react';
-import { Place, STATUS_META, placeStatusMeta } from '@/types';
+import { Place, STATUS_META, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
 
 type PlaceCardProps = {
   place: Place;
   isSelected: boolean;
   onSelect: () => void;
+  activeNeed?: AccessibilityNeed;
 };
 
-export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
-  const meta = placeStatusMeta(place);
-  // Screen readers must not hear "pre-survey" once contributor evidence exists: the
-  // accessible name has to match what the card is actually claiming.
-  const statusDescription = place.reportCount
-    ? `status dari bukti kontributor: ${STATUS_META[place.overall].label}`
-    : `status pre-survey: ${meta.label}`;
+export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas' }: PlaceCardProps) {
+  const meta = placeStatusMeta(place, activeNeed);
+  const freshness = getEvidenceFreshness(place.updatedAt);
+  const statusDescription = `${meta.label}, kesegaran data: ${freshness.label}`;
 
   return (
     <button
@@ -21,7 +19,7 @@ export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
       type="button"
       className={`place-card ${isSelected ? 'active' : ''}`}
       onClick={onSelect}
-      aria-label={`Pilih lokasi ${place.name}, ${statusDescription}`}
+      aria-label={`Pilih lokasi ${place.name}, profil ${activeNeed}: ${statusDescription}`}
     >
       <div className="place-title-row">
         <div>
@@ -34,17 +32,29 @@ export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
           <span className={`status-badge ${meta.badgeClass}`}>
             <strong>{meta.symbol}</strong> {meta.label}
           </span>
-          {place.needsGeocoding ? (
-            <span className="badge-needs-geocoding" title="Belum memiliki koordinat map presisi">
-              Perlu Geocoding
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <span className={`freshness-badge ${freshness.badgeClass}`} title={`Kesegaran data: ${freshness.label}`}>
+              {freshness.symbol} {freshness.label}
             </span>
-          ) : (
-            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
-          )}
+            {place.needsGeocoding ? (
+              <span className="badge-needs-geocoding" title="Belum memiliki koordinat map presisi">
+                Perlu Geocoding
+              </span>
+            ) : (
+              <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
+            )}
+          </div>
         </div>
       </div>
 
       <p>{place.chainSummary}</p>
+
+      {place.bottlenecks && place.bottlenecks.length > 0 && (
+        <div style={{ fontSize: '11px', color: '#b45309', background: '#fef3c7', padding: '3px 8px', borderRadius: '6px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span>⚠️</span>
+          <span>Perhatian profil {activeNeed}: {place.bottlenecks.length} titik perlu kewaspadaan</span>
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <span className="badge-evidence" title={`Tingkat bukti: ${place.evidenceLevelLabel}`}>
@@ -70,3 +80,4 @@ export function PlaceCard({ place, isSelected, onSelect }: PlaceCardProps) {
     </button>
   );
 }
+
