@@ -82,8 +82,9 @@ async function main() {
     await run(tool("initdb"), ["-D", dataDir, "-U", "postgres", "-A", "trust", "-E", "UTF8", "--no-sync"],
       { timeout: 120_000, maxBuffer: 8 * 1024 * 1024 });
 
+    const extraOptions = process.platform === "win32" ? "" : " -c unix_socket_directories=/tmp";
     // Host is pinned to loopback so the test cluster is never reachable off-box.
-    await detached("pg_ctl", ["-D", dataDir, "-l", logFile, "-o", `-p ${port} -c listen_addresses=127.0.0.1`, "-w", "-t", "30", "start"]);
+    await detached("pg_ctl", ["-D", dataDir, "-l", logFile, "-o", `-p ${port} -c listen_addresses=127.0.0.1${extraOptions}`, "-w", "-t", "30", "start"]);
     serverStarted = true;
     await waitForPort();
 
@@ -118,7 +119,12 @@ async function main() {
   } catch (error) {
     console.error("\nSQL acceptance test FAILED.");
     console.error(error.stdout || error.stderr || error.message);
-    if (serverStarted && existsSync(logFile)) console.error(`\nCluster log:\n${await readFile(logFile, "utf8")}`);
+    if (existsSync(logFile)) {
+      try {
+        const logContent = await readFile(logFile, "utf8");
+        if (logContent.trim()) console.error(`\nCluster log:\n${logContent}`);
+      } catch {}
+    }
     if (serverStarted) console.error(`\nIf this run leaves the cluster up: pg_ctl -D "${dataDir}" -m immediate stop`);
     process.exitCode = 1;
   } finally {
