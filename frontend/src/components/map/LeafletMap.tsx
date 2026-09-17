@@ -59,6 +59,31 @@ function MapBoundsController({
 }
 
 /**
+ * Controller to invalidate Leaflet map size on viewport changes or mobile tab switch
+ */
+function MapResizeController() {
+  const map = useMap();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+
+    function handleResize() {
+      map.invalidateSize();
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
+
+  return null;
+}
+
+/**
  * Optional user geolocation button control
  */
 function UserLocationButton() {
@@ -91,8 +116,8 @@ function UserLocationButton() {
   return (
     <>
       <div
-        className="leaflet-top leaflet-right"
-        style={{ marginTop: '12px', marginRight: '12px', pointerEvents: 'auto' }}
+        className="leaflet-bottom leaflet-right"
+        style={{ marginBottom: '26px', marginRight: '14px', pointerEvents: 'auto' }}
       >
         <div className="leaflet-bar leaflet-control" style={{ border: 'none' }}>
           <button
@@ -103,16 +128,16 @@ function UserLocationButton() {
             style={{
               backgroundColor: '#ffffff',
               border: '1px solid #cbd5e1',
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '18px',
               color: '#1a56db',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              borderRadius: '10px',
+              boxShadow: '0 3px 10px rgba(0,0,0,0.15)',
             }}
           >
             {locating ? '⏳' : '🎯'}
@@ -188,6 +213,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace }: Lea
       />
       <MapBoundsController places={validPlaces} />
       <MapPanController selectedPlace={selectedPlace} />
+      <MapResizeController />
       <UserLocationButton />
 
       {validPlaces.map((place) => {
