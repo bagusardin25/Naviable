@@ -15,8 +15,13 @@ export function AccessibilityChain({ elements }: AccessibilityChainProps) {
             <span className="element-code">{e.code}</span>
             <strong>{e.label}</strong>
           </div>
-          <div className="element-badge-wrapper">
+          <div className="element-badge-wrapper" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', margin: '4px 0' }}>
             <StatusBadge status={e.status} />
+            {e.isPreSurveyEvidence && (
+              <span className="badge-presurvey" style={{ fontSize: '9px', padding: '2px 6px' }}>
+                Pre-survey evidence
+              </span>
+            )}
           </div>
           <p className="element-note">{e.note}</p>
         </article>

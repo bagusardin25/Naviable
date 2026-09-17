@@ -15,12 +15,19 @@ export function EvidenceExportButton({ places }: EvidenceExportButtonProps) {
       'Nama_Lokasi',
       'Kategori',
       'Kecamatan',
+      'Alamat',
       'Latitude',
       'Longitude',
+      'Perlu_Geocoding',
+      'Status_PreSurvey_Kursi_Roda',
+      'Status_Verifikasi_Tim',
+      'Tingkat_Bukti',
+      'Sumber_Data',
+      'Lisensi_Sumber',
       'Kode_Elemen',
       'Nama_Elemen',
       'Status_Aksesibilitas',
-      'Catatan_Lapangan',
+      'Catatan_PreSurvey_Atau_Lapangan',
       'Status_Lokasi_Secara_Umum',
     ];
 
@@ -30,8 +37,15 @@ export function EvidenceExportButton({ places }: EvidenceExportButtonProps) {
         p.name,
         p.category,
         p.district,
-        p.lat,
-        p.lng,
+        p.address || '',
+        p.lat !== null ? p.lat : 'NULL',
+        p.lng !== null ? p.lng : 'NULL',
+        p.needsGeocoding ? 'YA' : 'TIDAK',
+        p.wheelchairStatus,
+        p.verifiedByTeam ? 'TERVERIFIKASI' : 'PRE-SURVEY',
+        p.evidenceLevelLabel,
+        p.sourceName || 'OpenStreetMap',
+        p.sourceLicense || 'ODbL 1.0',
         e.code,
         e.label,
         e.status,
@@ -52,7 +66,7 @@ export function EvidenceExportButton({ places }: EvidenceExportButtonProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `naviable-evidence-pack-surabaya-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `naviable-evidence-pack-surabaya-seed-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }

@@ -1,8 +1,15 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Place, Screen, AccessibilityNeed, ChainElementCode, AccessibilityStatus } from '@/types';
-import { SURABAYA_SEED_PLACES } from '@/data/places';
+import {
+  Place,
+  Screen,
+  AccessibilityNeed,
+  ChainElementCode,
+  AccessibilityStatus,
+  PreSurveyFilter,
+} from '@/types';
+import { loadSeedPlaces } from '@/lib/places/seedAdapter';
 import { useAccessibility } from '@/hooks/useAccessibility';
 
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -21,10 +28,15 @@ import { AccessibilityModal } from '@/components/accessibility/AccessibilityModa
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('map');
-  const [places, setPlaces] = useState<Place[]>(SURABAYA_SEED_PLACES);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(SURABAYA_SEED_PLACES[0]);
+  const [places, setPlaces] = useState<Place[]>(() => loadSeedPlaces());
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(() => {
+    const seed = loadSeedPlaces();
+    return seed[0] ?? null;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
+  const [statusFilter, setStatusFilter] = useState<PreSurveyFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showA11y, setShowA11y] = useState(false);
   const [reportTargetPlaceName, setReportTargetPlaceName] = useState<string | undefined>(undefined);
 
@@ -37,18 +49,54 @@ export default function Home() {
     resetSettings,
   } = useAccessibility();
 
-  // Filtered places according to search text
+  // Dynamic unique categories
+  const availableCategories = useMemo(() => {
+    const cats = Array.from(new Set(places.map((p) => p.category))).sort();
+    return cats;
+  }, [places]);
+
+  // Counts for each status filter pill
+  const statusCounts = useMemo(() => {
+    return {
+      all: places.length,
+      yes: places.filter((p) => p.wheelchairStatus === 'yes').length,
+      limited: places.filter((p) => p.wheelchairStatus === 'limited').length,
+      no: places.filter((p) => p.wheelchairStatus === 'no').length,
+      unknown: places.filter((p) => p.wheelchairStatus === 'unknown').length,
+      'needs-geocoding': places.filter((p) => p.needsGeocoding).length,
+    };
+  }, [places]);
+
+  // Multi-criteria filter: search query + status + category
   const filteredPlaces = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return places;
-    return places.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query) ||
-        p.district.toLowerCase().includes(query) ||
-        (p.address && p.address.toLowerCase().includes(query))
-    );
-  }, [places, searchQuery]);
+    return places.filter((p) => {
+      // 1. Status Filter
+      if (statusFilter === 'needs-geocoding') {
+        if (!p.needsGeocoding) return false;
+      } else if (statusFilter !== 'all') {
+        if (p.wheelchairStatus !== statusFilter) return false;
+      }
+
+      // 2. Category Filter
+      if (categoryFilter !== 'all' && p.category !== categoryFilter) {
+        return false;
+      }
+
+      // 3. Search text query
+      const query = searchQuery.trim().toLowerCase();
+      if (query) {
+        const matchName = p.name.toLowerCase().includes(query);
+        const matchCategory = p.category.toLowerCase().includes(query);
+        const matchDistrict = p.district.toLowerCase().includes(query);
+        const matchAddress = p.address ? p.address.toLowerCase().includes(query) : false;
+        if (!matchName && !matchCategory && !matchDistrict && !matchAddress) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [places, statusFilter, categoryFilter, searchQuery]);
 
   function handleSelectPlace(place: Place) {
     setSelectedPlace(place);
@@ -80,6 +128,7 @@ export default function Home() {
             note: note.trim() || 'Status dikonfirmasi kontributor dari verifikasi lapangan terkini.',
             photoUrl: photoUrl ?? el.photoUrl,
             lockedBy: 'kontributor' as const,
+            isPreSurveyEvidence: false,
           };
         }
         return el;
@@ -106,7 +155,7 @@ export default function Home() {
         elements: updatedElements,
         overall: severe,
         chainSummary: summary,
-        updated: 'Baru saja',
+        updated: 'Baru saja (Diverifikasi kontributor)',
         photos: photoUrl ? p.photos + 1 : p.photos,
       };
     });
@@ -130,6 +179,9 @@ export default function Home() {
     .filter(Boolean)
     .join(' ');
 
+  const hasActiveFilters =
+    statusFilter !== 'all' || categoryFilter !== 'all' || searchQuery.trim().length > 0;
+
   return (
     <main className={appClassName}>
       <AppSidebar currentScreen={screen} onSelectScreen={setScreen} />
@@ -148,6 +200,106 @@ export default function Home() {
             <section className="map-panel" aria-label="Peta interaktif aksesibilitas Surabaya">
               <div className="map-toolbar">
                 <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <select
+                    id="category-filter-select"
+                    className="filter-select"
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    aria-label="Filter berdasarkan kategori lokasi"
+                  >
+                    <option value="all">Semua Kategori ({places.length})</option>
+                    {availableCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat} ({places.filter((p) => p.category === cat).length})
+                      </option>
+                    ))}
+                  </select>
+
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      className="status-pill-btn"
+                      style={{ color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2' }}
+                      onClick={() => {
+                        setStatusFilter('all');
+                        setCategoryFilter('all');
+                        setSearchQuery('');
+                      }}
+                      title="Reset semua filter"
+                    >
+                      ✕ Reset Filter
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Filter Bar for Pre-Survey Indicators */}
+              <div
+                className="status-filter-bar"
+                style={{
+                  padding: '8px 20px',
+                  background: '#f8fafc',
+                  borderBottom: '1px solid var(--line)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  overflowX: 'auto',
+                  zIndex: 3,
+                  position: 'relative',
+                }}
+              >
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
+                  Status Pre-Survey:
+                </span>
+                <button
+                  type="button"
+                  className={`status-pill-btn ${statusFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('all')}
+                >
+                  Semua ({statusCounts.all})
+                </button>
+                <button
+                  type="button"
+                  className={`status-pill-btn ${statusFilter === 'yes' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('yes')}
+                >
+                  ✓ Akses Dilaporkan ({statusCounts.yes})
+                </button>
+                <button
+                  type="button"
+                  className={`status-pill-btn ${statusFilter === 'limited' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('limited')}
+                >
+                  ▲ Akses Terbatas ({statusCounts.limited})
+                </button>
+                <button
+                  type="button"
+                  className={`status-pill-btn ${statusFilter === 'no' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('no')}
+                >
+                  ✕ Tidak Aksesibel ({statusCounts.no})
+                </button>
+                <button
+                  type="button"
+                  className={`status-pill-btn ${statusFilter === 'unknown' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('unknown')}
+                >
+                  ? Belum Diketahui ({statusCounts.unknown})
+                </button>
+                <button
+                  type="button"
+                  className={`status-pill-btn ${statusFilter === 'needs-geocoding' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('needs-geocoding')}
+                  style={
+                    statusFilter === 'needs-geocoding'
+                      ? {}
+                      : { borderColor: '#fde68a', background: '#fffbeb', color: '#92400e' }
+                  }
+                >
+                  📍 Perlu Geocoding ({statusCounts['needs-geocoding']})
+                </button>
               </div>
 
               <MapView
@@ -184,7 +336,7 @@ export default function Home() {
             <div className="page-title">
               <div>
                 <span className="eyebrow">Civic Observatory</span>
-                <h1>Evidence Pack Surabaya</h1>
+                <h1>Evidence Pack Surabaya (Seed Data)</h1>
                 <p>
                   Ringkasan aksesibilitas ruang publik untuk komunitas disabilitas, kampus, NGO advokasi, dan perencana kota — bukan sistem penghukuman pemerintah.
                 </p>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Place, STATUS_META } from '@/types';
+import { Place, WHEELCHAIR_STATUS_META } from '@/types';
 import { MapLegend } from './MapLegend';
 
 const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
@@ -10,7 +10,7 @@ const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
   loading: () => (
     <div className="map-loading-placeholder">
       <div className="map-spinner" />
-      <span>Memuat peta interaktif Surabaya...</span>
+      <span>Memuat peta interaktif Surabaya (Leaflet + OSM)...</span>
     </div>
   ),
 });
@@ -23,6 +23,8 @@ type MapViewProps = {
 
 export function MapView({ places, selectedPlace, onSelectPlace }: MapViewProps) {
   const [mapMode, setMapMode] = useState<'osm' | 'canvas'>('osm');
+
+  const geocodedPlaces = places.filter((p) => !p.needsGeocoding);
 
   return (
     <div className="map-view-wrapper">
@@ -70,22 +72,25 @@ export function MapView({ places, selectedPlace, onSelectPlace }: MapViewProps) 
           <span className="map-label label-a">Jl. Raya Darmo</span>
           <span className="map-label label-b">Jl. Wonokromo</span>
           <span className="map-label label-c">Jl. Basuki Rahmat</span>
-          {places.map((p) => (
-            <button
-              key={p.id}
-              id={`marker-place-${p.id}`}
-              className={`marker marker-${p.overall.toLowerCase()} ${
-                selectedPlace?.id === p.id ? 'selected' : ''
-              }`}
-              style={{ left: `${p.x}%`, top: `${p.y}%` }}
-              onClick={() => onSelectPlace(p)}
-              aria-label={`${p.name}. ${p.chainSummary}`}
-              type="button"
-            >
-              <span>{STATUS_META[p.overall].symbol}</span>
-              <b>{p.name}</b>
-            </button>
-          ))}
+          {geocodedPlaces.map((p) => {
+            const meta = WHEELCHAIR_STATUS_META[p.wheelchairStatus] || WHEELCHAIR_STATUS_META.unknown;
+            return (
+              <button
+                key={p.id}
+                id={`marker-place-${p.id}`}
+                className={`marker marker-${p.wheelchairStatus} ${
+                  selectedPlace?.id === p.id ? 'selected' : ''
+                }`}
+                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                onClick={() => onSelectPlace(p)}
+                aria-label={`${p.name}. ${meta.label}. ${p.chainSummary}`}
+                type="button"
+              >
+                <span>{meta.symbol}</span>
+                <b>{p.name}</b>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
