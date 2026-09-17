@@ -43,6 +43,24 @@
   font-weight: 800;
   letter-spacing: calc(-1 * var(--unit));
   line-height: 1;
+  text-decoration: none;
+  color: inherit;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--purple);
+  font-size: calc(14 * var(--unit));
+  font-weight: 700;
+  text-decoration: none;
+  margin-bottom: calc(20 * var(--unit));
+  transition: opacity 0.15s ease;
+}
+.backLink:hover {
+  opacity: 0.8;
+  text-decoration: underline;
 }
 
 .logoMark,

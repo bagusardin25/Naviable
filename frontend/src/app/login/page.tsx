@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Roboto } from "next/font/google";
 import Image from "next/image";
+import Link from "next/link";
 import { LoginForm } from "./login-form";
 import { AccessibilityIcon } from "./login-icons";
 import styles from "./login.module.css";
@@ -18,10 +19,10 @@ export default function LoginPage() {
     <main className={`${styles.page} ${roboto.className} ${inter.variable}`} lang="id">
       <section className={styles.brandPanel} aria-label="Tentang Naviable">
         <div className={styles.brandContent}>
-          <div className={styles.wordmark} aria-label="Naviable">
+          <Link href="/" className={styles.wordmark} aria-label="Naviable - Kembali ke Beranda">
             <span className={styles.logoMark}><AccessibilityIcon /></span>
             <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
-          </div>
+          </Link>
 
           <p className={styles.tagline}>
             Pemetaan ruang publik aksesibel untuk<br />semua orang, di mana saja.
@@ -46,6 +47,9 @@ export default function LoginPage() {
 
       <section className={styles.formPanel} aria-labelledby="login-heading">
         <div className={styles.formContent}>
+          <Link href="/" className={styles.backLink}>
+            ← Kembali ke Peta Aksesibilitas
+          </Link>
           <header className={styles.heading}>
             <h1 id="login-heading">Selamat Datang di Naviable</h1>
             <p>Masuk untuk menjelajahi dan memvalidasi aksesibilitas kota Surabaya.</p>
