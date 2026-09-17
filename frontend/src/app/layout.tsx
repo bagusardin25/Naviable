@@ -1,30 +1,30 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "AbleMap — Peta Aksesibilitas Surabaya",
+  title: 'Naviable — Peta Aksesibilitas Kota Surabaya',
   description:
-    "Di elemen mana rantai akses putus? Peta rantai 8 elemen aksesibilitas ruang publik Surabaya dengan bukti foto dan kunci manusia.",
+    'Platform peta aksesibilitas Surabaya dengan dual-view peta dan daftar, verifikasi 8 elemen akses, pelaporan AI vision berbasis kunci manusia, dan civic observatory.',
+  icons: {
+    icon: '/naviable-mark.svg',
+    shortcut: '/naviable-mark.svg',
+    apple: '/naviable-mark-light.png',
+  },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html
-      lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="id" className="h-full antialiased">
+      <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );
 }

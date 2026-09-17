@@ -1,117 +1,219 @@
-import AccessibilityMap from "@/components/AccessibilityMap";
-import { StatusChip } from "@/components/StatusChip";
-import type { ApiPlace } from "@/lib/api";
-import { chainSummary, type ElementStatus, type Place } from "@/lib/types";
+'use client';
 
-export const revalidate = 0; // always fresh — data comes from the backend API
+import React, { useState, useMemo } from 'react';
+import { Place, Screen, AccessibilityNeed, ChainElementCode, AccessibilityStatus } from '@/types';
+import { SURABAYA_SEED_PLACES } from '@/data/places';
+import { useAccessibility } from '@/hooks/useAccessibility';
 
-async function getPlaces(): Promise<ApiPlace[]> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) return [];
-  try {
-    const res = await fetch(`${apiUrl}/api/places`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const json = (await res.json()) as { places: ApiPlace[] };
-    return json.places;
-  } catch {
-    // Backend down → degraded but functional UI
-    return [];
+import { AppSidebar } from '@/components/layout/AppSidebar';
+import { TopNavbar } from '@/components/layout/TopNavbar';
+import { NeedFilterTabs } from '@/components/navigation/NeedFilterTabs';
+import { MapView } from '@/components/map/MapView';
+import { PlaceList } from '@/components/places/PlaceList';
+import { PlaceDetailDrawer } from '@/components/places/PlaceDetailDrawer';
+import { ReportForm } from '@/components/reports/ReportForm';
+import { DashboardStats } from '@/components/observatory/DashboardStats';
+import { StatusDistribution } from '@/components/observatory/StatusDistribution';
+import { DistrictSnapshot } from '@/components/observatory/DistrictSnapshot';
+import { EvidenceExportButton } from '@/components/observatory/EvidenceExportButton';
+import { ContributorProfile } from '@/components/profile/ContributorProfile';
+import { AccessibilityModal } from '@/components/accessibility/AccessibilityModal';
+
+export default function Home() {
+  const [screen, setScreen] = useState<Screen>('map');
+  const [places, setPlaces] = useState<Place[]>(SURABAYA_SEED_PLACES);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(SURABAYA_SEED_PLACES[0]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
+  const [showA11y, setShowA11y] = useState(false);
+  const [reportTargetPlaceName, setReportTargetPlaceName] = useState<string | undefined>(undefined);
+
+  const {
+    settings,
+    setContrast,
+    setLargeText,
+    setReduceMotion,
+    setDyslexia,
+    resetSettings,
+  } = useAccessibility();
+
+  // Filtered places according to search text
+  const filteredPlaces = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return places;
+    return places.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query) ||
+        p.district.toLowerCase().includes(query) ||
+        (p.address && p.address.toLowerCase().includes(query))
+    );
+  }, [places, searchQuery]);
+
+  function handleSelectPlace(place: Place) {
+    setSelectedPlace(place);
   }
-}
 
-function toPlace(api: ApiPlace): Place {
-  const elements: Place["elements"] = {};
-  for (const [code, evidence] of Object.entries(api.elements ?? {})) {
-    if (!evidence) continue;
-    elements[code as keyof Place["elements"]] = {
-      status: evidence.status as ElementStatus,
-      lockedBy: evidence.lockedBy === "kontributor" ? "kontributor" : "ai_draf",
-      photoUrl: evidence.photoUrl ?? null,
-      note: evidence.note ?? null,
-    };
+  function handleCorrectPlace(place: Place) {
+    setReportTargetPlaceName(place.name);
+    setScreen('report');
   }
-  return {
-    id: api.id,
-    name: api.name,
-    category: api.category,
-    lat: api.lat,
-    lng: api.lng,
-    kelurahan: api.kelurahan ?? null,
-    kecamatan: api.kecamatan ?? null,
-    elements,
-  };
-}
 
-export default async function Home() {
-  const apiPlaces = await getPlaces();
-  const places = apiPlaces.map(toPlace);
+  function handleSubmitReport(
+    placeName: string,
+    elementCode: ChainElementCode,
+    newStatus: AccessibilityStatus,
+    note: string,
+    photoUrl: string | null
+  ) {
+    const target = places.find((p) => p.name === placeName);
+    if (!target) return;
+
+    const nextPlaces = places.map((p) => {
+      if (p.id !== target.id) return p;
+
+      const updatedElements = p.elements.map((el) => {
+        if (el.code === elementCode) {
+          return {
+            ...el,
+            status: newStatus,
+            note: note.trim() || 'Status dikonfirmasi kontributor dari verifikasi lapangan terkini.',
+            photoUrl: photoUrl ?? el.photoUrl,
+            lockedBy: 'kontributor' as const,
+          };
+        }
+        return el;
+      });
+
+      // Recalculate overall status based on worst status
+      const statuses = updatedElements.map((e) => e.status);
+      let severe: AccessibilityStatus = 'UTUH';
+      if (statuses.includes('TIDAK_ADA')) severe = 'TIDAK_ADA';
+      else if (statuses.includes('TERHALANG')) severe = 'TERHALANG';
+      else if (statuses.includes('TIDAK_STANDAR')) severe = 'TIDAK_STANDAR';
+      else if (statuses.includes('BELUM_DIKETAHUI')) severe = 'BELUM_DIKETAHUI';
+
+      const brokenLabels = updatedElements
+        .filter((e) => ['TERHALANG', 'TIDAK_STANDAR', 'TIDAK_ADA'].includes(e.status))
+        .map((e) => e.label.toLowerCase());
+
+      const summary = brokenLabels.length
+        ? `Rantai perlu perhatian pada ${brokenLabels.slice(0, 2).join(' dan ')}.`
+        : 'Rantai akses terkonfirmasi utuh dan mandiri.';
+
+      return {
+        ...p,
+        elements: updatedElements,
+        overall: severe,
+        chainSummary: summary,
+        updated: 'Baru saja',
+        photos: photoUrl ? p.photos + 1 : p.photos,
+      };
+    });
+
+    setPlaces(nextPlaces);
+    const updatedTarget = nextPlaces.find((p) => p.id === target.id) ?? null;
+    setSelectedPlace(updatedTarget);
+
+    setTimeout(() => {
+      setScreen('map');
+    }, 1000);
+  }
+
+  const appClassName = [
+    'app-shell',
+    settings.contrast ? 'contrast-mode' : '',
+    settings.largeText ? 'large-text' : '',
+    settings.reduceMotion ? 'reduce-motion' : '',
+    settings.dyslexia ? 'dyslexia-mode' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <main className="flex min-h-screen flex-col">
-      <header className="border-b px-6 py-4">
-        <h1 className="text-xl font-bold tracking-tight">
-          AbleMap <span className="font-normal text-gray-500">— Surabaya</span>
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Di elemen mana rantai akses putus? Bukan sekadar &quot;pin hijau&quot;.
-        </p>
-      </header>
+    <main className={appClassName}>
+      <AppSidebar currentScreen={screen} onSelectScreen={setScreen} />
 
-      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[1fr_380px]">
-        {/* Peta */}
-        <section aria-label="Peta" className="h-[60vh] lg:h-auto">
-          {places.length > 0 ? (
-            <AccessibilityMap places={places} />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gray-50 p-8 text-center">
+      <section className="workspace">
+        <TopNavbar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onOpenAccessibility={() => setShowA11y(true)}
+        />
+
+        {screen === 'map' && (
+          <div className="map-layout">
+            <h1 className="visually-hidden">Naviable — Peta Aksesibilitas Kota Surabaya</h1>
+
+            <section className="map-panel" aria-label="Peta interaktif aksesibilitas Surabaya">
+              <div className="map-toolbar">
+                <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
+              </div>
+
+              <MapView
+                places={filteredPlaces}
+                selectedPlace={selectedPlace}
+                onSelectPlace={handleSelectPlace}
+              />
+            </section>
+
+            <PlaceList
+              places={filteredPlaces}
+              selectedPlace={selectedPlace}
+              onSelectPlace={handleSelectPlace}
+            />
+
+            <PlaceDetailDrawer
+              place={selectedPlace}
+              onClose={() => setSelectedPlace(null)}
+              onCorrectPlace={handleCorrectPlace}
+            />
+          </div>
+        )}
+
+        {screen === 'report' && (
+          <ReportForm
+            places={places}
+            defaultPlaceName={reportTargetPlaceName}
+            onSubmitReport={handleSubmitReport}
+          />
+        )}
+
+        {screen === 'dashboard' && (
+          <div className="page-scroll dashboard-page">
+            <div className="page-title">
               <div>
-                <p className="font-medium">Belum ada lokasi terpetakan.</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Jalankan backend (npm run dev), isi .env, lalu seed lokasi pertama.
+                <span className="eyebrow">Civic Observatory</span>
+                <h1>Evidence Pack Surabaya</h1>
+                <p>
+                  Ringkasan aksesibilitas ruang publik untuk komunitas disabilitas, kampus, NGO advokasi, dan perencana kota — bukan sistem penghukuman pemerintah.
                 </p>
               </div>
+              <EvidenceExportButton places={places} />
             </div>
-          )}
-        </section>
 
-        {/* Daftar setara — keyboard/screen-reader equivalent of the map (doc §14) */}
-        <aside aria-label="Daftar lokasi" className="overflow-y-auto border-l">
-          <h2 className="sticky top-0 border-b bg-white px-4 py-3 font-semibold">
-            Daftar lokasi ({places.length})
-          </h2>
-          {places.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-500">
-              Daftar setara peta — untuk keyboard dan screen reader.
-            </p>
-          ) : (
-            <ul className="divide-y">
-              {places.map((place) => {
-                const statuses = Object.values(place.elements).map((e) => e?.status);
-                const status: ElementStatus = statuses.includes("TIDAK_ADA")
-                  ? "TIDAK_ADA"
-                  : statuses.includes("TERHALANG")
-                    ? "TERHALANG"
-                    : statuses.includes("TIDAK_STANDAR")
-                      ? "TIDAK_STANDAR"
-                      : statuses.includes("UTUH")
-                        ? "UTUH"
-                        : "BELUM_DIKETAHUI";
-                return (
-                  <li key={place.id} className="px-4 py-3">
-                    <a href={`/places/${place.id}`} className="font-medium hover:underline">
-                      {place.name}
-                    </a>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <StatusChip status={status} />
-                      <span className="text-xs text-gray-500">{chainSummary(place)}</span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </aside>
-      </div>
+            <DashboardStats places={places} />
+
+            <div className="dashboard-grid">
+              <StatusDistribution places={places} />
+              <DistrictSnapshot places={places} />
+            </div>
+          </div>
+        )}
+
+        {screen === 'profile' && <ContributorProfile />}
+      </section>
+
+      <AccessibilityModal
+        isOpen={showA11y}
+        onClose={() => setShowA11y(false)}
+        settings={settings}
+        onToggleContrast={() => setContrast(!settings.contrast)}
+        onToggleLargeText={() => setLargeText(!settings.largeText)}
+        onToggleReduceMotion={() => setReduceMotion(!settings.reduceMotion)}
+        onToggleDyslexia={() => setDyslexia(!settings.dyslexia)}
+        onReset={resetSettings}
+      />
     </main>
   );
 }

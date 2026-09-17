@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="naviable-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8357f7"/>
+      <stop offset="50%" stop-color="#6d45cc"/>
+      <stop offset="100%" stop-color="#4e2ca3"/>
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2fe0cb"/>
+      <stop offset="100%" stop-color="#16a25a"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#3b1f80" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Base Squircle -->
+  <rect x="6" y="6" width="108" height="108" rx="28" fill="url(#naviable-grad)" filter="url(#glow)" />
+  <rect x="7" y="7" width="106" height="106" rx="27" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
+  
+  <!-- Accessible Route & Pin Dynamic Glyphs -->
+  <!-- Map path -->
+  <path d="M30 78 C38 68, 46 64, 56 65 C68 66, 76 56, 88 42" fill="none" stroke="url(#accent-grad)" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 8"/>
+  
+  <!-- Modern Accessibility Navigation Silhouette -->
+  <!-- Head -->
+  <circle cx="58" cy="36" r="7" fill="#ffffff"/>
+  <!-- Torso & Forward Motion -->
+  <path d="M57 46 L53 62 L69 66 L74 78" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Wheel / Pulse circle -->
+  <circle cx="50" cy="72" r="15" fill="none" stroke="#ffffff" stroke-width="5"/>
+  <!-- Wheel spokes / dynamic angle -->
+  <line x1="50" y1="72" x2="61" y2="64" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Forward navigation chevron indicator -->
+  <polygon points="86,36 94,44 86,52" fill="#2fe0cb"/>
+</svg>

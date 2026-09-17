@@ -82,7 +82,9 @@ export function LoginForm() {
     }
     setPhoneError("");
     if (!authConfigured) {
-      setMessage(unavailableMessage);
+      // Mock demonstration OTP for testing without backend
+      setSentTo(normalized);
+      setMessage(`Mode Demo: Kode verifikasi demo telah dikirim ke ${normalized}. Gunakan kode: 123456`);
       return;
     }
     setPending(channel);
@@ -115,6 +117,13 @@ export function LoginForm() {
     }
     setCodeError("");
     setMessage("");
+
+    if (!authConfigured) {
+      // Demo validation: accept any 6-digit code in demo mode
+      router.replace("/");
+      return;
+    }
+
     setPending("verify");
     try {
       const { error } = await supabaseBrowser().auth.verifyOtp({ phone: sentTo, token: code, type: "sms" });
@@ -196,6 +205,15 @@ export function LoginForm() {
         <button className={`${styles.button} ${styles.loginButton}`} type="submit" disabled={busy}>
           <LoginIcon />
           <span>{pending === "sms" ? "Sending your code…" : pending === "verify" ? "Verifying…" : sentTo ? "Verify & Log In" : "Log In"}</span>
+        </button>
+
+        <button
+          className={`${styles.button} ${styles.google}`}
+          type="button"
+          onClick={() => router.push('/')}
+          style={{ marginTop: '8px' }}
+        >
+          <span>Jelajahi Langsung (Mode Tamu / Demo) →</span>
         </button>
       </form>
 

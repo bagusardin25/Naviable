@@ -9,37 +9,37 @@ const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-log
 const roboto = Roboto({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Log in · NaviAble",
-  description: "Sign in to NaviAble to explore accessible places near you.",
+  title: "Masuk · Naviable",
+  description: "Masuk ke Naviable untuk menjelajahi fasilitas aksesibel di sekitar Anda.",
 };
 
 export default function LoginPage() {
   return (
-    <main className={`${styles.page} ${roboto.className} ${inter.variable}`} lang="en">
-      <section className={styles.brandPanel} aria-label="About NaviAble">
+    <main className={`${styles.page} ${roboto.className} ${inter.variable}`} lang="id">
+      <section className={styles.brandPanel} aria-label="Tentang Naviable">
         <div className={styles.brandContent}>
-          <div className={styles.wordmark} aria-label="NaviAble">
+          <div className={styles.wordmark} aria-label="Naviable">
             <span className={styles.logoMark}><AccessibilityIcon /></span>
-            <span aria-hidden="true">Navi<span className={styles.brandAccent}>Able</span></span>
+            <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
           </div>
 
           <p className={styles.tagline}>
-            Mapping accessible places for<br />everyone, everywhere.
+            Pemetaan ruang publik aksesibel untuk<br />semua orang, di mana saja.
           </p>
 
           <Image
             className={styles.illustration}
             src="/images/login-community.svg"
-            alt="Four people with different accessibility needs, together beneath a location pin."
+            alt="Empat orang dengan berbagai kebutuhan aksesibilitas bersama di bawah pin lokasi."
             width={420}
             height={264}
             priority
           />
 
-          <ul className={styles.badges} aria-label="Accessibility features">
-            <li><span aria-hidden="true">♿</span> Wheelchair Accessible</li>
-            <li><span aria-hidden="true">🔊</span> Audio Support</li>
-            <li><span aria-hidden="true">👁️</span> High Contrast</li>
+          <ul className={styles.badges} aria-label="Fitur aksesibilitas">
+            <li><span aria-hidden="true">♿</span> Ramah Kursi Roda</li>
+            <li><span aria-hidden="true">🔊</span> Dukungan Audio</li>
+            <li><span aria-hidden="true">👁️</span> Kontras Tinggi</li>
           </ul>
         </div>
       </section>
@@ -47,8 +47,8 @@ export default function LoginPage() {
       <section className={styles.formPanel} aria-labelledby="login-heading">
         <div className={styles.formContent}>
           <header className={styles.heading}>
-            <h1 id="login-heading">Welcome to NaviAble</h1>
-            <p>Sign in to explore accessible places near you.</p>
+            <h1 id="login-heading">Selamat Datang di Naviable</h1>
+            <p>Masuk untuk menjelajahi dan memvalidasi aksesibilitas kota Surabaya.</p>
           </header>
           <LoginForm />
         </div>
