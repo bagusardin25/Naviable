@@ -1,0 +1,68 @@
+name: Security & Repository Hygiene Audit
+
+on:
+  push:
+    branches:
+      - main
+      - backend
+      - frontend
+      - ai
+  pull_request:
+    branches:
+      - main
+      - backend
+  schedule:
+    # Run every Monday at 04:00 UTC
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+jobs:
+  secret-and-hygiene-scan:
+    name: Secret Leaks & Git Hygiene Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify No Sensitive .env Files Are Tracked
+        run: |
+          echo "Scanning git-tracked files for sensitive patterns..."
+          LEAKED_ENV=$(git ls-files | grep -E '(^|/)(\.env($|\.(local|production|staging|development|test))|\.local/)' || true)
+          if [ -n "$LEAKED_ENV" ]; then
+            echo "::error::Sensitive files detected in git tree: $LEAKED_ENV"
+            exit 1
+          fi
+          echo "PASS: No sensitive .env or local database files found in git tree."
+
+      - name: Verify Non-README Markdown Files Are Excluded
+        run: |
+          echo "Verifying markdown file tracking policy (only README.md permitted)..."
+          INVALID_MD=$(git ls-files | grep -E '\.md$' | grep -v -E '(^|/)README\.md$' || true)
+          if [ -n "$INVALID_MD" ]; then
+            echo "::error::Non-README markdown files are tracked in git: $INVALID_MD"
+            echo "Please ensure non-README markdown files are ignored via .gitignore."
+            exit 1
+          fi
+          echo "PASS: Only README.md files are tracked."
+
+  dependency-audit:
+    name: NPM Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Audit Backend Dependencies
+        run: |
+          echo "Running npm audit in backend..."
+          npm --prefix backend audit --audit-level=high
+
+      - name: Audit Frontend Dependencies
+        run: |
+          echo "Running npm audit in frontend..."
+          npm --prefix frontend audit --audit-level=high

@@ -1,0 +1,142 @@
+name: CI / Verification Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - backend
+      - frontend
+      - ai
+  pull_request:
+    branches:
+      - main
+      - backend
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Express 5 + TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix backend ci
+
+      - name: Typecheck TypeScript (tsc --noEmit)
+        run: npm --prefix backend run typecheck
+
+      - name: Run Unit & Domain Tests (LocalStore)
+        run: npm --prefix backend test
+
+      - name: Run SQL Acceptance Tests (Ephemeral PostgreSQL)
+        run: |
+          for dir in /usr/lib/postgresql/*/bin /usr/bin; do
+            if [ -x "$dir/initdb" ]; then
+              export PG_BIN="$dir"
+              echo "Found PostgreSQL binaries in $PG_BIN"
+              break
+            fi
+          done
+          npm --prefix backend run test:sql
+
+      - name: Compile TypeScript to dist
+        run: npm --prefix backend run build
+
+      - name: Seed Database & Run E2E Smoke Test Loop
+        run: |
+          npm --prefix backend run seed
+
+          # Boot backend in background mode
+          npm --prefix backend run start &
+
+          # Wait for backend readiness probe
+          node -e '
+            const start = Date.now();
+            async function check() {
+              while (Date.now() - start < 20000) {
+                try {
+                  const res = await fetch("http://127.0.0.1:4000/health");
+                  if (res.ok) {
+                    console.log("Backend healthy & ready for smoke testing!");
+                    process.exit(0);
+                  }
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, 500));
+              }
+              console.error("Backend failed to boot within 20s");
+              process.exit(1);
+            }
+            check();
+          '
+
+          # Run smoke loop assertions against the running server
+          npm --prefix backend run test:smoke
+
+  frontend:
+    name: Frontend (Next.js 16 + React 19)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+
+      - name: Lint code with ESLint
+        run: npm --prefix frontend run lint
+
+      - name: Typecheck TypeScript (tsc --noEmit)
+        run: npm --prefix frontend run typecheck
+
+      - name: Build Next.js Production Bundle (Turbopack)
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+        run: npm --prefix frontend run build
+
+  e2e-integration:
+    name: Full Monorepo Build Verification
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install all dependencies
+        run: |
+          npm --prefix backend ci
+          npm --prefix frontend ci
+
+      - name: Monorepo Typecheck (All Subprojects)
+        run: npm run typecheck
+
+      - name: Full Production Build All
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+        run: npm run build:all
