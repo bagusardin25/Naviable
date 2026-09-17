@@ -64,21 +64,57 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
       <form onSubmit={publish} className="report-grid" aria-busy={busy}>
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
           <h2>1. Bukti Lapangan</h2>
-          <label htmlFor="report-location-select">Lokasi Fasilitas<select id="report-location-select" value={placeId} onChange={e => { setPlaceId(e.target.value); setConfirmed(false); }} required><option value="" disabled>Pilih lokasi</option>{places.map(p => <option key={p.id} value={String(p.id)}>{p.name} ({p.district})</option>)}</select></label>
-          <label htmlFor="reporter-name">Nama publik kontributor<input id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} required autoComplete="name" /></label>
-          <label htmlFor="report-element-select">Elemen yang dilaporkan<select id="report-element-select" value={elementCode} onChange={e => { setElementCode(e.target.value as ChainElementCode); setStatus('BELUM_DIKETAHUI'); setConfirmed(false); }} required>{(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => <option key={code} value={code}>{code} — {CHAIN_ELEMENT_MAP[code].label}</option>)}</select></label>
-          <label htmlFor="file-upload-input">Foto Bukti Lapangan<input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required /><small>JPG, PNG, WebP · maksimal 5 MB. Gunakan foto fasilitas tanpa identitas pribadi.</small></label>
-          <label htmlFor="report-notes">Catatan Lapangan<textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder="Jelaskan kondisi yang Anda amati di lokasi." rows={4} /></label>
+          <label htmlFor="report-location-select">
+            Lokasi Fasilitas
+            <select id="report-location-select" value={placeId} onChange={e => { setPlaceId(e.target.value); setConfirmed(false); }} required>
+              <option value="" disabled>Pilih lokasi</option>
+              {places.map(p => <option key={p.id} value={String(p.id)}>{p.name} ({p.district})</option>)}
+            </select>
+          </label>
+          <label htmlFor="reporter-name">
+            Nama publik kontributor
+            <input type="text" id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} placeholder="Contoh: Budi Santoso" required autoComplete="name" />
+          </label>
+          <label htmlFor="report-element-select">
+            Elemen yang dilaporkan
+            <select id="report-element-select" value={elementCode} onChange={e => { setElementCode(e.target.value as ChainElementCode); setStatus('BELUM_DIKETAHUI'); setConfirmed(false); }} required>
+              {(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => <option key={code} value={code}>{code} — {CHAIN_ELEMENT_MAP[code].label}</option>)}
+            </select>
+          </label>
+          <div>
+            <span className="field-label-text">Foto Bukti Lapangan</span>
+            <label htmlFor="file-upload-input" className="upload-box" aria-label="Unggah foto bukti lapangan">
+              <Icon name="camera" size={26} />
+              {photo ? (
+                <div className="upload-preview-badge">
+                  <span>✓ Foto tersimpan (ketuk untuk ganti)</span>
+                </div>
+              ) : (
+                <>
+                  <span>Ketuk atau seret foto bukti ke sini</span>
+                  <small>JPG, PNG, WebP · maks 5 MB · Tanpa identitas pribadi</small>
+                </>
+              )}
+              <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required />
+            </label>
+          </div>
+          <label htmlFor="report-notes">
+            Catatan Lapangan
+            <textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder="Jelaskan kondisi yang Anda amati di lokasi (misal: ramp terlalu curam, pintu terkunci)." rows={4} />
+          </label>
         </fieldset>
         <section className="card ai-card" aria-label="Analisis dan konfirmasi manusia">
           <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} uploadedPhotoUrl={photo?.image ?? null} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
           <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Menganalisis…' : 'Bantu isi draf dengan AI (opsional)'}</button>
           <fieldset disabled={busy || analyzing} style={{ border: 0, padding: 0, minWidth: 0 }}>
             <HumanLockSelector currentStatus={status} onSelectStatus={s => { setStatus(s); setConfirmed(false); }} />
-            <label style={{ display: 'flex', gap: '8px', marginTop: '16px' }}><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required />Saya telah memeriksa foto dan kondisi lapangan serta mengonfirmasi status elemen yang dipilih.</label>
+            <label style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'flex-start', fontSize: '12px' }}>
+              <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required style={{ marginTop: '2px' }} />
+              <span>Saya telah memeriksa foto dan kondisi lapangan serta mengonfirmasi status elemen yang dipilih.</span>
+            </label>
           </fieldset>
           <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || !placeId}>{submitting ? 'Menyimpan laporan…' : 'Publish Setelah Konfirmasi Manusia'}</button>
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '12px', border: '1px solid #fecaca' }}>{error}</p>}
         </section>
       </form>
     </div>
