@@ -5,7 +5,8 @@ import {
   Place,
   Screen,
   AccessibilityNeed,
-  PreSurveyFilter,
+  ProfileStatusFilter,
+  calculatePlaceProfileStatus,
 } from '@/types';
 import { fetchPlaces, fetchHealth } from '@/lib/api';
 import { useAccessibility } from '@/hooks/useAccessibility';
@@ -21,6 +22,8 @@ import { DashboardStats } from '@/components/observatory/DashboardStats';
 import { StatusDistribution } from '@/components/observatory/StatusDistribution';
 import { DistrictSnapshot } from '@/components/observatory/DistrictSnapshot';
 import { EvidenceExportButton } from '@/components/observatory/EvidenceExportButton';
+import { DataQualityCard } from '@/components/observatory/DataQualityCard';
+import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
 import { AccessibilityModal } from '@/components/accessibility/AccessibilityModal';
 
@@ -34,9 +37,10 @@ export default function Home() {
   const [reload, setReload] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
-  const [statusFilter, setStatusFilter] = useState<PreSurveyFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<ProfileStatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showA11y, setShowA11y] = useState(false);
+  const [showJourney, setShowJourney] = useState(false);
   const [reportTargetPlaceName, setReportTargetPlaceName] = useState<string | undefined>(undefined);
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
 
@@ -69,26 +73,30 @@ export default function Home() {
     return cats;
   }, [places]);
 
-  // Counts for each status filter pill
+  // Counts for each profile-evaluated status filter pill
   const statusCounts = useMemo(() => {
-    return {
+    const counts: Record<ProfileStatusFilter, number> = {
       all: places.length,
-      yes: places.filter((p) => p.wheelchairStatus === 'yes').length,
-      limited: places.filter((p) => p.wheelchairStatus === 'limited').length,
-      no: places.filter((p) => p.wheelchairStatus === 'no').length,
-      unknown: places.filter((p) => p.wheelchairStatus === 'unknown').length,
-      'needs-geocoding': places.filter((p) => p.needsGeocoding).length,
+      UTUH: 0,
+      TERHALANG: 0,
+      TIDAK_STANDAR: 0,
+      TIDAK_ADA: 0,
+      BELUM_DIKETAHUI: 0,
     };
-  }, [places]);
+    for (const p of places) {
+      const status = calculatePlaceProfileStatus(p, need).status;
+      if (counts[status] !== undefined) counts[status]++;
+    }
+    return counts;
+  }, [places, need]);
 
-  // Multi-criteria filter: search query + status + category
+  // Multi-criteria filter: search query + profile-evaluated status + category
   const filteredPlaces = useMemo(() => {
     return places.filter((p) => {
-      // 1. Status Filter
-      if (statusFilter === 'needs-geocoding') {
-        if (!p.needsGeocoding) return false;
-      } else if (statusFilter !== 'all') {
-        if (p.wheelchairStatus !== statusFilter) return false;
+      // 1. Status Filter by active profile
+      if (statusFilter !== 'all') {
+        const profileStatus = calculatePlaceProfileStatus(p, need).status;
+        if (profileStatus !== statusFilter) return false;
       }
 
       // 2. Category Filter
@@ -110,7 +118,15 @@ export default function Home() {
 
       return true;
     });
-  }, [places, statusFilter, categoryFilter, searchQuery]);
+  }, [places, statusFilter, categoryFilter, searchQuery, need]);
+
+  // Screen reader polite live announcement for search & profile updates
+  const liveAnnouncement = !loading
+    ? `Menampilkan ${filteredPlaces.length} lokasi untuk profil ${need}${
+        statusFilter !== 'all' ? `, status ${statusFilter}` : ''
+      }.`
+    : 'Memuat data lokasi dari server…';
+
 
   function handleSelectPlace(place: Place) {
     setSelectedPlace(place);
@@ -143,9 +159,16 @@ export default function Home() {
 
   return (
     <main className={appClassName}>
+      <a href="#main-content" className="skip-link">
+        Lewati ke konten utama
+      </a>
+      <div role="status" aria-live="polite" aria-atomic="true" className="visually-hidden">
+        {liveAnnouncement}
+      </div>
+
       <AppSidebar currentScreen={screen} onSelectScreen={setScreen} />
 
-      <section className="workspace">
+      <section id="main-content" className="workspace">
         <TopNavbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -189,6 +212,21 @@ export default function Home() {
                   <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      id="btn-toggle-journey"
+                      type="button"
+                      className={`status-pill-btn ${showJourney ? 'active' : ''}`}
+                      style={
+                        showJourney
+                          ? { background: '#6d45cc', color: '#ffffff', borderColor: '#5632b6' }
+                          : { borderColor: '#c4b5fd', color: '#6d45cc', background: '#f5f3ff' }
+                      }
+                      onClick={() => setShowJourney(!showJourney)}
+                      title="Buka petunjuk rantai perjalanan (non-GPS)"
+                    >
+                      🧭 Journey Hint (Rantai Perjalanan)
+                    </button>
+
                     <select
                       id="category-filter-select"
                       className="filter-select"
@@ -222,10 +260,19 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Status Filter Bar for Pre-Survey Indicators */}
-                <div className="status-filter-bar">
+                {showJourney && (
+                  <JourneyPlanner
+                    places={places}
+                    currentNeed={need}
+                    onSelectPlace={handleSelectPlace}
+                    onClose={() => setShowJourney(false)}
+                  />
+                )}
+
+                {/* Status Filter Bar evaluated dynamically for active need profile */}
+                <div className="status-filter-bar" role="toolbar" aria-label={`Filter status untuk profil ${need}`}>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
-                    Status Pre-Survey:
+                    Status Profil {need}:
                   </span>
                   <button
                     type="button"
@@ -236,43 +283,38 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
-                    className={`status-pill-btn ${statusFilter === 'yes' ? 'active' : ''}`}
-                    onClick={() => setStatusFilter('yes')}
+                    className={`status-pill-btn ${statusFilter === 'UTUH' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('UTUH')}
                   >
-                    ✓ Akses Dilaporkan ({statusCounts.yes})
+                    ✓ Utuh ({statusCounts.UTUH})
                   </button>
                   <button
                     type="button"
-                    className={`status-pill-btn ${statusFilter === 'limited' ? 'active' : ''}`}
-                    onClick={() => setStatusFilter('limited')}
+                    className={`status-pill-btn ${statusFilter === 'TERHALANG' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('TERHALANG')}
                   >
-                    ▲ Akses Terbatas ({statusCounts.limited})
+                    ! Terhalang ({statusCounts.TERHALANG})
                   </button>
                   <button
                     type="button"
-                    className={`status-pill-btn ${statusFilter === 'no' ? 'active' : ''}`}
-                    onClick={() => setStatusFilter('no')}
+                    className={`status-pill-btn ${statusFilter === 'TIDAK_STANDAR' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('TIDAK_STANDAR')}
                   >
-                    ✕ Tidak Aksesibel ({statusCounts.no})
+                    • Tidak Standar ({statusCounts.TIDAK_STANDAR})
                   </button>
                   <button
                     type="button"
-                    className={`status-pill-btn ${statusFilter === 'unknown' ? 'active' : ''}`}
-                    onClick={() => setStatusFilter('unknown')}
+                    className={`status-pill-btn ${statusFilter === 'TIDAK_ADA' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('TIDAK_ADA')}
                   >
-                    ? Belum Diketahui ({statusCounts.unknown})
+                    × Tidak Ada ({statusCounts.TIDAK_ADA})
                   </button>
                   <button
                     type="button"
-                    className={`status-pill-btn ${statusFilter === 'needs-geocoding' ? 'active' : ''}`}
-                    onClick={() => setStatusFilter('needs-geocoding')}
-                    style={
-                      statusFilter === 'needs-geocoding'
-                        ? {}
-                        : { borderColor: '#fde68a', background: '#fffbeb', color: '#92400e' }
-                    }
+                    className={`status-pill-btn ${statusFilter === 'BELUM_DIKETAHUI' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('BELUM_DIKETAHUI')}
                   >
-                    📍 Perlu Geocoding ({statusCounts['needs-geocoding']})
+                    ? Belum Diketahui ({statusCounts.BELUM_DIKETAHUI})
                   </button>
                 </div>
 
@@ -280,6 +322,7 @@ export default function Home() {
                   places={filteredPlaces}
                   selectedPlace={selectedPlace}
                   onSelectPlace={handleSelectPlace}
+                  activeNeed={need}
                 />
               </section>
 
@@ -287,6 +330,7 @@ export default function Home() {
                 places={filteredPlaces}
                 selectedPlace={selectedPlace}
                 onSelectPlace={handleSelectPlace}
+                activeNeed={need}
                 className={mobileTab !== 'list' ? 'mobile-hidden' : ''}
               />
 
@@ -302,6 +346,7 @@ export default function Home() {
                 place={selectedPlace}
                 onClose={() => setSelectedPlace(null)}
                 onCorrectPlace={handleCorrectPlace}
+                activeNeed={need}
               />
             </div>
           </>
@@ -330,6 +375,7 @@ export default function Home() {
             </div>
 
             <DashboardStats places={places} />
+            <DataQualityCard places={places} />
 
             <div className="dashboard-grid">
               <StatusDistribution places={places} />

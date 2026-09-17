@@ -10,7 +10,7 @@
     "build:all": "npm --prefix backend run build && npm --prefix frontend run build",
     "start": "npm --prefix frontend start",
     "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
-    "test": "npm --prefix backend test",
+    "test": "npm --prefix backend test && npm --prefix frontend test",
     "test:sql": "npm --prefix backend run test:sql",
     "seed": "npm --prefix backend run seed"
   }
