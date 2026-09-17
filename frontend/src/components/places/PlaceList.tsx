@@ -6,14 +6,15 @@ type PlaceListProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  className?: string;
 };
 
-export function PlaceList({ places, selectedPlace, onSelectPlace }: PlaceListProps) {
+export function PlaceList({ places, selectedPlace, onSelectPlace, className = '' }: PlaceListProps) {
   const geocodedCount = places.filter((p) => !p.needsGeocoding).length;
   const unlocatedCount = places.filter((p) => p.needsGeocoding).length;
 
   return (
-    <aside className="places-panel" aria-label="Daftar tempat setara dengan peta">
+    <aside className={`places-panel ${className}`.trim()} aria-label="Daftar tempat setara dengan peta">
       <div className="panel-heading">
         <div>
           <span className="eyebrow">Dual view · Surabaya Seed Data</span>

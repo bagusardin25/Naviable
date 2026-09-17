@@ -44,6 +44,7 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
           type="button"
           className={currentScreen === 'map' ? 'active' : ''}
           onClick={() => onSelectScreen('map')}
+          aria-label="Peta Aksesibilitas"
         >
           <Icon name="map" />
           <span>Peta</span>
@@ -53,24 +54,29 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
           type="button"
           className={currentScreen === 'report' ? 'active' : ''}
           onClick={() => onSelectScreen('report')}
+          aria-label="Laporkan Tempat"
         >
           <Icon name="report" />
-          <span>Laporkan Tempat</span>
+          <span className="nav-label-full">Laporkan Tempat</span>
+          <span className="nav-label-mobile">Lapor</span>
         </button>
         <button
           id="nav-dashboard"
           type="button"
           className={currentScreen === 'dashboard' ? 'active' : ''}
           onClick={() => onSelectScreen('dashboard')}
+          aria-label="Civic Observatory Dashboard"
         >
           <Icon name="dashboard" />
-          <span>Observatorium</span>
+          <span className="nav-label-full">Observatorium</span>
+          <span className="nav-label-mobile">Observasi</span>
         </button>
         <button
           id="nav-profile"
           type="button"
           className={currentScreen === 'profile' ? 'active' : ''}
           onClick={() => onSelectScreen('profile')}
+          aria-label="Profil Kontributor"
         >
           <Icon name="user" />
           <span>Profil</span>
