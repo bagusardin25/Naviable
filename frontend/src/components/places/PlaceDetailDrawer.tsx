@@ -104,7 +104,7 @@ export function PlaceDetailDrawer({
     <section
       ref={drawerRef}
       className="detail-drawer"
-      aria-label={`Detail aksesibilitas ${place.name}`}
+      aria-label={`Detail kondisi akses ${place.name}`}
       role="dialog"
       aria-modal="true"
     >
@@ -112,7 +112,7 @@ export function PlaceDetailDrawer({
         id="drawer-close-btn"
         className="drawer-close"
         onClick={onClose}
-        aria-label="Tutup detail lokasi"
+        aria-label="Tutup detail tempat"
         type="button"
       >
         <Icon name="close" />
@@ -124,18 +124,18 @@ export function PlaceDetailDrawer({
           <span className={`status-badge ${meta.badgeClass}`}>
             <strong>{meta.symbol}</strong> {meta.label}
           </span>
-          <span className={`freshness-badge ${freshness.badgeClass}`} title={`Kesegaran data: ${freshness.label}`}>
+          <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`}>
             {freshness.symbol} {freshness.label}
           </span>
           {place.needsGeocoding ? (
-            <span className="badge-needs-geocoding">Perlu Geocoding</span>
+            <span className="badge-needs-geocoding">Belum ada titik peta</span>
           ) : (
-            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
+            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} laporan warga` : 'Belum diverifikasi'}</span>
           )}
         </div>
 
         <h2>{place.name}</h2>
-        <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+        <span style={{ fontSize: '12px', color: '#576479', display: 'block', marginBottom: '4px' }}>
           {place.category} · Kec. {place.district} · {place.distance}
         </span>
         {place.address && <p className="detail-address">{place.address}</p>}
@@ -151,16 +151,16 @@ export function PlaceDetailDrawer({
             background: '#eff6ff',
             border: '1px solid #bfdbfe',
             borderRadius: '10px',
-            fontSize: '11px',
+            fontSize: '12px',
             color: '#1e40af',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, marginBottom: '4px' }}>
             <span>🔄</span>
-            <span>Perubahan Kondisi Terverifikasi (Immutable Trail):</span>
+            <span>Riwayat pembaruan kondisi:</span>
           </div>
           {conditionChanges.map((change, idx) => (
-            <div key={idx} style={{ marginTop: '4px', lineHeight: 1.4 }}>
+            <div key={idx} style={{ marginTop: '4px', lineHeight: 1.5 }}>
               <strong>{change.elementLabel}</strong> diperbarui dari{' '}
               <span className="badge-status-change" style={{ background: '#fee2e2', color: '#991b1b', padding: '1px 6px', borderRadius: '4px' }}>
                 {STATUS_META[change.previousStatus].label}
@@ -175,10 +175,9 @@ export function PlaceDetailDrawer({
         </div>
       )}
 
-
       {place.needsGeocoding && (
         <div className="geocoding-notice-box" role="alert">
-          <strong>⚠️ Belum Memiliki Koordinat Presisi:</strong> Lokasi ini tercantum dalam dataset awal tetapi belum memiliki titik koordinat GPS. Koordinat perlu dilengkapi oleh pengelola dataset sebelum ditampilkan pada peta.
+          <strong>⚠️ Belum ada titik peta:</strong> Tempat ini tercatat di data publik, tetapi belum memiliki titik koordinat presisi. Data koordinat akan dilengkapi sebelum ditampilkan pada peta.
         </div>
       )}
 
@@ -186,12 +185,11 @@ export function PlaceDetailDrawer({
         <div className="presurvey-notice-box" role="note">
           <span style={{ fontSize: '16px' }}>📷</span>
           <div>
-            <strong>Bukti lapangan dari kontributor</strong>
-            <div style={{ fontSize: '10px', marginTop: '2px', color: '#15803d' }}>
+            <strong>Laporan kondisi dari warga</strong>
+            <div style={{ fontSize: '11.5px', marginTop: '3px', color: '#166534', lineHeight: 1.5 }}>
               Sudah ada {place.reportCount} laporan warga
-              {place.coverage ? `; ${place.coverage.known} dari ${place.coverage.total} elemen relevan punya status terkonfirmasi` : ''}.
-              {' '}Status elemen di bawah berasal dari konfirmasi kontributor dan menggantikan indikasi pra-survei pada elemen yang sudah dikunci.
-              {unknownElements > 0 ? ` ${unknownElements} elemen masih belum diketahui dan menunggu bukti foto.` : ' Seluruh elemen relevan sudah punya bukti.'}
+              {place.coverage ? ` (${place.coverage.known} dari ${place.coverage.total} titik akses terkonfirmasi)` : ''}.
+              {unknownElements > 0 ? ` Masih ada ${unknownElements} titik akses yang belum lengkap.` : ' Seluruh titik akses utama sudah memiliki bukti foto.'}
             </div>
           </div>
         </div>
@@ -199,9 +197,9 @@ export function PlaceDetailDrawer({
         <div className="presurvey-notice-box" role="note">
           <span style={{ fontSize: '16px' }}>ℹ️</span>
           <div>
-            <strong>Status Pre-Survey (Belum Terverifikasi Lapangan)</strong>
-            <div style={{ fontSize: '10px', marginTop: '2px', color: '#15803d' }}>
-              Data ini bersumber dari indikasi publik dan belum diaudit langsung oleh tim Naviable. Kontribusi bukti foto diperlukan untuk verifikasi mandiri.
+            <strong>Belum diverifikasi</strong>
+            <div style={{ fontSize: '11.5px', marginTop: '3px', color: '#166534', lineHeight: 1.5 }}>
+              Informasi awal dari data publik. Belum diverifikasi langsung di lapangan. Bantu laporkan kondisi sebenarnya dengan foto.
             </div>
           </div>
         </div>
@@ -209,12 +207,12 @@ export function PlaceDetailDrawer({
 
       {place.features && place.features.length > 0 && (
         <div style={{ margin: '12px 0', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-            Fitur Aksesibilitas Tercatat di Data Awal:
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '4px' }}>
+            Fasilitas yang tercatat:
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {place.features.map((feat, idx) => (
-              <span key={idx} style={{ background: '#e2e8f0', color: '#1e293b', fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+              <span key={idx} style={{ background: '#e2e8f0', color: '#1e293b', fontSize: '11px', padding: '2px 8px', borderRadius: '4px' }}>
                 {feat}
               </span>
             ))}
@@ -222,17 +220,17 @@ export function PlaceDetailDrawer({
         </div>
       )}
 
-      <div className="evidence-meta" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
+      <div className="evidence-meta" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
         <div>
           <span style={{ color: '#64748b' }}>Sumber:</span>{' '}
-          <strong>{place.sourceName || 'OpenStreetMap'}</strong>
+          <strong>{place.sourceName || 'Data publik'}</strong>
         </div>
         <div>
           <span style={{ color: '#64748b' }}>Lisensi:</span>{' '}
-          <strong>{place.sourceLicense || 'Tidak dicantumkan'}</strong>
+          <strong>{place.sourceLicense || 'Terbuka'}</strong>
         </div>
         <div>
-          <span style={{ color: '#64748b' }}>Tingkat Bukti:</span>{' '}
+          <span style={{ color: '#64748b' }}>Jenis bukti:</span>{' '}
           <span>{place.evidenceLevelLabel}</span>
         </div>
         <div>
@@ -242,20 +240,20 @@ export function PlaceDetailDrawer({
       </div>
 
       {place.sourceUrl && (
-        <div style={{ margin: '8px 0', fontSize: '11px' }}>
+        <div style={{ margin: '8px 0', fontSize: '12px' }}>
           <a
             href={place.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#6d45cc', textDecoration: 'underline', wordBreak: 'break-all' }}
           >
-            Buka Catatan Sumber Asli ↗
+            Buka sumber asli ↗
           </a>
         </div>
       )}
 
-      <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '16px 0 8px', color: '#1e293b' }}>
-        Kondisi 8 Rantai Aksesibilitas
+      <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '16px 0 8px', color: '#1e293b' }}>
+        Kondisi akses
       </h3>
       <AccessibilityChain elements={place.elements} />
 
@@ -269,9 +267,9 @@ export function PlaceDetailDrawer({
       <div className="journey-hint" role="note">
         <Icon name="route" />
         <div>
-          <strong>Journey Hint</strong>
+          <strong>Catatan perjalanan</strong>
           <span>
-            Halte terdekat → akses masuk → fasilitas inti. Naviable menandai titik putus rantai akses; bukan sistem navigasi GPS router.
+            Periksa akses dari halte atau titik transit ke pintu masuk hingga fasilitas utama. Naviable menandai titik akses yang masih terputus.
           </span>
         </div>
       </div>
@@ -283,7 +281,7 @@ export function PlaceDetailDrawer({
         onClick={() => onCorrectPlace(place)}
         type="button"
       >
-        Koreksi dengan bukti baru
+        Perbarui kondisi tempat ini
       </button>
     </section>
   );

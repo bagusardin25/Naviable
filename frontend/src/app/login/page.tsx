@@ -48,11 +48,11 @@ export default function LoginPage() {
       <section className={styles.formPanel} aria-labelledby="login-heading">
         <div className={styles.formContent}>
           <Link href="/" className={styles.backLink}>
-            ← Kembali ke Peta Aksesibilitas
+            ← Kembali ke Peta Akses
           </Link>
           <header className={styles.heading}>
             <h1 id="login-heading">Selamat Datang di Naviable</h1>
-            <p>Masuk untuk menjelajahi dan memvalidasi aksesibilitas kota Surabaya.</p>
+            <p>Masuk untuk merekam kontribusi Anda atau menjelajahi kondisi aksesibilitas di Surabaya.</p>
           </header>
           <LoginForm />
         </div>

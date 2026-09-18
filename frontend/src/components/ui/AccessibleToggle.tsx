@@ -22,9 +22,9 @@ export function AccessibleToggle({ id, label, text, checked, onChange }: Accessi
         onClick={onChange}
         role="switch"
         aria-checked={checked}
-        aria-label={`Aktifkan ${label}`}
+        aria-label={label}
       >
-        <span>{checked ? 'ON' : 'OFF'}</span>
+        <span>{checked ? 'AKTIF' : 'MATI'}</span>
         <i />
       </button>
     </div>

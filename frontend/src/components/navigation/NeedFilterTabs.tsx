@@ -13,8 +13,8 @@ const NEEDS: AccessibilityNeed[] = ['Mobilitas', 'Visual', 'Auditori', 'Sensorik
 export function NeedFilterTabs({ currentNeed, onSelectNeed }: NeedFilterTabsProps) {
   return (
     <div className="need-filter-wrapper">
-      <span className="eyebrow">Kebutuhan perjalanan</span>
-      <div className="need-tabs" role="tablist" aria-label="Filter profil kebutuhan aksesibilitas">
+      <span className="eyebrow">Kebutuhan akses</span>
+      <div className="need-tabs" role="tablist" aria-label="Pilih jenis kebutuhan akses">
         {NEEDS.map((n) => (
           <button
             key={n}

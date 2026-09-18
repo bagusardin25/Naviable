@@ -9,11 +9,11 @@ const OBSERVED_CODES: ChainElementCode[] = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 
 
 export function StatusDistribution({ places }: StatusDistributionProps) {
   return (
-    <section className="card" aria-label="Distribusi status hambatan elemen aksesibilitas">
+    <section className="card" aria-label="Hambatan akses yang sering dilaporkan">
       <div className="card-title-row">
         <div>
-          <span className="eyebrow">Analisis Rantai Akses</span>
-          <h2>Elemen Paling Sering Putus</h2>
+          <span className="eyebrow">Sorotan Akses</span>
+          <h2>Akses yang Paling Sering Terkendala</h2>
         </div>
       </div>
 

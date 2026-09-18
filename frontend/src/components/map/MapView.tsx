@@ -10,7 +10,7 @@ const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
   loading: () => (
     <div className="map-loading-placeholder">
       <div className="map-spinner" />
-      <span>Memuat peta interaktif Surabaya (Leaflet + OSM)...</span>
+      <span>Memuat peta interaktif Surabaya...</span>
     </div>
   ),
 });
@@ -36,9 +36,9 @@ export function MapView({ places, selectedPlace, onSelectPlace, activeNeed = 'Mo
             type="button"
             className={mapMode === 'osm' ? 'active' : ''}
             onClick={() => setMapMode('osm')}
-            title="Tampilan Peta OSM Riil"
+            title="Tampilan Peta Jalan Riil"
           >
-            Satelit / OSM
+            Peta Jalan
           </button>
           <button
             type="button"
@@ -85,7 +85,7 @@ export function MapView({ places, selectedPlace, onSelectPlace, activeNeed = 'Mo
                 }`}
                 style={{ left: `${p.x}%`, top: `${p.y}%` }}
                 onClick={() => onSelectPlace(p)}
-                aria-label={`${p.name}. Profil ${activeNeed}: ${meta.label}. ${p.chainSummary}`}
+                aria-label={`${p.name}. Kebutuhan ${activeNeed}: ${meta.label}. ${p.chainSummary}`}
                 type="button"
               >
                 <span>{meta.symbol}</span>

@@ -64,7 +64,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
         onClick={() => setIsOpen(true)}
       >
         <Icon name="download" />
-        <span>Export Evidence Pack (CSV)</span>
+        <span>Unduh Data CSV</span>
       </button>
 
       {isOpen && (
@@ -83,19 +83,19 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
           >
             <div className="modal-header">
               <div>
-                <span className="eyebrow">Civic Observatory Export</span>
+                <span className="eyebrow">Unduh Data Riset</span>
                 <h2 id="csv-export-title" style={{ fontSize: '18px', margin: 0 }}>
-                  Unduh Filtered Evidence Pack
+                  Unduh Data Keterbukaan Akses
                 </h2>
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                  Filter data sebelum mengunduh agar data sesuai dengan kebutuhan advokasi, penelitian, atau audit.
+                  Saring data sebelum mengunduh agar sesuai dengan kebutuhan advokasi atau penelitian Anda.
                 </p>
               </div>
               <button
                 type="button"
                 id="export-close-btn"
                 onClick={() => setIsOpen(false)}
-                aria-label="Tutup jendela ekspor"
+                aria-label="Tutup jendela unduh"
               >
                 <Icon name="close" />
               </button>
@@ -140,7 +140,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
 
               <div>
                 <label htmlFor="csv-filter-profile" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Profil Kebutuhan
+                  Kebutuhan Akses
                 </label>
                 <select
                   id="csv-filter-profile"
@@ -149,17 +149,17 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                   value={profile}
                   onChange={(e) => setProfile(e.target.value)}
                 >
-                  <option value="all">Semua Profil (Seluruh Elemen Rantai)</option>
-                  <option value="mobilitas">Mobilitas</option>
-                  <option value="visual">Visual</option>
-                  <option value="auditori">Auditori</option>
+                  <option value="all">Semua Kebutuhan</option>
+                  <option value="mobilitas">Kursi Roda / Motorik</option>
+                  <option value="visual">Tunanetra / Visual</option>
+                  <option value="auditori">Tunarungu / Auditori</option>
                   <option value="sensorik">Sensorik</option>
                 </select>
               </div>
 
               <div>
                 <label htmlFor="csv-filter-element" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Elemen Spesifik
+                  Bagian Fasilitas
                 </label>
                 <select
                   id="csv-filter-element"
@@ -168,7 +168,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                   value={element}
                   onChange={(e) => setElement(e.target.value)}
                 >
-                  <option value="all">Semua Elemen</option>
+                  <option value="all">Semua Bagian</option>
                   <option value="E1_door">E1 - Pintu / Akses Masuk</option>
                   <option value="E2_ramp">E2 - Ramp</option>
                   <option value="E3_toilet">E3 - Toilet Aksesibel</option>
@@ -182,7 +182,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
 
               <div>
                 <label htmlFor="csv-filter-status" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Status Elemen
+                  Kondisi Bagian
                 </label>
                 <select
                   id="csv-filter-status"
@@ -191,12 +191,12 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option value="all">Semua Status</option>
-                  <option value="UTUH">UTUH (Dapat Dipakai Mandiri)</option>
-                  <option value="TERHALANG">TERHALANG (Ada tapi Terhalang)</option>
-                  <option value="TIDAK_STANDAR">TIDAK STANDAR (Perlu Perbaikan)</option>
-                  <option value="TIDAK_ADA">TIDAK ADA (Belum Tersedia)</option>
-                  <option value="BELUM_DIKETAHUI">BELUM DIKETAHUI (Belum Disurvei)</option>
+                  <option value="all">Semua Kondisi</option>
+                  <option value="UTUH">Bisa Digunakan (Dapat Dipakai Mandiri)</option>
+                  <option value="TERHALANG">Terhalang (Ada tapi Terhalang)</option>
+                  <option value="TIDAK_STANDAR">Perlu Perhatian (Kurang Standar)</option>
+                  <option value="TIDAK_ADA">Tidak Tersedia (Belum Ada)</option>
+                  <option value="BELUM_DIKETAHUI">Belum Diketahui (Belum Disurvei)</option>
                 </select>
               </div>
             </div>
@@ -211,7 +211,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                 lineHeight: 1.4,
               }}
             >
-              🛡️ <strong>Keamanan Formula Injection:</strong> Output CSV terproteksi dari eksekusi rumus spreadsheet otomatis sesuai standar keamanan siber OWASP.
+              🛡️ <strong>Keamanan Data:</strong> Berkas CSV ini diformat agar aman dibuka di berbagai aplikasi spreadsheet tanpa risiko kode otomatis berbahaya.
             </div>
 
             {error && (
@@ -235,7 +235,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                 onClick={handleDownload}
               >
                 <Icon name="download" />
-                <span>{pending ? 'Mempersiapkan CSV…' : 'Unduh CSV'}</span>
+                <span>{pending ? 'Menyiapkan berkas…' : 'Unduh CSV'}</span>
               </button>
             </div>
           </section>

@@ -13,29 +13,29 @@ export function DashboardStats({ places }: DashboardStatsProps) {
   const totalPhotos = places.reduce((sum, p) => sum + p.photos, 0);
 
   return (
-    <div className="metric-grid" aria-label="Metrik observatorium aksesibilitas">
+    <div className="metric-grid" aria-label="Statistik keterbukaan akses">
       <article>
-        <span>Lokasi Terpetakan</span>
+        <span>Tempat Terdata</span>
         <strong>{places.length}</strong>
-        <small>Dataset publik Surabaya</small>
+        <small>Fasilitas publik di Surabaya</small>
       </article>
 
       <article>
-        <span>Rantai Perlu Perhatian</span>
+        <span>Akses Masih Terputus</span>
         <strong style={{ color: '#e78a16' }}>{brokenCount}</strong>
-        <small>Titik putus terkonfirmasi</small>
+        <small>Perlu perbaikan segera</small>
       </article>
 
       <article>
-        <span>Elemen Belum Diketahui</span>
+        <span>Data Belum Lengkap</span>
         <strong style={{ color: '#7d8798' }}>{unknownCount}</strong>
-        <small>Prioritas bukti berikutnya</small>
+        <small>Butuh pengecekan warga</small>
       </article>
 
       <article>
-        <span>Foto Bukti Lapangan</span>
+        <span>Foto Kondisi Warga</span>
         <strong style={{ color: '#6d45cc' }}>{totalPhotos}</strong>
-        <small>Verifikasi komunitas</small>
+        <small>Kontribusi dari lapangan</small>
       </article>
     </div>
   );

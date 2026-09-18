@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: 'Naviable — Peta Aksesibilitas Kota Surabaya',
   description:
-    'Platform peta aksesibilitas Surabaya dengan dual-view peta dan daftar, verifikasi 8 elemen akses, pelaporan AI vision berbasis kunci manusia, dan civic observatory.',
+    'Cari tahu kondisi akses fasilitas publik di Surabaya sebelum bepergian, dengan verifikasi langsung dan bukti foto warga.',
   icons: {
     icon: '/naviable-mark.svg',
     shortcut: '/naviable-mark.svg',
@@ -23,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="h-full antialiased">
+    <html lang="id" className={`h-full antialiased ${inter.variable}`}>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

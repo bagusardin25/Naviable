@@ -62,10 +62,10 @@ export const STATUS_STYLE: Record<
   ElementStatus,
   { color: string; pattern: string; label: string }
 > = {
-  UTUH: { color: "#16a34a", pattern: "solid", label: "Utuh" },
+  UTUH: { color: "#16a34a", pattern: "solid", label: "Bisa digunakan" },
   TERHALANG: { color: "#ea580c", pattern: "dashed", label: "Terhalang" },
-  TIDAK_STANDAR: { color: "#ca8a04", pattern: "dotted", label: "Tidak standar" },
-  TIDAK_ADA: { color: "#dc2626", pattern: "cross", label: "Tidak ada" },
+  TIDAK_STANDAR: { color: "#ca8a04", pattern: "dotted", label: "Perlu perhatian" },
+  TIDAK_ADA: { color: "#dc2626", pattern: "cross", label: "Tidak tersedia" },
   BELUM_DIKETAHUI: { color: "#6b7280", pattern: "empty", label: "Belum diketahui" },
 };
 
@@ -80,10 +80,10 @@ export const USER_PROFILES = [
 export type UserProfile = (typeof USER_PROFILES)[number];
 
 export const USER_PROFILE_LABELS: Record<UserProfile, string> = {
-  mobilitas: "Pengguna kursi roda",
+  mobilitas: "Kursi roda",
   visual: "Tunanetra",
   auditori: "Tunarungu",
-  sensorik: "Sensorik / kognitif",
+  sensorik: "Sensorik",
 };
 
 export type ElementEvidence = {
@@ -120,15 +120,15 @@ export function chainSummary(place: Place): string {
   const intact = entries.filter((e) => e.status === "UTUH");
 
   if (broken.length === 0 && intact.length === 0) {
-    return "Belum ada bukti foto untuk lokasi ini — bantu petakan.";
+    return "Belum ada informasi akses untuk tempat ini.";
   }
   if (broken.length === 0) {
-    return `Rantai utuh pada ${intact.length} elemen terverifikasi.`;
+    return `${intact.length} titik akses dilaporkan bisa digunakan.`;
   }
   const brokenNames = broken
     .map((b) => CHAIN_ELEMENT_LABELS[b.el].toLowerCase())
     .join(", ");
-  return `Rantai putus di ${brokenNames}.`;
+  return `Akses terputus di ${brokenNames}.`;
 }
 
 /** Weighted summary score. BELUM_DIKETAHUI excluded from denominator (§6.3). */

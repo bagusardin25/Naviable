@@ -106,13 +106,13 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
     if (!photo || analyzing) return;
     setAnalyzing(true); setAiError('');
     try { setAnalysis(await analyzePhoto(photo.image, photo.mimeType)); }
-    catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : 'AI tidak tersedia. Checklist manual tetap dapat digunakan.'); }
+    catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : 'Bantuan foto sedang tidak tersedia. Anda tetap bisa mengisi checklist secara manual.'); }
     finally { setAnalyzing(false); }
   }
   async function publish(event: React.FormEvent) {
     event.preventDefault();
     if (submitting) return;
-    if (!photo || !confirmed) { setError('Unggah foto dan konfirmasi checklist terlebih dahulu.'); return; }
+    if (!photo || !confirmed) { setError('Unggah foto dan centang konfirmasi kondisi terlebih dahulu.'); return; }
     const payload: ReportPayload = { placeId, reporterName, ...photo, humanConfirmed: true, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
     const signature = JSON.stringify(payload);
     if (attempt.current?.signature !== signature) attempt.current = { signature, key: crypto.randomUUID() };
@@ -126,12 +126,12 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
       }
       onSubmitReport(result.place);
     }
-    catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum tersimpan. Coba lagi.'); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum berhasil dikirim. Silakan coba lagi.'); }
     finally { setSubmitting(false); }
   }
   return (
     <div className="page-scroll">
-      <div className="page-title"><div><span className="eyebrow">Pelaporan bukti lapangan</span><h1>Foto → Draf AI → Kunci Manusia</h1><p>AI membantu mengisi draf. Anda memeriksa kondisi lapangan dan mengunci status akhir.</p><p>Untuk layanan online, <a href="/login">masuk sebagai kontributor</a>.</p></div></div>
+      <div className="page-title"><div><span className="eyebrow">Lapor Kondisi Akses</span><h1>Laporkan Kondisi Akses</h1><p>Bagikan foto dan informasi terkini agar kawan disabilitas dapat bepergian dengan aman dan mandiri.</p><p>Ingin rekam riwayat kontribusi Anda? <a href="/login">Masuk ke akun kontributor</a>.</p></div></div>
       {draftRestored && (
         <div
           role="status"
@@ -150,7 +150,7 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>💾</span>
-            <span>Draf laporan tersimpan otomatis dimuat dari perangkat Anda.</span>
+            <span>Draf laporan sebelumnya tersimpan otomatis di perangkat ini.</span>
           </div>
           <button
             type="button"
@@ -171,57 +171,57 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
       )}
       <form onSubmit={publish} className="report-grid" aria-busy={busy}>
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
-          <h2>1. Bukti Lapangan</h2>
+          <h2>1. Informasi & Foto Lokasi</h2>
           <label htmlFor="report-location-select">
-            Lokasi Fasilitas
+            Nama Tempat / Fasilitas
             <select id="report-location-select" value={placeId} onChange={e => { setPlaceId(e.target.value); setConfirmed(false); }} required>
-              <option value="" disabled>Pilih lokasi</option>
+              <option value="" disabled>Pilih lokasi tempat</option>
               {places.map(p => <option key={p.id} value={String(p.id)}>{p.name} ({p.district})</option>)}
             </select>
           </label>
           <label htmlFor="reporter-name">
-            Nama publik kontributor
+            Nama Anda (ditampilkan ke publik)
             <input type="text" id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} placeholder="Contoh: Budi Santoso" required autoComplete="name" />
           </label>
           <label htmlFor="report-element-select">
-            Elemen yang dilaporkan
+            Bagian yang dilaporkan
             <select id="report-element-select" value={elementCode} onChange={e => { setElementCode(e.target.value as ChainElementCode); setStatus('BELUM_DIKETAHUI'); setConfirmed(false); }} required>
               {(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => <option key={code} value={code}>{code} — {CHAIN_ELEMENT_MAP[code].label}</option>)}
             </select>
           </label>
           <div>
-            <span className="field-label-text">Foto Bukti Lapangan</span>
-            <label htmlFor="file-upload-input" className="upload-box" aria-label="Unggah foto bukti lapangan">
+            <span className="field-label-text">Foto Kondisi di Lapangan</span>
+            <label htmlFor="file-upload-input" className="upload-box" aria-label="Unggah foto kondisi di lapangan">
               <Icon name="camera" size={26} />
               {photo ? (
                 <div className="upload-preview-badge">
-                  <span>✓ Foto tersimpan (ketuk untuk ganti)</span>
+                  <span>✓ Foto tersimpan (klik untuk ganti)</span>
                 </div>
               ) : (
                 <>
-                  <span>Ketuk atau seret foto bukti ke sini</span>
-                  <small>JPG, PNG, WebP · maks 5 MB · Tanpa identitas pribadi</small>
+                  <span>Klik atau seret foto ke sini</span>
+                  <small>Format JPG, PNG, atau WebP · maks 5 MB</small>
                 </>
               )}
               <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required />
             </label>
           </div>
           <label htmlFor="report-notes">
-            Catatan Lapangan
-            <textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder="Jelaskan kondisi yang Anda amati di lokasi (misal: ramp terlalu curam, pintu terkunci)." rows={4} />
+            Catatan Tambahan (opsional)
+            <textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder="Ceritakan kondisi yang Anda temui (misal: ramp terlalu curam, pintu darurat terkunci, jalan berlubang)." rows={4} />
           </label>
         </fieldset>
-        <section className="card ai-card" aria-label="Analisis dan konfirmasi manusia">
+        <section className="card ai-card" aria-label="Pemeriksaan dan konfirmasi">
           <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} uploadedPhotoUrl={photo?.image ?? null} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
-          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Menganalisis…' : 'Bantu isi draf dengan AI (opsional)'}</button>
+          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Memeriksa foto…' : 'Bantu kenali kondisi dengan AI (opsional)'}</button>
           <fieldset disabled={busy || analyzing} style={{ border: 0, padding: 0, minWidth: 0 }}>
             <HumanLockSelector currentStatus={status} onSelectStatus={s => { setStatus(s); setConfirmed(false); }} />
             <label style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'flex-start', fontSize: '12px' }}>
               <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required style={{ marginTop: '2px' }} />
-              <span>Saya telah memeriksa foto dan kondisi lapangan serta mengonfirmasi status elemen yang dipilih.</span>
+              <span>Saya sudah memeriksa foto dan memastikan kondisi ini sesuai dengan yang ada di lokasi.</span>
             </label>
           </fieldset>
-          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || !placeId}>{submitting ? 'Menyimpan laporan…' : 'Publish Setelah Konfirmasi Manusia'}</button>
+          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || !placeId}>{submitting ? 'Mengirim laporan…' : 'Kirim Laporan'}</button>
           {error && <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '12px', border: '1px solid #fecaca' }}>{error}</p>}
         </section>
       </form>

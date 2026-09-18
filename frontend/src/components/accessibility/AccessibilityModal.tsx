@@ -88,14 +88,14 @@ export function AccessibilityModal({
         <div className="modal-header">
           <div>
             <span className="eyebrow">Preferensi Tampilan</span>
-            <h2 id="a11y-title">Accessibility Settings</h2>
-            <p>Atur antarmuka Naviable agar paling nyaman dan aman sesuai kebutuhan indra Anda.</p>
+            <h2 id="a11y-title">Pengaturan Aksesibilitas</h2>
+            <p>Atur tampilan agar paling nyaman dan pas dengan kebutuhan Anda.</p>
           </div>
           <button
             id="modal-close-btn"
             type="button"
             onClick={onClose}
-            aria-label="Tutup jendela pengaturan aksesibilitas"
+            aria-label="Tutup pengaturan aksesibilitas"
           >
             <Icon name="close" />
           </button>
@@ -104,29 +104,29 @@ export function AccessibilityModal({
         <div className="settings-list">
           <AccessibleToggle
             id="toggle-contrast"
-            label="High Contrast Dark Mode"
-            text="Tingkatkan kontras antarelemen antarmuka dengan palet gelap pekat dan teks terang."
+            label="Mode Kontras Tinggi"
+            text="Tampilkan latar belakang gelap dengan teks terang berkontras tinggi agar lebih mudah dibaca."
             checked={settings.contrast}
             onChange={onToggleContrast}
           />
           <AccessibleToggle
             id="toggle-large-text"
-            label="Large Typography"
-            text="Perbesar ukuran teks antarmuka secara global tanpa mengubah makna atau merusak tata letak."
+            label="Perbesar Ukuran Teks"
+            text="Perbesar ukuran huruf di seluruh halaman agar lebih nyaman dibaca tanpa merusak tata letak."
             checked={settings.largeText}
             onChange={onToggleLargeText}
           />
           <AccessibleToggle
             id="toggle-reduce-motion"
-            label="Disable Motion & Animations"
-            text="Nonaktifkan transisi visual, efek pemindaian, dan animasi yang dapat memicu pusing."
+            label="Kurangi Gerakan & Animasi"
+            text="Nonaktifkan efek gerak dan animasi bila Anda sensitif terhadap perpindahan visual di layar."
             checked={settings.reduceMotion}
             onChange={onToggleReduceMotion}
           />
           <AccessibleToggle
             id="toggle-dyslexia"
-            label="Dyslexia-Friendly Typography"
-            text="Gunakan bentuk huruf yang lebih jelas dan jarak antarhuruf yang ramah untuk pembaca disleksia."
+            label="Huruf Ramah Disleksia"
+            text="Gunakan jenis huruf dan spasi khusus yang lebih ramah bagi pembaca disleksia."
             checked={settings.dyslexia}
             onChange={onToggleDyslexia}
           />
@@ -139,7 +139,7 @@ export function AccessibilityModal({
             className="secondary-action"
             onClick={onReset}
           >
-            Reset Standar
+            Kembalikan ke Awal
           </button>
           <button
             id="btn-a11y-save"
@@ -147,7 +147,7 @@ export function AccessibilityModal({
             className="primary-action"
             onClick={onClose}
           >
-            Simpan Preferensi
+            Simpan
           </button>
         </div>
       </section>

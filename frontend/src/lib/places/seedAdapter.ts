@@ -158,17 +158,17 @@ function buildElementsChain(record: RawSeedRecord): ElementItem[] {
         f.toLowerCase().includes(code.toLowerCase())
       );
       note = relevantFeature
-        ? `Pre-survey evidence: "${relevantFeature}" dilaporkan pada referensi awal. Belum diverifikasi langsung oleh tim Naviable.`
-        : `Pre-survey evidence: Indikasi ${meta.label} tercantum pada dokumen pendukung awal. Belum diverifikasi langsung oleh tim Naviable.`;
+        ? `Data awal: "${relevantFeature}" tercatat pada referensi publik. Belum diverifikasi langsung oleh warga.`
+        : `Data awal: Indikasi ${meta.label} tercatat pada dokumen awal. Belum diverifikasi langsung oleh warga.`;
     } else if (code === 'E1' && wheelchair === 'yes') {
       isPreSurvey = true;
-      note = 'Pre-survey evidence: Akses masuk ramah kursi roda dilaporkan pada data awal. Belum diverifikasi langsung oleh tim Naviable.';
+      note = 'Data awal: Akses masuk ramah kursi roda dilaporkan tersedia. Belum diverifikasi langsung di lapangan.';
     } else if (code === 'E3' && toilet === 'yes') {
       isPreSurvey = true;
-      note = 'Pre-survey evidence: Toilet disabilitas dilaporkan tersedia pada data awal. Belum diverifikasi langsung oleh tim Naviable.';
+      note = 'Data awal: Toilet disabilitas dilaporkan tersedia. Belum diverifikasi langsung di lapangan.';
     } else if (code === 'E5' && tactile === 'yes') {
       isPreSurvey = true;
-      note = 'Pre-survey evidence: Jalur pemandu dilaporkan tersedia pada data awal. Belum diverifikasi langsung oleh tim Naviable.';
+      note = 'Data awal: Jalur pemandu dilaporkan tersedia. Belum diverifikasi langsung di lapangan.';
     }
 
     return {
@@ -183,18 +183,18 @@ function buildElementsChain(record: RawSeedRecord): ElementItem[] {
 
 function generateChainSummary(wheelchair: PreSurveyWheelchairStatus, hasCoords: boolean): string {
   if (!hasCoords) {
-    return 'Pre-survey: Titik lokasi memerlukan koordinat geocoding sebelum audit lapangan.';
+    return 'Belum ada titik koordinat di peta. Perlu penandaan lokasi.';
   }
   switch (wheelchair) {
     case 'yes':
-      return 'Pre-survey: Akses kursi roda dilaporkan tersedia pada data awal. Belum diverifikasi tim Naviable.';
+      return 'Data awal: Akses kursi roda dilaporkan bisa digunakan. Menunggu verifikasi warga.';
     case 'limited':
-      return 'Pre-survey: Akses kursi roda terbatas dilaporkan. Memerlukan konfirmasi bukti lapangan.';
+      return 'Data awal: Akses kursi roda memiliki keterbatasan. Perlu pengecekan langsung.';
     case 'no':
-      return 'Pre-survey: Akses kursi roda dilaporkan tidak memadai atau belum tersedia.';
+      return 'Data awal: Dilaporkan belum ramah kursi roda.';
     case 'unknown':
     default:
-      return 'Pre-survey: Data aksesibilitas belum tercatat, masuk daftar prioritas survei komunitas.';
+      return 'Belum ada informasi akses yang tercatat untuk tempat ini.';
   }
 }
 
@@ -268,7 +268,7 @@ export function adaptSeedRecords(records: RawSeedRecord[]): Place[] {
       verifiedByTeam: Boolean(record.verified_by_team),
       needsGeocoding,
       chainSummary,
-      updated: '13 Sep 2026 (Pre-survey)',
+      updated: '13 Sep 2026 (Data Awal)',
       photos: 0,
       elements,
     };

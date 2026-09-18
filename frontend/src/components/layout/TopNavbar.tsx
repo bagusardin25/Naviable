@@ -52,7 +52,7 @@ export function TopNavbar({
         </label>
         {voiceNotice && (
           <div className="voice-toast" role="status">
-            Pencarian suara belum tersedia. Gunakan kolom pencarian teks.
+            Pencarian suara belum didukung di peramban ini. Silakan gunakan pencarian teks.
           </div>
         )}
       </div>

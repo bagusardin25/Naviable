@@ -20,31 +20,31 @@ export function ContributorProfile() {
       <section className="profile-hero">
         <div className="avatar large" aria-hidden="true">AR</div>
         <div>
-          <span className="eyebrow">Kontributor Komunitas</span>
-          <h1>{data?.mode === 'local' ? 'Kontribusi Perangkat Lokal' : 'Profil Kontributor'}</h1>
-          <p>Riwayat pelaporan dan kontribusi validasi aksesibilitas kota Surabaya.</p>
+          <span className="eyebrow">Relawan Surabaya</span>
+          <h1>{data?.mode === 'local' ? 'Riwayat di Peramban Ini' : 'Profil Kontributor'}</h1>
+          <p>Daftar laporan kondisi akses yang pernah Anda kirimkan untuk membantu sesama warga.</p>
         </div>
       </section>
 
       {error && (
         <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginTop: '16px', border: '1px solid #fecaca' }}>
-          {error} <a href="/login" style={{ color: '#6d45cc', fontWeight: 700, marginLeft: '6px', textDecoration: 'underline' }}>Masuk Akun</a>
+          {error} <a href="/login" style={{ color: '#6d45cc', fontWeight: 700, marginLeft: '6px', textDecoration: 'underline' }}>Masuk ke Akun</a>
         </p>
       )}
 
-      {!data && !error && <p role="status" style={{ padding: '24px 0', color: '#64748b' }}>Memuat kontribusi…</p>}
+      {!data && !error && <p role="status" style={{ padding: '24px 0', color: '#64748b' }}>Memuat riwayat kontribusi…</p>}
 
       {data && (
         <div className="profile-grid">
           <article className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h2>Laporan Tersimpan</h2>
+            <h2>Laporan Terkirim</h2>
             <strong className="big-number">{data.total}</strong>
             <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 16px' }}>
-              Status terkonfirmasi kontributor warga mandiri untuk bukti fasilitas publik Surabaya.
+              Laporan kondisi akses yang Anda bantu perbarui untuk fasilitas publik di Surabaya.
             </p>
             {data.mode === 'supabase' && (
               <button type="button" className="secondary-action" onClick={signOut} style={{ alignSelf: 'flex-start' }}>
-                Keluar dari Akun
+                Keluar Akun
               </button>
             )}
           </article>
@@ -52,7 +52,7 @@ export function ContributorProfile() {
           <article className="card">
             <div className="card-title-row" style={{ marginBottom: '12px' }}>
               <h2>Laporan Terbaru</h2>
-              <span className="count-pill">{data.reports.length} item</span>
+              <span className="count-pill">{data.reports.length} laporan</span>
             </div>
             {data.reports.length ? (
               <div style={{ display: 'grid', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
@@ -74,14 +74,14 @@ export function ContributorProfile() {
                       </span>
                     </div>
                     <div style={{ color: '#64748b', fontSize: '11px', marginTop: '3px' }}>
-                      Status: {r.elements.map((e) => e.status).join(', ')}
+                      Kondisi: {r.elements.map((e) => e.status).join(', ')}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <p style={{ color: '#64748b', fontSize: '13px' }}>
-                Belum ada laporan tersimpan. Mulai berkontribusi dengan mengambil foto fasilitas publik dan checklist lapangan.
+                Belum ada laporan yang tercatat. Anda bisa mulai berkontribusi dengan memotret dan melaporkan kondisi fasilitas di sekitar Anda.
               </p>
             )}
           </article>

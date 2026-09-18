@@ -122,10 +122,10 @@ export default function Home() {
 
   // Screen reader polite live announcement for search & profile updates
   const liveAnnouncement = !loading
-    ? `Menampilkan ${filteredPlaces.length} lokasi untuk profil ${need}${
-        statusFilter !== 'all' ? `, status ${statusFilter}` : ''
+    ? `Menampilkan ${filteredPlaces.length} tempat untuk kebutuhan ${need}${
+        statusFilter !== 'all' ? `, kondisi ${statusFilter}` : ''
       }.`
-    : 'Memuat data lokasi dari server…';
+    : 'Memuat data tempat dari server…';
 
 
   function handleSelectPlace(place: Place) {
@@ -175,12 +175,12 @@ export default function Home() {
           onOpenAccessibility={() => setShowA11y(true)}
         />
 
-        {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat lokasi dari server…</p>}
+        {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat data tempat dari server…</p>}
         {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>Coba lagi</button></div>}
-        {storage === 'local' && <p role="note" style={{ padding: '6px 20px', background: '#fffbeb', fontSize: '12px' }}>Mode lokal · Laporan tersimpan di perangkat ini. Data awal tetap pra-survei.</p>}
+        {storage === 'local' && <p role="note" style={{ padding: '6px 20px', background: '#fffbeb', fontSize: '12px' }}>Mode lokal · Laporan tersimpan di peramban ini.</p>}
         {screen === 'map' && (
           <>
-            <div className="mobile-view-tabs" role="tablist" aria-label="Beralih tampilan peta atau daftar">
+            <div className="mobile-view-tabs" role="tablist" aria-label="Pilih tampilan peta atau daftar">
               <button
                 type="button"
                 role="tab"
@@ -188,7 +188,7 @@ export default function Home() {
                 className={`mobile-view-btn ${mobileTab === 'map' ? 'active' : ''}`}
                 onClick={() => setMobileTab('map')}
               >
-                🗺️ Tampilan Peta
+                🗺️ Peta
               </button>
               <button
                 type="button"
@@ -197,7 +197,7 @@ export default function Home() {
                 className={`mobile-view-btn ${mobileTab === 'list' ? 'active' : ''}`}
                 onClick={() => setMobileTab('list')}
               >
-                📋 Daftar Tempat ({filteredPlaces.length})
+                📋 Daftar ({filteredPlaces.length})
               </button>
             </div>
 
@@ -222,9 +222,9 @@ export default function Home() {
                           : { borderColor: '#c4b5fd', color: '#6d45cc', background: '#f5f3ff' }
                       }
                       onClick={() => setShowJourney(!showJourney)}
-                      title="Buka petunjuk rantai perjalanan (non-GPS)"
+                      title="Buka petunjuk rute akses"
                     >
-                      🧭 Journey Hint (Rantai Perjalanan)
+                      🧭 Petunjuk Rute
                     </button>
 
                     <select
@@ -270,9 +270,9 @@ export default function Home() {
                 )}
 
                 {/* Status Filter Bar evaluated dynamically for active need profile */}
-                <div className="status-filter-bar" role="toolbar" aria-label={`Filter status untuk profil ${need}`}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
-                    Status Profil {need}:
+                <div className="status-filter-bar" role="toolbar" aria-label={`Filter kondisi untuk kebutuhan ${need}`}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
+                    Kondisi ({need}):
                   </span>
                   <button
                     type="button"
@@ -286,7 +286,7 @@ export default function Home() {
                     className={`status-pill-btn ${statusFilter === 'UTUH' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('UTUH')}
                   >
-                    ✓ Utuh ({statusCounts.UTUH})
+                    ✓ Bisa Digunakan ({statusCounts.UTUH})
                   </button>
                   <button
                     type="button"
@@ -300,7 +300,7 @@ export default function Home() {
                     className={`status-pill-btn ${statusFilter === 'TIDAK_STANDAR' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_STANDAR')}
                   >
-                    • Tidak Standar ({statusCounts.TIDAK_STANDAR})
+                    • Perlu Perhatian ({statusCounts.TIDAK_STANDAR})
                   </button>
                   <button
                     type="button"
@@ -365,10 +365,10 @@ export default function Home() {
           <div className="page-scroll dashboard-page">
             <div className="page-title">
               <div>
-                <span className="eyebrow">Civic Observatory</span>
-                <h1>Evidence Pack Surabaya</h1>
+                <span className="eyebrow">Data & Riset Warga</span>
+                <h1>Data Keterbukaan Akses Surabaya</h1>
                 <p>
-                  Ringkasan aksesibilitas ruang publik untuk komunitas disabilitas, kampus, NGO advokasi, dan perencana kota — bukan sistem penghukuman pemerintah.
+                  Ringkasan kondisi ruang publik dari pengamatan warga Surabaya untuk komunitas disabilitas, pegiat advokasi, dan perencana kota.
                 </p>
               </div>
               <EvidenceExportButton places={places} />

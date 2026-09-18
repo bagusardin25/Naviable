@@ -15,23 +15,28 @@ export function PlaceList({ places, selectedPlace, onSelectPlace, className = ''
   const unlocatedCount = places.filter((p) => p.needsGeocoding).length;
 
   return (
-    <aside className={`places-panel ${className}`.trim()} aria-label="Daftar tempat setara dengan peta">
+    <aside className={`places-panel ${className}`.trim()} aria-label="Daftar tempat">
       <div className="panel-heading">
         <div>
-          <span className="eyebrow">Dual view · Surabaya Seed Data</span>
-          <h2>Daftar Lokasi</h2>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+          <span className="eyebrow">Data tempat Surabaya</span>
+          <h2>Daftar Tempat</h2>
+          <div style={{ fontSize: '12px', color: '#576479', marginTop: '2px' }}>
             <span>{geocodedCount} titik di peta</span>
-            {unlocatedCount > 0 && <span> · {unlocatedCount} perlu geocoding</span>}
+            {unlocatedCount > 0 && <span> · {unlocatedCount} belum ada titik peta</span>}
           </div>
         </div>
-        <span className="count-pill">{places.length} lokasi</span>
+        <span className="count-pill">{places.length} tempat</span>
       </div>
 
       <div className="place-list" role="list">
         {places.length === 0 ? (
-          <div className="empty-places" style={{ padding: '24px 12px', textAlign: 'center', color: '#64748b' }}>
-            <p>Tidak ada tempat yang cocok dengan filter atau kata kunci pencarian.</p>
+          <div className="empty-places" style={{ padding: '36px 16px', textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', margin: '0 0 6px' }}>
+              Belum ada tempat yang cocok
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+              Coba gunakan nama tempat lain atau atur ulang filter pencarian.
+            </p>
           </div>
         ) : (
           places.map((place) => (

@@ -94,7 +94,7 @@ export type StatusMeta = {
 
 export const STATUS_META: Record<AccessibilityStatus, StatusMeta> = {
   UTUH: {
-    label: 'Utuh',
+    label: 'Bisa digunakan',
     short: 'Dapat dipakai mandiri',
     symbol: '✓',
     color: '#16a25a',
@@ -108,22 +108,22 @@ export const STATUS_META: Record<AccessibilityStatus, StatusMeta> = {
     pattern: 'dashed',
   },
   TIDAK_STANDAR: {
-    label: 'Tidak standar',
+    label: 'Perlu perhatian',
     short: 'Ada, tetapi berpotensi tidak aman/mandiri',
     symbol: '•',
     color: '#d4a100',
     pattern: 'dotted',
   },
   TIDAK_ADA: {
-    label: 'Tidak ada',
-    short: 'Elemen belum tersedia',
+    label: 'Tidak tersedia',
+    short: 'Fasilitas belum tersedia',
     symbol: '×',
     color: '#df3a43',
     pattern: 'cross',
   },
   BELUM_DIKETAHUI: {
     label: 'Belum diketahui',
-    short: 'Belum ada bukti yang cukup',
+    short: 'Belum ada data verifikasi',
     symbol: '?',
     color: '#7d8798',
     pattern: 'empty',
@@ -142,39 +142,39 @@ export type WheelchairStatusMeta = {
 
 export const WHEELCHAIR_STATUS_META: Record<PreSurveyWheelchairStatus, WheelchairStatusMeta> = {
   yes: {
-    label: 'Akses Kursi Roda Dilaporkan',
-    short: 'Pre-survey: akses kursi roda dilaporkan tersedia',
+    label: 'Dilaporkan bisa diakses',
+    short: 'Akses kursi roda dilaporkan tersedia',
     symbol: '✓',
     color: '#16a25a',
     pattern: 'solid',
-    ariaLabel: 'pre-survey wheelchair access reported',
+    ariaLabel: 'akses kursi roda dilaporkan tersedia',
     badgeClass: 'status-utuh',
   },
   limited: {
-    label: 'Akses Terbatas Dilaporkan',
-    short: 'Pre-survey: akses kursi roda terbatas dilaporkan',
+    label: 'Akses terbatas',
+    short: 'Akses kursi roda terbatas',
     symbol: '▲',
     color: '#e78a16',
     pattern: 'dashed',
-    ariaLabel: 'pre-survey limited wheelchair access reported',
+    ariaLabel: 'akses terbatas dilaporkan',
     badgeClass: 'status-terhalang',
   },
   no: {
-    label: 'Tidak Aksesibel Dilaporkan',
-    short: 'Pre-survey: akses kursi roda dilaporkan tidak tersedia',
+    label: 'Dilaporkan belum aksesibel',
+    short: 'Akses kursi roda dilaporkan belum memadai',
     symbol: '✕',
     color: '#df3a43',
     pattern: 'cross',
-    ariaLabel: 'pre-survey wheelchair access reported unavailable',
+    ariaLabel: 'akses kursi roda dilaporkan belum memadai',
     badgeClass: 'status-tidak_ada',
   },
   unknown: {
-    label: 'Belum Diketahui',
-    short: 'Pre-survey: data aksesibilitas belum diketahui',
+    label: 'Belum diketahui',
+    short: 'Informasi akses belum tersedia',
     symbol: '?',
     color: '#7d8798',
     pattern: 'empty',
-    ariaLabel: 'pre-survey accessibility unknown',
+    ariaLabel: 'data aksesibilitas belum diketahui',
     badgeClass: 'status-belum_diketahui',
   },
 };
@@ -225,12 +225,12 @@ export function calculatePlaceProfileStatus(
     if (contributorElements.some((e) => e.status === 'TIDAK_ADA')) {
       return {
         status: 'TIDAK_ADA',
-        label: 'Bukti kontributor: Tidak ada',
-        short: 'Elemen kunci tidak tersedia',
+        label: 'Tidak tersedia',
+        short: 'Fasilitas akses dilaporkan tidak ada',
         symbol: '✕',
         color: '#df3a43',
         pattern: 'cross',
-        ariaLabel: 'status tidak ada',
+        ariaLabel: 'status tidak tersedia',
         badgeClass: 'status-tidak_ada',
         isPreSurvey: false,
       };
@@ -238,8 +238,8 @@ export function calculatePlaceProfileStatus(
     if (contributorElements.some((e) => e.status === 'TERHALANG')) {
       return {
         status: 'TERHALANG',
-        label: 'Bukti kontributor: Terhalang',
-        short: 'Elemen kunci terhalang',
+        label: 'Terhalang',
+        short: 'Akses ada tetapi terhalang',
         symbol: '!',
         color: '#e78a16',
         pattern: 'dashed',
@@ -251,12 +251,12 @@ export function calculatePlaceProfileStatus(
     if (contributorElements.some((e) => e.status === 'TIDAK_STANDAR')) {
       return {
         status: 'TIDAK_STANDAR',
-        label: 'Bukti kontributor: Tidak standar',
-        short: 'Elemen berpotensi tidak aman/mandiri',
+        label: 'Perlu perhatian',
+        short: 'Kondisi berpotensi kurang aman atau sulit mandiri',
         symbol: '•',
         color: '#d4a100',
         pattern: 'dotted',
-        ariaLabel: 'status tidak standar',
+        ariaLabel: 'status perlu perhatian',
         badgeClass: 'status-tidak_standar',
         isPreSurvey: false,
       };
@@ -267,12 +267,12 @@ export function calculatePlaceProfileStatus(
     ) {
       return {
         status: 'UTUH',
-        label: 'Bukti kontributor: Utuh',
-        short: 'Dapat dipakai mandiri',
+        label: 'Bisa digunakan',
+        short: 'Dapat digunakan mandiri',
         symbol: '✓',
         color: '#16a25a',
         pattern: 'solid',
-        ariaLabel: 'status utuh',
+        ariaLabel: 'status bisa digunakan',
         badgeClass: 'status-utuh',
         isPreSurvey: false,
       };
@@ -280,12 +280,12 @@ export function calculatePlaceProfileStatus(
     const intactCount = contributorElements.filter((e) => e.status === 'UTUH').length;
     return {
       status: 'BELUM_DIKETAHUI',
-      label: `Rantai belum lengkap (${intactCount}/${relevantCodes.length})`,
-      short: 'Sebagian terkonfirmasi, sisanya belum diverifikasi',
+      label: `Data belum lengkap (${intactCount}/${relevantCodes.length})`,
+      short: 'Sebagian titik akses sudah terkonfirmasi warga',
       symbol: '?',
       color: '#7d8798',
       pattern: 'empty',
-      ariaLabel: 'status belum lengkap',
+      ariaLabel: 'status data belum lengkap',
       badgeClass: 'status-belum_diketahui',
       isPreSurvey: false,
     };
@@ -296,12 +296,12 @@ export function calculatePlaceProfileStatus(
     if (place.wheelchairStatus === 'yes') {
       return {
         status: 'UTUH',
-        label: 'Pre-survey: Akses Kursi Roda Dilaporkan',
-        short: 'Pre-survey: akses kursi roda dilaporkan tersedia',
+        label: 'Dilaporkan bisa diakses',
+        short: 'Akses kursi roda dilaporkan tersedia',
         symbol: '✓',
         color: '#16a25a',
         pattern: 'solid',
-        ariaLabel: 'pre-survey akses kursi roda dilaporkan',
+        ariaLabel: 'akses kursi roda dilaporkan tersedia',
         badgeClass: 'status-utuh',
         isPreSurvey: true,
       };
@@ -309,12 +309,12 @@ export function calculatePlaceProfileStatus(
     if (place.wheelchairStatus === 'limited') {
       return {
         status: 'TERHALANG',
-        label: 'Pre-survey: Akses Terbatas Dilaporkan',
-        short: 'Pre-survey: akses terbatas dilaporkan',
+        label: 'Akses terbatas',
+        short: 'Akses kursi roda terbatas',
         symbol: '▲',
         color: '#e78a16',
         pattern: 'dashed',
-        ariaLabel: 'pre-survey akses terbatas dilaporkan',
+        ariaLabel: 'akses terbatas dilaporkan',
         badgeClass: 'status-terhalang',
         isPreSurvey: true,
       };
@@ -322,24 +322,24 @@ export function calculatePlaceProfileStatus(
     if (place.wheelchairStatus === 'no') {
       return {
         status: 'TIDAK_ADA',
-        label: 'Pre-survey: Tidak Aksesibel Dilaporkan',
-        short: 'Pre-survey: akses dilaporkan tidak memadai',
+        label: 'Dilaporkan belum aksesibel',
+        short: 'Akses kursi roda dilaporkan belum memadai',
         symbol: '✕',
         color: '#df3a43',
         pattern: 'cross',
-        ariaLabel: 'pre-survey tidak aksesibel',
+        ariaLabel: 'akses belum memadai dilaporkan',
         badgeClass: 'status-tidak_ada',
         isPreSurvey: true,
       };
     }
     return {
       status: 'BELUM_DIKETAHUI',
-      label: 'Pre-survey: Belum Diketahui',
-      short: 'Data akses mobilitas belum tercatat',
+      label: 'Belum diketahui',
+      short: 'Informasi akses mobilitas belum tercatat',
       symbol: '?',
       color: '#7d8798',
       pattern: 'empty',
-      ariaLabel: 'pre-survey mobilitas belum diketahui',
+      ariaLabel: 'informasi akses belum diketahui',
       badgeClass: 'status-belum_diketahui',
       isPreSurvey: true,
     };
@@ -350,24 +350,24 @@ export function calculatePlaceProfileStatus(
     if (hasTactile) {
       return {
         status: 'UTUH',
-        label: 'Pre-survey: Jalur Pemandu Dilaporkan',
-        short: 'Pre-survey: jalur pemandu dilaporkan ada',
+        label: 'Dilaporkan ada jalur pemandu',
+        short: 'Jalur pemandu dilaporkan tersedia',
         symbol: '✓',
         color: '#16a25a',
         pattern: 'solid',
-        ariaLabel: 'pre-survey jalur pemandu dilaporkan',
+        ariaLabel: 'jalur pemandu dilaporkan tersedia',
         badgeClass: 'status-utuh',
         isPreSurvey: true,
       };
     }
     return {
       status: 'BELUM_DIKETAHUI',
-      label: 'Belum Ada Bukti Visual',
-      short: 'Jalur pemandu / rambu visual belum tercatat',
+      label: 'Belum ada data visual',
+      short: 'Jalur pemandu atau rambu visual belum tercatat',
       symbol: '?',
       color: '#7d8798',
       pattern: 'empty',
-      ariaLabel: 'bukti visual belum diketahui',
+      ariaLabel: 'data visual belum diketahui',
       badgeClass: 'status-belum_diketahui',
       isPreSurvey: true,
     };
@@ -378,24 +378,24 @@ export function calculatePlaceProfileStatus(
     if (hasSignage) {
       return {
         status: 'UTUH',
-        label: 'Pre-survey: Signage Visual Dilaporkan',
-        short: 'Pre-survey: informasi visual dilaporkan ada',
+        label: 'Dilaporkan ada rambu visual',
+        short: 'Informasi visual dilaporkan tersedia',
         symbol: '✓',
         color: '#16a25a',
         pattern: 'solid',
-        ariaLabel: 'pre-survey signage dilaporkan',
+        ariaLabel: 'rambu visual dilaporkan tersedia',
         badgeClass: 'status-utuh',
         isPreSurvey: true,
       };
     }
     return {
       status: 'BELUM_DIKETAHUI',
-      label: 'Belum Ada Bukti Auditori',
-      short: 'Signage visual / pengumuman teks belum tercatat',
+      label: 'Belum ada data auditori',
+      short: 'Rambu visual atau informasi teks belum tercatat',
       symbol: '?',
       color: '#7d8798',
       pattern: 'empty',
-      ariaLabel: 'bukti auditori belum diketahui',
+      ariaLabel: 'data auditori belum diketahui',
       badgeClass: 'status-belum_diketahui',
       isPreSurvey: true,
     };
@@ -408,24 +408,24 @@ export function calculatePlaceProfileStatus(
   if (hasSensory) {
     return {
       status: 'UTUH',
-      label: 'Pre-survey: Panduan Ruang Dilaporkan',
-      short: 'Pre-survey: panduan ruang dilaporkan ada',
+      label: 'Dilaporkan ramah sensorik',
+      short: 'Panduan ruang atau area tenang dilaporkan ada',
       symbol: '✓',
       color: '#16a25a',
       pattern: 'solid',
-      ariaLabel: 'pre-survey panduan ruang dilaporkan',
+      ariaLabel: 'ramah sensorik dilaporkan',
       badgeClass: 'status-utuh',
       isPreSurvey: true,
     };
   }
   return {
     status: 'BELUM_DIKETAHUI',
-    label: 'Belum Ada Bukti Sensorik',
-    short: 'Informasi sensorik ruang belum tercatat',
+    label: 'Belum ada data sensorik',
+    short: 'Informasi tata ruang sensorik belum tercatat',
     symbol: '?',
     color: '#7d8798',
     pattern: 'empty',
-    ariaLabel: 'bukti sensorik belum diketahui',
+    ariaLabel: 'data sensorik belum diketahui',
     badgeClass: 'status-belum_diketahui',
     isPreSurvey: true,
   };
@@ -453,7 +453,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
   if (!updatedAt) {
     return {
       level: 'presurvey',
-      label: 'Pre-survey Baseline',
+      label: 'Data awal publik',
       badgeClass: 'freshness-presurvey',
       daysAgo: null,
       symbol: '📋',
@@ -463,7 +463,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
   if (isNaN(date.getTime())) {
     return {
       level: 'presurvey',
-      label: 'Pre-survey Baseline',
+      label: 'Data awal publik',
       badgeClass: 'freshness-presurvey',
       daysAgo: null,
       symbol: '📋',
@@ -473,7 +473,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
   if (diffDays <= 90) {
     return {
       level: 'fresh',
-      label: `Segar (≤ 90 hr)`,
+      label: `Terbaru (≤ 90 hr)`,
       badgeClass: 'freshness-fresh',
       daysAgo: diffDays,
       symbol: '🟢',
@@ -482,7 +482,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
   if (diffDays <= 365) {
     return {
       level: 'aging',
-      label: `Menua (${Math.max(1, Math.round(diffDays / 30))} bln)`,
+      label: `Perlu diperbarui (${Math.max(1, Math.round(diffDays / 30))} bln)`,
       badgeClass: 'freshness-aging',
       daysAgo: diffDays,
       symbol: '🟡',
@@ -490,7 +490,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
   }
   return {
     level: 'stale',
-    label: `Kedaluwarsa (> 1 thn)`,
+    label: `Perlu survei ulang (> 1 thn)`,
     badgeClass: 'freshness-stale',
     daysAgo: diffDays,
     symbol: '⚪',
@@ -580,12 +580,12 @@ export type JourneyResponse = {
 };
 
 export const EVIDENCE_LEVEL_LABELS: Record<string, string> = {
-  community_reported: 'Community reported (OpenStreetMap)',
-  official_documentation: 'Official documentation',
-  research_documentation: 'Research documentation',
-  government_registry: 'Government registry',
-  news_report: 'News report',
-  operator_statement_reported_by_news: 'Operator statement reported by news',
+  community_reported: 'Laporan komunitas (OpenStreetMap)',
+  official_documentation: 'Dokumentasi resmi pengelola',
+  research_documentation: 'Dokumentasi riset lapangan',
+  government_registry: 'Basis data publik pemerintah',
+  news_report: 'Laporan berita publik',
+  operator_statement_reported_by_news: 'Keterangan pengelola via berita',
 };
 
 export type AccessibilitySettings = {

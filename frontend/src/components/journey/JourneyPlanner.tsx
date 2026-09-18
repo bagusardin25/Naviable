@@ -59,19 +59,19 @@ export function JourneyPlanner({
   }
 
   return (
-    <div className="journey-planner-panel" role="region" aria-label="Perencana rantai perjalanan">
+    <div className="journey-planner-panel" role="region" aria-label="Petunjuk rute akses">
       <div className="journey-planner-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Icon name="route" />
           <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b' }}>
-            Journey Accessibility Hint
+            Petunjuk Rute Akses
           </h2>
         </div>
         <button
           type="button"
           className="drawer-close"
           onClick={onClose}
-          aria-label="Tutup petunjuk perjalanan"
+          aria-label="Tutup petunjuk rute"
           style={{ position: 'static' }}
         >
           <Icon name="close" />
@@ -92,9 +92,9 @@ export function JourneyPlanner({
           lineHeight: 1.45,
         }}
       >
-        <strong>⚠️ Prinsip Naviable:</strong> Fitur ini menyajikan urutan titik rantai akses (evidence chain points),{' '}
-        <strong>bukan turn-by-turn routing atau navigasi GPS jalan raya</strong>.
-        Konektivitas trotoar dan rute antar titik belum diverifikasi secara menyeluruh.
+        <strong>Catatan:</strong> Fitur ini merangkum titik akses penting di rute yang kamu tuju,{' '}
+        <strong>bukan navigasi belokan jalan raya (GPS)</strong>.
+        Kondisi trotoar penghubung masih terus diverifikasi bersama warga.
       </div>
 
       <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -103,7 +103,7 @@ export function JourneyPlanner({
             htmlFor="journey-origin-select"
             style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}
           >
-            📍 Titik Asal
+            📍 Titik Awal
           </label>
           <select
             id="journey-origin-select"
@@ -137,7 +137,7 @@ export function JourneyPlanner({
             onChange={(e) => setDestinationId(e.target.value)}
             required
           >
-            <option value="" disabled>Pilih titik akhir...</option>
+            <option value="" disabled>Pilih titik tujuan...</option>
             {geocodedPlaces.map((p) => (
               <option key={p.id} value={String(p.id)}>
                 {p.name} ({p.district})
@@ -151,7 +151,7 @@ export function JourneyPlanner({
             htmlFor="journey-profile-select"
             style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}
           >
-            ♿ Profil Kebutuhan Perjalanan
+            ♿ Kebutuhan Akses
           </label>
           <select
             id="journey-profile-select"
@@ -160,10 +160,10 @@ export function JourneyPlanner({
             value={profile}
             onChange={(e) => setProfile(e.target.value as AccessibilityNeed)}
           >
-            <option value="Mobilitas">Mobilitas (Kursi roda / motorik)</option>
-            <option value="Visual">Visual (Jalur pemandu & signage)</option>
-            <option value="Auditori">Auditori (Signage & panduan visual)</option>
-            <option value="Sensorik">Sensorik (Informasi tata ruang)</option>
+            <option value="Mobilitas">Kursi roda / mobilitas fisik</option>
+            <option value="Visual">Tunanetra (jalur pemandu & tactile)</option>
+            <option value="Auditori">Tunarungu / komunikasi visual</option>
+            <option value="Sensorik">Sensori & ketenangan</option>
           </select>
         </div>
 
@@ -173,7 +173,7 @@ export function JourneyPlanner({
           style={{ marginTop: '6px', justifyContent: 'center' }}
           disabled={loading || !originId || !destinationId}
         >
-          {loading ? 'Memeriksa Titik Rantai…' : 'Periksa Titik Rantai Akses'}
+          {loading ? 'Memeriksa rute…' : 'Cek Rute Akses'}
         </button>
 
         {error && (
@@ -196,11 +196,11 @@ export function JourneyPlanner({
           >
             <strong style={{ fontSize: '12px', color: journey.hasBottlenecks ? '#991b1b' : '#166534', display: 'block' }}>
               {journey.hasBottlenecks
-                ? `⚠️ Perhatian: Ditemukan ${journey.bottleneckCount} titik dengan kendala rantai akses!`
-                : '✓ Seluruh titik rantai yang diketahui belum memiliki laporan kendala kritis.'}
+                ? `Perhatian: Ditemukan ${journey.bottleneckCount} titik yang dilaporkan bermasalah di rute ini.`
+                : 'Semua titik yang tercatat di rute ini dilaporkan bisa digunakan.'}
             </strong>
             <span style={{ fontSize: '11px', color: journey.hasBottlenecks ? '#b91c1c' : '#15803d', display: 'block', marginTop: '2px' }}>
-              Diperiksa untuk profil: <strong>{profile}</strong>.
+              Dicek untuk kebutuhan: <strong>{profile}</strong>.
             </span>
           </div>
 
@@ -209,7 +209,7 @@ export function JourneyPlanner({
               const fullPlace = places.find((p) => String(p.id) === String(pt.id));
               const isOrigin = idx === 0;
               const isDestination = idx === journey.points.length - 1;
-              const stepLabel = isOrigin ? '1. Titik Asal' : isDestination ? `${journey.points.length}. Titik Tujuan` : `${idx + 1}. Titik Transit (Halte Bus)`;
+              const stepLabel = isOrigin ? '1. Titik Awal' : isDestination ? `${journey.points.length}. Titik Tujuan` : `${idx + 1}. Titik Transit`;
               const statusMeta = STATUS_META[pt.overall] ?? STATUS_META.BELUM_DIKETAHUI;
 
               return (
@@ -245,7 +245,7 @@ export function JourneyPlanner({
 
                   {pt.bottlenecks && pt.bottlenecks.length > 0 && (
                     <div style={{ margin: '6px 0', fontSize: '11px', color: '#b91c1c', background: '#fff1f2', padding: '4px 8px', borderRadius: '4px' }}>
-                      <strong>Titik Terputus:</strong>{' '}
+                      <strong>Akses bermasalah:</strong>{' '}
                       {pt.bottlenecks.map(getElementLabel).join(', ')}
                     </div>
                   )}
@@ -261,7 +261,7 @@ export function JourneyPlanner({
                       style={{ fontSize: '11px', padding: '4px 8px', width: '100%', justifyContent: 'center' }}
                       onClick={() => onSelectPlace(fullPlace)}
                     >
-                      Periksa Bukti Titik Ini ↗
+                      Lihat detail tempat ini ↗
                     </button>
                   )}
                 </li>

@@ -9,7 +9,7 @@ import styles from "./login.module.css";
 const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
-const unavailableMessage = "Sign-in is not available yet. Please try again later.";
+const unavailableMessage = "Layanan masuk akun sedang disiapkan. Silakan jelajahi langsung atau coba lagi nanti.";
 
 // Accept the local Indonesian format shown in the design, or an international number.
 function normalizePhone(value: string) {
@@ -32,7 +32,7 @@ export function LoginForm() {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
-  const [policy, setPolicy] = useState("Terms of Service");
+  const [policy, setPolicy] = useState("Ketentuan Layanan");
   const busy = pending !== null;
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export function LoginForm() {
       });
       if (error) throw error;
     } catch {
-      setMessage("We couldn’t connect to Google. Please try again.");
+      setMessage("Tidak dapat terhubung ke Google. Silakan coba lagi.");
     } finally {
       setPending(null);
     }
@@ -76,7 +76,7 @@ export function LoginForm() {
     setMessage("");
     const normalized = normalizePhone(phone);
     if (!normalized) {
-      setPhoneError("Enter a valid phone number, such as 812-3456-7890.");
+      setPhoneError("Masukkan nomor ponsel yang valid, contoh: 0812-3456-7890.");
       phoneRef.current?.focus();
       return;
     }
@@ -93,9 +93,9 @@ export function LoginForm() {
       });
       if (error) throw error;
       setSentTo(normalized);
-      setMessage(`A verification code has been sent via ${channel === "sms" ? "SMS" : "WhatsApp"}.`);
+      setMessage(`Kode verifikasi telah dikirim melalui ${channel === "sms" ? "SMS" : "WhatsApp"}.`);
     } catch {
-      setMessage(`We couldn’t send a ${channel === "sms" ? "text message" : "WhatsApp code"}. Please try again or continue with Google.`);
+      setMessage(`Tidak dapat mengirim kode melalui ${channel === "sms" ? "SMS" : "WhatsApp"}. Silakan coba lagi atau gunakan akun Google.`);
     } finally {
       setPending(null);
     }
@@ -109,7 +109,7 @@ export function LoginForm() {
       return;
     }
     if (!/^\d{6,8}$/.test(code)) {
-      setCodeError("Enter the verification code from your message.");
+      setCodeError("Masukkan kode verifikasi yang Anda terima.");
       codeRef.current?.focus();
       return;
     }
@@ -127,7 +127,7 @@ export function LoginForm() {
       if (error) throw error;
       router.replace("/");
     } catch {
-      setCodeError("That code is invalid or has expired. Try again or request a new code.");
+      setCodeError("Kode tidak valid atau sudah kedaluwarsa. Silakan periksa kembali atau minta kode baru.");
       codeRef.current?.focus();
     } finally {
       setPending(null);
@@ -145,18 +145,18 @@ export function LoginForm() {
         <div className={styles.socialButtons}>
           <button className={`${styles.button} ${styles.google}`} type="button" onClick={signInWithGoogle} disabled={busy}>
             <GoogleIcon />
-            <span>{pending === "google" ? "Connecting to Google…" : "Continue with Google"}</span>
+            <span>{pending === "google" ? "Menghubungkan ke Google…" : "Masuk dengan Google"}</span>
           </button>
           <button className={`${styles.button} ${styles.whatsapp}`} type="button" onClick={() => requestCode("whatsapp")} disabled={busy || Boolean(sentTo)}>
             <WhatsAppIcon />
-            <span>{pending === "whatsapp" ? "Sending your code…" : "Continue with WhatsApp"}</span>
+            <span>{pending === "whatsapp" ? "Mengirim kode…" : "Masuk dengan WhatsApp"}</span>
           </button>
         </div>
 
-        <div className={styles.divider}><span>or use phone number</span></div>
+        <div className={styles.divider}><span>atau gunakan nomor ponsel</span></div>
 
         <div className={styles.field}>
-          <label htmlFor="phone-number">Phone Number</label>
+          <label htmlFor="phone-number">Nomor Ponsel</label>
           <input
             ref={phoneRef}
             id="phone-number"
@@ -164,7 +164,7 @@ export function LoginForm() {
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            placeholder="812-3456-7890"
+            placeholder="0812-3456-7890"
             value={phone}
             maxLength={24}
             required
@@ -179,20 +179,20 @@ export function LoginForm() {
 
         {sentTo ? (
           <div className={`${styles.field} ${styles.codeField}`}>
-            <label htmlFor="verification-code">Verification code</label>
-            <input ref={codeRef} id="verification-code" name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="Enter your code" value={code} maxLength={8} disabled={busy} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "code-error" : undefined} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "")); setCodeError(""); }} />
+            <label htmlFor="verification-code">Kode Verifikasi</label>
+            <input ref={codeRef} id="verification-code" name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="Masukkan kode" value={code} maxLength={8} disabled={busy} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "code-error" : undefined} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "")); setCodeError(""); }} />
             {codeError && <p id="code-error" className={styles.fieldError} role="alert">{codeError}</p>}
-            <button className={styles.textButton} type="button" disabled={busy} onClick={() => { setSentTo(null); setCode(""); setCodeError(""); setMessage(""); phoneRef.current?.focus(); }}>Change number or request a new code</button>
+            <button className={styles.textButton} type="button" disabled={busy} onClick={() => { setSentTo(null); setCode(""); setCodeError(""); setMessage(""); phoneRef.current?.focus(); }}>Ganti nomor atau minta kode baru</button>
           </div>
         ) : (
           <button
             className={styles.audioCaptcha}
             type="button"
             disabled={busy}
-            onClick={() => setMessage("Audio verification is not available yet. You can continue with Google or request a phone verification code.")}
+            onClick={() => setMessage("Verifikasi suara sedang dalam pengembangan. Anda dapat masuk dengan akun Google atau meminta kode ponsel.")}
           >
             <span className={styles.speaker}><SpeakerIcon /></span>
-            <span className={styles.audioCopy}><strong>Audio Captcha</strong><span>Click to hear a verification challenge</span></span>
+            <span className={styles.audioCopy}><strong>Verifikasi Suara</strong><span>Ketuk untuk mendengarkan kode</span></span>
             <span className={styles.waveform}><WaveformIcon /></span>
           </button>
         )}
@@ -201,7 +201,7 @@ export function LoginForm() {
 
         <button className={`${styles.button} ${styles.loginButton}`} type="submit" disabled={busy}>
           <LoginIcon />
-          <span>{pending === "sms" ? "Sending your code…" : pending === "verify" ? "Verifying…" : sentTo ? "Verify & Log In" : "Log In"}</span>
+          <span>{pending === "sms" ? "Mengirim kode…" : pending === "verify" ? "Memverifikasi…" : sentTo ? "Verifikasi & Masuk" : "Lanjut Masuk"}</span>
         </button>
 
         <button
@@ -210,20 +210,20 @@ export function LoginForm() {
           onClick={() => router.push('/')}
           style={{ marginTop: '8px' }}
         >
-          <span>Jelajahi Langsung (Mode Tamu / Demo) →</span>
+          <span>Lanjut tanpa akun (Mode Tamu) →</span>
         </button>
       </form>
 
       <p className={styles.legal}>
-        By logging in, you agree to our{" "}
-        <button type="button" onClick={() => openPolicy("Terms of Service")}>Terms of Service</button>{" "}
-        and{" "}<button type="button" onClick={() => openPolicy("Privacy Policy")}>Privacy Policy</button>
+        Dengan masuk, Anda menyetujui{" "}
+        <button type="button" onClick={() => openPolicy("Ketentuan Layanan")}>Ketentuan Layanan</button>{" "}
+        dan{" "}<button type="button" onClick={() => openPolicy("Kebijakan Privasi")}>Kebijakan Privasi</button> Naviable.
       </p>
 
       <dialog ref={dialogRef} className={styles.policyDialog} aria-labelledby="policy-title">
         <h2 id="policy-title">{policy}</h2>
-        <p>NaviAble’s {policy.toLowerCase()} has not been published yet. Please check back before creating an account.</p>
-        <button className={`${styles.button} ${styles.loginButton}`} type="button" onClick={() => dialogRef.current?.close()}>Close</button>
+        <p>Dokumen {policy.toLowerCase()} Naviable sedang diselaraskan. Anda dapat menjelajahi peta langsung tanpa mendaftar.</p>
+        <button className={`${styles.button} ${styles.loginButton}`} type="button" onClick={() => dialogRef.current?.close()}>Tutup</button>
       </dialog>
     </>
   );

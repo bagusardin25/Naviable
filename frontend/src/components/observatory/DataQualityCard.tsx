@@ -17,16 +17,16 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
     <div
       className="card"
       style={{ marginTop: '16px', padding: '16px 20px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}
-      aria-label="Kualitas data dan kelengkapan spasial"
+      aria-label="Kelengkapan data lokasi"
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
         <div>
-          <span className="eyebrow">Tata Kelola Data Spasial</span>
-          <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '2px 0 4px', color: '#1e293b' }}>
-            Kualitas Data & Kelengkapan Spasial
+          <span className="eyebrow">Kelengkapan Data</span>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '2px 0 4px', color: '#1e293b' }}>
+            Kelengkapan Titik di Peta
           </h2>
           <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-            Audit akurasi titik geolokasi terhadap dataset fasilitas publik Kota Surabaya.
+            Perbandingan tempat yang sudah memiliki koordinat peta dengan tempat yang masih butuh penandaan lokasi.
           </p>
         </div>
         <span
@@ -39,27 +39,27 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
             color: percentage >= 80 ? '#166534' : '#92400e',
           }}
         >
-          {percentage}% Koordinat Lengkap
+          {percentage}% Sudah Ada Titik Peta
         </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
         <div style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
-          <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Titik GPS Terverifikasi</span>
+          <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Titik Peta Tersedia</span>
           <strong style={{ fontSize: '18px', color: '#16a34a' }}>{geocoded}</strong>
-          <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Siap ditampilkan pada peta OSM</span>
+          <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Bisa dilihat langsung di peta</span>
         </div>
 
         <div style={{ padding: '10px 14px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
-          <span style={{ fontSize: '11px', color: '#92400e', display: 'block' }}>Perlu Geocoding Lapangan</span>
+          <span style={{ fontSize: '11px', color: '#92400e', display: 'block' }}>Belum Ada Titik Peta</span>
           <strong style={{ fontSize: '18px', color: '#d97706' }}>{needsGeocoding}</strong>
-          <span style={{ fontSize: '10px', color: '#92400e', display: 'block' }}>Tercatat di data awal tanpa GPS presisi</span>
+          <span style={{ fontSize: '10px', color: '#92400e', display: 'block' }}>Masih butuh bantuan penandaan lokasi</span>
         </div>
 
         <div style={{ padding: '10px 14px', background: '#f1f5f9', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '11px', color: '#475569', display: 'block' }}>Total Fasilitas Tercatat</span>
+          <span style={{ fontSize: '11px', color: '#475569', display: 'block' }}>Total Tempat Terdata</span>
           <strong style={{ fontSize: '18px', color: '#0f172a' }}>{total}</strong>
-          <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Fasilitas publik dalam observatorium</span>
+          <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Fasilitas publik yang tercatat</span>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
           lineHeight: 1.5,
         }}
       >
-        <strong>Prinsip Inklusi Data Spasial:</strong> Fasilitas publik tanpa koordinat presisi sengaja tidak dihapus dari platform. Mempertahankan fasilitas tersebut memastikan tidak terjadi diskriminasi pencatatan terhadap ruang-ruang publik di luar koridor komersial utama yang belum terpetakan di OpenStreetMap.
+        <strong>Mengapa semua tempat tetap dicatat?</strong> Tempat yang belum memiliki titik peta tetap kami tampilkan agar tidak terlewatkan. Relawan dapat membantu menambahkan lokasi saat survei ke lapangan.
       </div>
     </div>
   );

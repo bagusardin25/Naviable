@@ -2,20 +2,20 @@ import React from 'react';
 
 export function MapLegend() {
   return (
-    <div className="map-legend-inline" aria-label="Keterangan status pre-survey peta">
-      <span title="Pre-survey: akses kursi roda dilaporkan tersedia">
+    <div className="map-legend-inline" aria-label="Keterangan kondisi di peta">
+      <span title="Akses dilaporkan bisa digunakan">
         <i className="dot utuh" aria-hidden="true" />
-        Akses Dilaporkan
+        Bisa Diakses
       </span>
-      <span title="Pre-survey: akses kursi roda terbatas dilaporkan">
+      <span title="Akses dilaporkan memiliki keterbatasan">
         <i className="dot warning" aria-hidden="true" />
         Akses Terbatas
       </span>
-      <span title="Pre-survey: akses kursi roda dilaporkan tidak tersedia">
+      <span title="Akses dilaporkan belum memadai">
         <i style={{ width: 8, height: 8, borderRadius: '50%', background: '#df3a43', display: 'inline-block' }} aria-hidden="true" />
-        Tidak Aksesibel
+        Belum Aksesibel
       </span>
-      <span title="Pre-survey: data aksesibilitas belum diketahui">
+      <span title="Informasi akses belum dilaporkan">
         <i className="dot unknown" aria-hidden="true" />
         Belum Diketahui
       </span>

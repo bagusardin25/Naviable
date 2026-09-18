@@ -172,7 +172,7 @@ function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import(
   const statusClass = meta.status.toLowerCase();
   const marker = document.createElement('div');
   marker.className = `marker marker-${statusClass} ${isSelectedClass}`;
-  marker.title = `${place.name} — Profil ${activeNeed}: ${meta.label}`;
+  marker.title = `${place.name} — Kebutuhan ${activeNeed}: ${meta.label}`;
   const symbol = document.createElement('span');
   symbol.setAttribute('aria-hidden', 'true');
   symbol.textContent = meta.symbol;
@@ -242,7 +242,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
                   <span className={`status-badge ${meta.badgeClass}`}>
                     {meta.symbol} {meta.label}
                   </span>
-                  <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} LAPORAN` : 'PRE-SURVEY'}</span>
+                  <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} laporan warga` : 'Data awal'}</span>
                 </div>
 
                 {place.address && (
@@ -254,7 +254,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
                 {place.features && place.features.length > 0 && (
                   <div>
                     <span style={{ fontSize: '10px', fontWeight: 700, color: '#334155' }}>
-                      Fitur tercatat:
+                      Catatan fasilitas:
                     </span>
                     <ul className="popup-features">
                       {place.features.slice(0, 3).map((feat, idx) => (
@@ -265,7 +265,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
                 )}
 
                 <div className="popup-disclaimer">
-                  ⚠️ Indikasi awal {place.sourceName || 'OpenStreetMap'}. Belum diverifikasi lapangan oleh tim Naviable.
+                  ℹ️ Data awal bersumber dari {place.sourceName || 'OpenStreetMap'}. Belum diverifikasi langsung oleh warga.
                 </div>
 
                 <button
@@ -274,7 +274,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
                   style={{ marginTop: '8px' }}
                   onClick={() => onSelectPlace(place)}
                 >
-                  Buka Detail Rantai Akses →
+                  Lihat kondisi akses →
                 </button>
               </div>
             </Popup>

@@ -65,11 +65,11 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
           type="button"
           className={currentScreen === 'dashboard' ? 'active' : ''}
           onClick={() => onSelectScreen('dashboard')}
-          aria-label="Civic Observatory Dashboard"
+          aria-label="Dashboard Data Keterbukaan Akses"
         >
           <Icon name="dashboard" />
-          <span className="nav-label-full">Observatorium</span>
-          <span className="nav-label-mobile">Observasi</span>
+          <span className="nav-label-full">Data Kota</span>
+          <span className="nav-label-mobile">Data</span>
         </button>
         <button
           id="nav-profile"
@@ -87,7 +87,7 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
         <div className="avatar">AR</div>
         <div>
           <strong>Ahmad Rizki</strong>
-          <span>Kontributor terverifikasi</span>
+          <span>Relawan Surabaya</span>
         </div>
       </div>
     </aside>

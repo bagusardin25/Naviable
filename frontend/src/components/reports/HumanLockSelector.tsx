@@ -20,10 +20,10 @@ export function HumanLockSelector({
 }: HumanLockSelectorProps) {
   return (
     <div className="manual-lock">
-      <span className="eyebrow">3. Kunci manusia (Wajib)</span>
-      <p>Pilih status akhir berdasarkan bukti foto dan pengalaman penggunaan nyata di lapangan.</p>
+      <span className="eyebrow">3. Tentukan kondisi akhir (Wajib)</span>
+      <p>Pilih kondisi yang paling sesuai dengan apa yang Anda lihat langsung di lokasi.</p>
 
-      <div className="status-choice" role="radiogroup" aria-label="Pilih status aksesibilitas">
+      <div className="status-choice" role="radiogroup" aria-label="Pilih kondisi akses">
         {STATUSES.map((s) => {
           const meta = STATUS_META[s];
           const isSelected = currentStatus === s;
