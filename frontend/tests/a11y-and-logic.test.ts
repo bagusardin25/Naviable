@@ -57,12 +57,13 @@ test('1. Dynamic Accessibility Evaluation: Profile-specific independence', () =>
   // For Mobilitas: should show pre-survey wheelchair reported
   const mobilitasResult = calculatePlaceProfileStatus(place, 'Mobilitas');
   assert.equal(mobilitasResult.status, 'UTUH');
-  assert.match(mobilitasResult.label, /Kursi Roda/i);
+  assert.match(mobilitasResult.label, /Dilaporkan bisa diakses/i);
+  assert.match(mobilitasResult.short, /kursi roda/i);
 
   // For Visual: tactile paving is NOT reported -> must NOT inherit wheelchair status!
   const visualResult = calculatePlaceProfileStatus(place, 'Visual');
   assert.equal(visualResult.status, 'BELUM_DIKETAHUI');
-  assert.match(visualResult.label, /Belum Ada Bukti Visual/i);
+  assert.match(visualResult.label, /Belum ada data visual/i);
 
   // For Auditori: signage is not reported -> must be BELUM_DIKETAHUI
   const auditoriResult = calculatePlaceProfileStatus(place, 'Auditori');
@@ -92,7 +93,8 @@ test('2. Dynamic Accessibility Evaluation: Contributor evidence overrides pre-su
 
   const mobilitasResult = calculatePlaceProfileStatus(place, 'Mobilitas');
   assert.equal(mobilitasResult.status, 'TERHALANG');
-  assert.match(mobilitasResult.label, /Bukti kontributor: Terhalang/i);
+  assert.equal(mobilitasResult.label, 'Terhalang');
+  assert.equal(mobilitasResult.isPreSurvey, false);
 });
 
 test('3. Evidence Freshness Boundaries (<=90d, 91-365d, >365d, presurvey)', () => {
@@ -107,19 +109,22 @@ test('3. Evidence Freshness Boundaries (<=90d, 91-365d, >365d, presurvey)', () =
   const freshDate = new Date(now - 15 * dayMs).toISOString();
   const fresh = getEvidenceFreshness(freshDate);
   assert.equal(fresh.level, 'fresh');
-  assert.equal(fresh.symbol, '🟢');
+  assert.match(fresh.label, /Terbaru/i);
+  assert.equal(fresh.symbol, '');
 
   // Aging: 120 days ago (~4 months)
   const agingDate = new Date(now - 120 * dayMs).toISOString();
   const aging = getEvidenceFreshness(agingDate);
   assert.equal(aging.level, 'aging');
-  assert.equal(aging.symbol, '🟡');
+  assert.match(aging.label, /Perlu diperbarui/i);
+  assert.equal(aging.symbol, '');
 
   // Stale: 400 days ago (>1 year)
   const staleDate = new Date(now - 400 * dayMs).toISOString();
   const stale = getEvidenceFreshness(staleDate);
   assert.equal(stale.level, 'stale');
-  assert.equal(stale.symbol, '⚪');
+  assert.match(stale.label, /Perlu survei ulang/i);
+  assert.equal(stale.symbol, '');
 });
 
 test('4. Conflict / Condition Change Detection', () => {
