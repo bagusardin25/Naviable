@@ -456,7 +456,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
       label: 'Data awal publik',
       badgeClass: 'freshness-presurvey',
       daysAgo: null,
-      symbol: '📋',
+      symbol: '',
     };
   }
   const date = new Date(updatedAt);
@@ -466,7 +466,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
       label: 'Data awal publik',
       badgeClass: 'freshness-presurvey',
       daysAgo: null,
-      symbol: '📋',
+      symbol: '',
     };
   }
   const diffDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)));
@@ -476,7 +476,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
       label: `Terbaru (≤ 90 hr)`,
       badgeClass: 'freshness-fresh',
       daysAgo: diffDays,
-      symbol: '🟢',
+      symbol: '',
     };
   }
   if (diffDays <= 365) {
@@ -485,7 +485,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
       label: `Perlu diperbarui (${Math.max(1, Math.round(diffDays / 30))} bln)`,
       badgeClass: 'freshness-aging',
       daysAgo: diffDays,
-      symbol: '🟡',
+      symbol: '',
     };
   }
   return {
@@ -493,7 +493,7 @@ export function getEvidenceFreshness(updatedAt?: string | null): EvidenceFreshne
     label: `Perlu survei ulang (> 1 thn)`,
     badgeClass: 'freshness-stale',
     daysAgo: diffDays,
-    symbol: '⚪',
+    symbol: '',
   };
 }
 

@@ -101,9 +101,10 @@ export function JourneyPlanner({
         <div>
           <label
             htmlFor="journey-origin-select"
-            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}
+            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
-            📍 Titik Awal
+            <Icon name="location" size={13} />
+            <span>Titik Awal</span>
           </label>
           <select
             id="journey-origin-select"
@@ -125,9 +126,10 @@ export function JourneyPlanner({
         <div>
           <label
             htmlFor="journey-destination-select"
-            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}
+            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
-            🏁 Titik Tujuan
+            <Icon name="flag" size={13} />
+            <span>Titik Tujuan</span>
           </label>
           <select
             id="journey-destination-select"
@@ -149,9 +151,10 @@ export function JourneyPlanner({
         <div>
           <label
             htmlFor="journey-profile-select"
-            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}
+            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
-            ♿ Kebutuhan Akses
+            <Icon name="access" size={13} />
+            <span>Kebutuhan Akses</span>
           </label>
           <select
             id="journey-profile-select"
@@ -194,10 +197,18 @@ export function JourneyPlanner({
               marginBottom: '12px',
             }}
           >
-            <strong style={{ fontSize: '12px', color: journey.hasBottlenecks ? '#991b1b' : '#166534', display: 'block' }}>
-              {journey.hasBottlenecks
-                ? `Perhatian: Ditemukan ${journey.bottleneckCount} titik yang dilaporkan bermasalah di rute ini.`
-                : 'Semua titik yang tercatat di rute ini dilaporkan bisa digunakan.'}
+            <strong style={{ fontSize: '12px', color: journey.hasBottlenecks ? '#991b1b' : '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {journey.hasBottlenecks ? (
+                <>
+                  <Icon name="warning" size={15} />
+                  <span>Perhatian: Ditemukan {journey.bottleneckCount} titik yang dilaporkan bermasalah di rute ini.</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="check-circle" size={15} />
+                  <span>Semua titik yang tercatat di rute ini dilaporkan bisa digunakan.</span>
+                </>
+              )}
             </strong>
             <span style={{ fontSize: '11px', color: journey.hasBottlenecks ? '#b91c1c' : '#15803d', display: 'block', marginTop: '2px' }}>
               Dicek untuk kebutuhan: <strong>{profile}</strong>.
@@ -211,6 +222,7 @@ export function JourneyPlanner({
               const isDestination = idx === journey.points.length - 1;
               const stepLabel = isOrigin ? '1. Titik Awal' : isDestination ? `${journey.points.length}. Titik Tujuan` : `${idx + 1}. Titik Transit`;
               const statusMeta = STATUS_META[pt.overall] ?? STATUS_META.BELUM_DIKETAHUI;
+              const statusIcon = pt.overall === 'UTUH' ? 'check-circle' : pt.overall === 'TERHALANG' ? 'warning' : pt.overall === 'TIDAK_STANDAR' ? 'alert-circle' : pt.overall === 'TIDAK_ADA' ? 'x-circle' : 'help-circle';
 
               return (
                 <li
@@ -237,9 +249,10 @@ export function JourneyPlanner({
                     </div>
                     <span
                       className={`status-badge status-${pt.overall.toLowerCase()}`}
-                      style={{ fontSize: '10px', whiteSpace: 'nowrap' }}
+                      style={{ fontSize: '10px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     >
-                      {statusMeta.symbol} {statusMeta.label}
+                      <Icon name={statusIcon} size={12} />
+                      <span>{statusMeta.label}</span>
                     </span>
                   </div>
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { AccessibilityStatus, STATUS_META } from '@/types';
+import { Icon } from '@/components/ui/Icon';
 
 type HumanLockSelectorProps = {
   currentStatus: AccessibilityStatus;
@@ -14,6 +15,14 @@ const STATUSES: AccessibilityStatus[] = [
   'BELUM_DIKETAHUI',
 ];
 
+const STATUS_ICONS: Record<AccessibilityStatus, string> = {
+  UTUH: 'check-circle',
+  TERHALANG: 'warning',
+  TIDAK_STANDAR: 'alert-circle',
+  TIDAK_ADA: 'x-circle',
+  BELUM_DIKETAHUI: 'help-circle',
+};
+
 export function HumanLockSelector({
   currentStatus,
   onSelectStatus,
@@ -27,6 +36,7 @@ export function HumanLockSelector({
         {STATUSES.map((s) => {
           const meta = STATUS_META[s];
           const isSelected = currentStatus === s;
+          const icon = STATUS_ICONS[s];
 
           return (
             <button
@@ -38,7 +48,7 @@ export function HumanLockSelector({
               className={isSelected ? `selected choice-${s.toLowerCase()}` : ''}
               onClick={() => onSelectStatus(s)}
             >
-              <span>{meta.symbol}</span>
+              <Icon name={icon} size={14} />
               <span>{meta.label}</span>
             </button>
           );

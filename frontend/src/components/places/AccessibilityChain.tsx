@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { ElementItem } from '@/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Icon } from '@/components/ui/Icon';
 
 type AccessibilityChainProps = {
   elements: ElementItem[];
@@ -26,7 +27,12 @@ export function AccessibilityChain({ elements }: AccessibilityChainProps) {
           </div>
           <p className="element-note">{e.note}</p>
           {e.photoUrl && <a href={e.photoUrl} target="_blank" rel="noopener noreferrer"><Image src={e.photoUrl} alt={`Bukti foto ${e.label}`} width={240} height={135} unoptimized style={{ width: '100%', objectFit: 'contain' }} /></a>}
-          {e.lockedBy === 'kontributor' && <small style={{ color: '#166534', fontSize: '11px', marginTop: '4px' }}>✓ Diverifikasi warga</small>}
+          {e.lockedBy === 'kontributor' && (
+            <small style={{ color: '#166534', fontSize: '11px', marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Icon name="check" size={11} />
+              <span>Diverifikasi warga</span>
+            </small>
+          )}
         </article>
       ))}
     </div>

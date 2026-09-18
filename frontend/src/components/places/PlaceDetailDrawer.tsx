@@ -100,6 +100,26 @@ export function PlaceDetailDrawer({
   const conditionChanges = detectConditionChanges(historySettled ? history.reports : []);
   const unknownElements = place.elements.filter((element) => element.status === 'BELUM_DIKETAHUI').length;
 
+  const statusIcon =
+    meta.status === 'UTUH'
+      ? 'check-circle'
+      : meta.status === 'TERHALANG'
+      ? 'warning'
+      : meta.status === 'TIDAK_STANDAR'
+      ? 'alert-circle'
+      : meta.status === 'TIDAK_ADA'
+      ? 'x-circle'
+      : 'help-circle';
+
+  const freshnessIcon =
+    freshness.level === 'fresh'
+      ? 'check-circle'
+      : freshness.level === 'aging'
+      ? 'clock'
+      : freshness.level === 'stale'
+      ? 'history'
+      : 'info';
+
   return (
     <section
       ref={drawerRef}
@@ -121,11 +141,13 @@ export function PlaceDetailDrawer({
       <div className="detail-title">
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
           <span className="eyebrow">Profil {activeNeed}</span>
-          <span className={`status-badge ${meta.badgeClass}`}>
-            <strong>{meta.symbol}</strong> {meta.label}
+          <span className={`status-badge ${meta.badgeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Icon name={statusIcon} size={11} />
+            <span>{meta.label}</span>
           </span>
-          <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`}>
-            {freshness.symbol} {freshness.label}
+          <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Icon name={freshnessIcon} size={11} />
+            <span>{freshness.label}</span>
           </span>
           {place.needsGeocoding ? (
             <span className="badge-needs-geocoding">Belum ada titik peta</span>
@@ -156,7 +178,7 @@ export function PlaceDetailDrawer({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, marginBottom: '4px' }}>
-            <span>🔄</span>
+            <Icon name="history" size={14} />
             <span>Riwayat pembaruan kondisi:</span>
           </div>
           {conditionChanges.map((change, idx) => (
@@ -165,7 +187,7 @@ export function PlaceDetailDrawer({
               <span className="badge-status-change" style={{ background: '#fee2e2', color: '#991b1b', padding: '1px 6px', borderRadius: '4px' }}>
                 {STATUS_META[change.previousStatus].label}
               </span>{' '}
-              ➔{' '}
+              →{' '}
               <span className="badge-status-change" style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '4px' }}>
                 {STATUS_META[change.currentStatus].label}
               </span>{' '}
@@ -176,14 +198,19 @@ export function PlaceDetailDrawer({
       )}
 
       {place.needsGeocoding && (
-        <div className="geocoding-notice-box" role="alert">
-          <strong>⚠️ Belum ada titik peta:</strong> Tempat ini tercatat di data publik, tetapi belum memiliki titik koordinat presisi. Data koordinat akan dilengkapi sebelum ditampilkan pada peta.
+        <div className="geocoding-notice-box" role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+          <Icon name="warning" size={16} className="flex-shrink-0" style={{ marginTop: '2px' }} />
+          <div>
+            <strong>Belum ada titik peta:</strong> Tempat ini tercatat di data publik, tetapi belum memiliki titik koordinat presisi. Data koordinat akan dilengkapi sebelum ditampilkan pada peta.
+          </div>
         </div>
       )}
 
       {place.reportCount ? (
         <div className="presurvey-notice-box" role="note">
-          <span style={{ fontSize: '16px' }}>📷</span>
+          <span style={{ color: '#166534', flexShrink: 0, marginTop: '2px' }}>
+            <Icon name="camera" size={18} />
+          </span>
           <div>
             <strong>Laporan kondisi dari warga</strong>
             <div style={{ fontSize: '11.5px', marginTop: '3px', color: '#166534', lineHeight: 1.5 }}>
@@ -195,7 +222,9 @@ export function PlaceDetailDrawer({
         </div>
       ) : (
         <div className="presurvey-notice-box" role="note">
-          <span style={{ fontSize: '16px' }}>ℹ️</span>
+          <span style={{ color: '#166534', flexShrink: 0, marginTop: '2px' }}>
+            <Icon name="info" size={18} />
+          </span>
           <div>
             <strong>Belum diverifikasi</strong>
             <div style={{ fontSize: '11.5px', marginTop: '3px', color: '#166534', lineHeight: 1.5 }}>

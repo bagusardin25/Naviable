@@ -149,7 +149,7 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>💾</span>
+            <Icon name="save" size={15} />
             <span>Draf laporan sebelumnya tersimpan otomatis di perangkat ini.</span>
           </div>
           <button
@@ -195,7 +195,10 @@ export function ReportForm({ places, defaultPlaceName, onSubmitReport }: ReportF
               <Icon name="camera" size={26} />
               {photo ? (
                 <div className="upload-preview-badge">
-                  <span>✓ Foto tersimpan (klik untuk ganti)</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Icon name="check" size={13} />
+                    <span>Foto tersimpan (klik untuk ganti)</span>
+                  </span>
                 </div>
               ) : (
                 <>

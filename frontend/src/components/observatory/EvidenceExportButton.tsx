@@ -209,9 +209,15 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                 fontSize: '11px',
                 color: '#475569',
                 lineHeight: 1.4,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '6px',
               }}
             >
-              🛡️ <strong>Keamanan Data:</strong> Berkas CSV ini diformat agar aman dibuka di berbagai aplikasi spreadsheet tanpa risiko kode otomatis berbahaya.
+              <Icon name="shield" size={14} className="flex-shrink-0" style={{ marginTop: '1px' }} />
+              <div>
+                <strong>Keamanan Data:</strong> Berkas CSV ini diformat agar aman dibuka di berbagai aplikasi spreadsheet tanpa risiko kode otomatis berbahaya.
+              </div>
             </div>
 
             {error && (

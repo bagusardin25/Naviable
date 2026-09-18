@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Place, placeStatusMeta } from '@/types';
+import { Icon } from '@/components/ui/Icon';
 
 type LeafletMapProps = {
   places: Place[];
@@ -141,7 +142,11 @@ function UserLocationButton() {
               boxShadow: '0 3px 10px rgba(0,0,0,0.15)',
             }}
           >
-            {locating ? '⏳' : '🎯'}
+            {locating ? (
+              <Icon name="spinner" size={18} className="animate-spin" />
+            ) : (
+              <Icon name="target" size={18} />
+            )}
           </button>
         </div>
       </div>
@@ -264,8 +269,9 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
                   </div>
                 )}
 
-                <div className="popup-disclaimer">
-                  ℹ️ Data awal bersumber dari {place.sourceName || 'OpenStreetMap'}. Belum diverifikasi langsung oleh warga.
+                <div className="popup-disclaimer" style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                  <Icon name="info" size={14} className="flex-shrink-0" style={{ marginTop: '1px' }} />
+                  <span>Data awal bersumber dari {place.sourceName || 'OpenStreetMap'}. Belum diverifikasi langsung oleh warga.</span>
                 </div>
 
                 <button

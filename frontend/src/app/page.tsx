@@ -26,6 +26,7 @@ import { DataQualityCard } from '@/components/observatory/DataQualityCard';
 import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
 import { AccessibilityModal } from '@/components/accessibility/AccessibilityModal';
+import { Icon } from '@/components/ui/Icon';
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('map');
@@ -188,7 +189,8 @@ export default function Home() {
                 className={`mobile-view-btn ${mobileTab === 'map' ? 'active' : ''}`}
                 onClick={() => setMobileTab('map')}
               >
-                🗺️ Peta
+                <Icon name="map" size={15} />
+                <span>Peta</span>
               </button>
               <button
                 type="button"
@@ -197,7 +199,8 @@ export default function Home() {
                 className={`mobile-view-btn ${mobileTab === 'list' ? 'active' : ''}`}
                 onClick={() => setMobileTab('list')}
               >
-                📋 Daftar ({filteredPlaces.length})
+                <Icon name="list" size={15} />
+                <span>Daftar ({filteredPlaces.length})</span>
               </button>
             </div>
 
@@ -224,7 +227,8 @@ export default function Home() {
                       onClick={() => setShowJourney(!showJourney)}
                       title="Buka petunjuk rute akses"
                     >
-                      🧭 Petunjuk Rute
+                      <Icon name="compass" size={14} />
+                      <span>Petunjuk Rute</span>
                     </button>
 
                     <select
@@ -254,7 +258,8 @@ export default function Home() {
                         }}
                         title="Reset semua filter"
                       >
-                        ✕ Reset Filter
+                        <Icon name="close" size={13} />
+                        <span>Reset Filter</span>
                       </button>
                     )}
                   </div>
@@ -286,35 +291,40 @@ export default function Home() {
                     className={`status-pill-btn ${statusFilter === 'UTUH' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('UTUH')}
                   >
-                    ✓ Bisa Digunakan ({statusCounts.UTUH})
+                    <Icon name="check-circle" size={13} />
+                    <span>Bisa Digunakan ({statusCounts.UTUH})</span>
                   </button>
                   <button
                     type="button"
                     className={`status-pill-btn ${statusFilter === 'TERHALANG' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TERHALANG')}
                   >
-                    ! Terhalang ({statusCounts.TERHALANG})
+                    <Icon name="warning" size={13} />
+                    <span>Terhalang ({statusCounts.TERHALANG})</span>
                   </button>
                   <button
                     type="button"
                     className={`status-pill-btn ${statusFilter === 'TIDAK_STANDAR' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_STANDAR')}
                   >
-                    • Perlu Perhatian ({statusCounts.TIDAK_STANDAR})
+                    <Icon name="alert-circle" size={13} />
+                    <span>Perlu Perhatian ({statusCounts.TIDAK_STANDAR})</span>
                   </button>
                   <button
                     type="button"
                     className={`status-pill-btn ${statusFilter === 'TIDAK_ADA' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_ADA')}
                   >
-                    × Tidak Ada ({statusCounts.TIDAK_ADA})
+                    <Icon name="x-circle" size={13} />
+                    <span>Tidak Ada ({statusCounts.TIDAK_ADA})</span>
                   </button>
                   <button
                     type="button"
                     className={`status-pill-btn ${statusFilter === 'BELUM_DIKETAHUI' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('BELUM_DIKETAHUI')}
                   >
-                    ? Belum Diketahui ({statusCounts.BELUM_DIKETAHUI})
+                    <Icon name="help-circle" size={13} />
+                    <span>Belum Diketahui ({statusCounts.BELUM_DIKETAHUI})</span>
                   </button>
                 </div>
 

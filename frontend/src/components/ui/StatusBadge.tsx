@@ -1,5 +1,6 @@
 import React from 'react';
 import { AccessibilityStatus, STATUS_META } from '@/types';
+import { Icon } from '@/components/ui/Icon';
 
 type StatusBadgeProps = {
   status: AccessibilityStatus;
@@ -18,12 +19,24 @@ export function StatusBadge({ status, size = 'sm', className = '' }: StatusBadge
     BELUM_DIKETAHUI: 'status-belum_diketahui',
   };
 
+  const statusIcon =
+    status === 'UTUH'
+      ? 'check-circle'
+      : status === 'TERHALANG'
+      ? 'warning'
+      : status === 'TIDAK_STANDAR'
+      ? 'alert-circle'
+      : status === 'TIDAK_ADA'
+      ? 'x-circle'
+      : 'help-circle';
+
   return (
     <span
       className={`status-badge ${statusClassMap[status]} ${size === 'md' ? 'status-badge-md' : ''} ${className}`}
       title={`${meta.label}: ${meta.short}`}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
     >
-      <strong aria-hidden="true">{meta.symbol}</strong>
+      <Icon name={statusIcon} size={size === 'md' ? 13 : 11} />
       <span>{meta.label}</span>
     </span>
   );

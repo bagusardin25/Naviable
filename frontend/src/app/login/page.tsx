@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
 import { AccessibilityIcon } from "./login-icons";
+import { Icon } from "@/components/ui/Icon";
 import styles from "./login.module.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-login-heading" });
@@ -38,9 +39,9 @@ export default function LoginPage() {
           />
 
           <ul className={styles.badges} aria-label="Fitur aksesibilitas">
-            <li><span aria-hidden="true">♿</span> Ramah Kursi Roda</li>
-            <li><span aria-hidden="true">🔊</span> Dukungan Audio</li>
-            <li><span aria-hidden="true">👁️</span> Kontras Tinggi</li>
+            <li><Icon name="access" size={16} /> <span>Ramah Kursi Roda</span></li>
+            <li><Icon name="volume" size={16} /> <span>Dukungan Audio</span></li>
+            <li><Icon name="eye" size={16} /> <span>Kontras Tinggi</span></li>
           </ul>
         </div>
       </section>

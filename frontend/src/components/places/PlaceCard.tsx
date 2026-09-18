@@ -1,5 +1,6 @@
 import React from 'react';
 import { Place, STATUS_META, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
+import { Icon } from '@/components/ui/Icon';
 
 type PlaceCardProps = {
   place: Place;
@@ -12,6 +13,26 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
   const meta = placeStatusMeta(place, activeNeed);
   const freshness = getEvidenceFreshness(place.updatedAt);
   const statusDescription = `${meta.label}, kondisi: ${freshness.label}`;
+
+  const statusIcon =
+    meta.status === 'UTUH'
+      ? 'check-circle'
+      : meta.status === 'TERHALANG'
+      ? 'warning'
+      : meta.status === 'TIDAK_STANDAR'
+      ? 'alert-circle'
+      : meta.status === 'TIDAK_ADA'
+      ? 'x-circle'
+      : 'help-circle';
+
+  const freshnessIcon =
+    freshness.level === 'fresh'
+      ? 'check-circle'
+      : freshness.level === 'aging'
+      ? 'clock'
+      : freshness.level === 'stale'
+      ? 'history'
+      : 'info';
 
   return (
     <button
@@ -29,12 +50,14 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
           </span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
-          <span className={`status-badge ${meta.badgeClass}`}>
-            <strong>{meta.symbol}</strong> {meta.label}
+          <span className={`status-badge ${meta.badgeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Icon name={statusIcon} size={11} />
+            <span>{meta.label}</span>
           </span>
           <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-            <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`}>
-              {freshness.symbol} {freshness.label}
+            <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Icon name={freshnessIcon} size={11} />
+              <span>{freshness.label}</span>
             </span>
             {place.needsGeocoding ? (
               <span className="badge-needs-geocoding" title="Belum memiliki koordinat peta presisi">
@@ -52,8 +75,8 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
       <p>{place.chainSummary}</p>
 
       {place.bottlenecks && place.bottlenecks.length > 0 && (
-        <div style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', padding: '4px 9px', borderRadius: '6px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span>⚠️</span>
+        <div style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', padding: '4px 9px', borderRadius: '6px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Icon name="warning" size={14} className="flex-shrink-0" />
           <span>Perhatian: {place.bottlenecks.length} titik akses perlu diperhatikan</span>
         </div>
       )}
