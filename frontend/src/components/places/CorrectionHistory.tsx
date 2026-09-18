@@ -78,7 +78,7 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
 
   return (
     <section aria-label={`Riwayat pembaruan, ${total} laporan`}>
-      <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '16px 0 8px', color: '#1e293b' }}>
+      <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '16px 0 8px', color: 'var(--ink)' }}>
         Riwayat pembaruan warga ({total})
       </h3>
       <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '10px' }}>
@@ -87,23 +87,23 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
           return (
             <li
               key={report.id}
-              style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 12px', background: '#f8fafc' }}
+              style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 12px', background: 'var(--surface-secondary)' }}
             >
-              <div style={{ fontSize: '12px', color: '#475569', marginBottom: '6px' }}>
-                <strong style={{ color: '#1e293b', fontWeight: 600 }}>{report.reporterName}</strong> · {formatDate(report.createdAt)}
+              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
+                <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>{report.reporterName}</strong> · {formatDate(report.createdAt)}
               </div>
 
               <ul style={{ listStyle: 'none', margin: '0 0 8px', padding: 0, display: 'grid', gap: '4px' }}>
                 {report.elements.map((evidence) => {
                   const meta = STATUS_META[evidence.status];
                   return (
-                    <li key={evidence.element} style={{ fontSize: '13px', color: '#1e293b' }}>
-                      <span aria-hidden="true" style={{ color: meta?.color ?? '#7d8798', fontWeight: 700 }}>
+                    <li key={evidence.element} style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                      <span aria-hidden="true" style={{ color: meta?.color ?? 'var(--muted)', fontWeight: 700 }}>
                         {meta?.symbol ?? '?'}
                       </span>{' '}
                       <strong>{elementLabel(evidence.element)}</strong>:{' '}
                       <span>{statusText(evidence.status)}</span>
-                      {evidence.note ? <span style={{ color: '#576479' }}> — {evidence.note}</span> : null}
+                      {evidence.note ? <span style={{ color: 'var(--muted)' }}> — {evidence.note}</span> : null}
                     </li>
                   );
                 })}
@@ -113,7 +113,7 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
                 href={mediaUrl(report.photoUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#6d45cc' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--purple)' }}
               >
                 <Image
                   src={mediaUrl(report.photoUrl)}
@@ -121,7 +121,7 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
                   width={72}
                   height={54}
                   unoptimized
-                  style={{ objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{ objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
                 />
                 Buka foto bukti
               </a>
@@ -130,7 +130,7 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
         })}
       </ol>
       {total > shown && (
-        <p style={{ fontSize: '12px', color: '#576479', marginTop: '6px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '6px' }}>
           Menampilkan {shown} laporan terbaru dari total {total}.
         </p>
       )}

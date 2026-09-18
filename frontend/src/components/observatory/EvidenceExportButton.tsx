@@ -87,7 +87,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                 <h2 id="csv-export-title" style={{ fontSize: '18px', margin: 0 }}>
                   Unduh Data Keterbukaan Akses
                 </h2>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                <p style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>
                   Saring data sebelum mengunduh agar sesuai dengan kebutuhan advokasi atau penelitian Anda.
                 </p>
               </div>
@@ -101,9 +101,9 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '14px 0' }}>
+            <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label htmlFor="csv-filter-district" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-district" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Kecamatan
                 </label>
                 <select
@@ -121,7 +121,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-category" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-category" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Kategori Fasilitas
                 </label>
                 <select
@@ -139,7 +139,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-profile" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-profile" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Kebutuhan Akses
                 </label>
                 <select
@@ -158,7 +158,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-element" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-element" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Bagian Fasilitas
                 </label>
                 <select
@@ -181,8 +181,8 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-status" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Kondisi Bagian
+                <label htmlFor="csv-filter-status" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
+                  Status Kondisi
                 </label>
                 <select
                   id="csv-filter-status"
@@ -191,7 +191,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option value="all">Semua Kondisi</option>
+                  <option value="all">Semua Status</option>
                   <option value="UTUH">Bisa Digunakan (Dapat Dipakai Mandiri)</option>
                   <option value="TERHALANG">Terhalang (Ada tapi Terhalang)</option>
                   <option value="TIDAK_STANDAR">Perlu Perhatian (Kurang Standar)</option>
@@ -199,24 +199,25 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                   <option value="BELUM_DIKETAHUI">Belum Diketahui (Belum Disurvei)</option>
                 </select>
               </div>
-            </div>
 
-            <div
-              style={{
-                background: '#f8fafc',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                color: '#475569',
-                lineHeight: 1.4,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '6px',
-              }}
-            >
-              <Icon name="shield" size={14} className="flex-shrink-0" style={{ marginTop: '1px' }} />
-              <div>
-                <strong>Keamanan Data:</strong> Berkas CSV ini diformat agar aman dibuka di berbagai aplikasi spreadsheet tanpa risiko kode otomatis berbahaya.
+              <div
+                style={{
+                  background: 'var(--surface-secondary)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.4,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '6px',
+                }}
+              >
+                <Icon name="shield" size={14} className="flex-shrink-0" style={{ marginTop: '1px' }} />
+                <div>
+                  <strong>Keamanan Data:</strong> Berkas CSV ini diformat agar aman dibuka di berbagai aplikasi spreadsheet tanpa risiko kode otomatis berbahaya.
+                </div>
               </div>
             </div>
 

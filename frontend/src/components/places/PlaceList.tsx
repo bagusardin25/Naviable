@@ -20,7 +20,7 @@ export function PlaceList({ places, selectedPlace, onSelectPlace, className = ''
         <div>
           <span className="eyebrow">Data tempat Surabaya</span>
           <h2>Daftar Tempat</h2>
-          <div style={{ fontSize: '12px', color: '#576479', marginTop: '2px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
             <span>{geocodedCount} titik di peta</span>
             {unlocatedCount > 0 && <span> · {unlocatedCount} belum ada titik peta</span>}
           </div>

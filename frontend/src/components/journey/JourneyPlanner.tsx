@@ -82,12 +82,12 @@ export function JourneyPlanner({
         className="journey-disclaimer-card"
         role="note"
         style={{
-          background: '#fffbeb',
-          border: '1px solid #fde68a',
+          background: 'var(--notice-warning-bg)',
+          border: '1px solid var(--notice-warning-border)',
           padding: '10px 12px',
           borderRadius: '8px',
           fontSize: '11px',
-          color: '#92400e',
+          color: 'var(--notice-warning-ink)',
           margin: '10px 0',
           lineHeight: 1.45,
         }}
@@ -101,7 +101,7 @@ export function JourneyPlanner({
         <div>
           <label
             htmlFor="journey-origin-select"
-            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
+            style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
             <Icon name="location" size={13} />
             <span>Titik Awal</span>
@@ -112,9 +112,8 @@ export function JourneyPlanner({
             style={{ width: '100%' }}
             value={originId}
             onChange={(e) => setOriginId(e.target.value)}
-            required
           >
-            <option value="" disabled>Pilih titik awal...</option>
+            <option value="" disabled>Pilih lokasi keberangkatan…</option>
             {geocodedPlaces.map((p) => (
               <option key={p.id} value={String(p.id)}>
                 {p.name} ({p.district})
@@ -125,21 +124,20 @@ export function JourneyPlanner({
 
         <div>
           <label
-            htmlFor="journey-destination-select"
-            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
+            htmlFor="journey-dest-select"
+            style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
-            <Icon name="flag" size={13} />
+            <Icon name="compass" size={13} />
             <span>Titik Tujuan</span>
           </label>
           <select
-            id="journey-destination-select"
+            id="journey-dest-select"
             className="filter-select"
             style={{ width: '100%' }}
             value={destinationId}
             onChange={(e) => setDestinationId(e.target.value)}
-            required
           >
-            <option value="" disabled>Pilih titik tujuan...</option>
+            <option value="" disabled>Pilih tempat tujuan…</option>
             {geocodedPlaces.map((p) => (
               <option key={p.id} value={String(p.id)}>
                 {p.name} ({p.district})
@@ -151,10 +149,9 @@ export function JourneyPlanner({
         <div>
           <label
             htmlFor="journey-profile-select"
-            style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
+            style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}
           >
-            <Icon name="access" size={13} />
-            <span>Kebutuhan Akses</span>
+            Profil Aksesibilitas
           </label>
           <select
             id="journey-profile-select"
@@ -163,10 +160,10 @@ export function JourneyPlanner({
             value={profile}
             onChange={(e) => setProfile(e.target.value as AccessibilityNeed)}
           >
-            <option value="Mobilitas">Kursi roda / mobilitas fisik</option>
-            <option value="Visual">Tunanetra (jalur pemandu & tactile)</option>
-            <option value="Auditori">Tunarungu / komunikasi visual</option>
-            <option value="Sensorik">Sensori & ketenangan</option>
+            <option value="Mobilitas">Kursi Roda / Motorik</option>
+            <option value="Visual">Tunanetra / Gangguan Penglihatan</option>
+            <option value="Auditori">Tunarungu / Gangguan Pendengaran</option>
+            <option value="Sensorik">Sensitivitas Sensorik</option>
           </select>
         </div>
 
@@ -180,7 +177,7 @@ export function JourneyPlanner({
         </button>
 
         {error && (
-          <div role="alert" style={{ color: '#dc2626', fontSize: '11px', background: '#fef2f2', padding: '8px 10px', borderRadius: '6px' }}>
+          <div role="alert" style={{ color: 'var(--notice-error-ink)', fontSize: '11px', background: 'var(--notice-error-bg)', border: '1px solid var(--notice-error-border)', padding: '8px 10px', borderRadius: '6px' }}>
             {error}
           </div>
         )}
@@ -192,12 +189,12 @@ export function JourneyPlanner({
             style={{
               padding: '10px 12px',
               borderRadius: '8px',
-              background: journey.hasBottlenecks ? '#fef2f2' : '#f0fdf4',
-              border: `1px solid ${journey.hasBottlenecks ? '#fca5a5' : '#bbf7d0'}`,
+              background: journey.hasBottlenecks ? 'var(--notice-error-bg)' : 'var(--notice-success-bg)',
+              border: `1px solid ${journey.hasBottlenecks ? 'var(--notice-error-border)' : 'var(--notice-success-border)'}`,
               marginBottom: '12px',
             }}
           >
-            <strong style={{ fontSize: '12px', color: journey.hasBottlenecks ? '#991b1b' : '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <strong style={{ fontSize: '12px', color: journey.hasBottlenecks ? 'var(--notice-error-ink)' : 'var(--notice-success-ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               {journey.hasBottlenecks ? (
                 <>
                   <Icon name="warning" size={15} />
@@ -210,7 +207,7 @@ export function JourneyPlanner({
                 </>
               )}
             </strong>
-            <span style={{ fontSize: '11px', color: journey.hasBottlenecks ? '#b91c1c' : '#15803d', display: 'block', marginTop: '2px' }}>
+            <span style={{ fontSize: '11px', color: journey.hasBottlenecks ? 'var(--notice-error-ink)' : 'var(--notice-success-ink)', display: 'block', marginTop: '2px', opacity: 0.9 }}>
               Dicek untuk kebutuhan: <strong>{profile}</strong>.
             </span>
           </div>
@@ -228,22 +225,22 @@ export function JourneyPlanner({
                 <li
                   key={pt.id}
                   style={{
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px',
                     padding: '10px',
                     marginBottom: '8px',
-                    background: '#ffffff',
+                    background: 'var(--surface-secondary)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                     <div>
-                      <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#6d45cc' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--purple)' }}>
                         {stepLabel}
                       </span>
-                      <strong style={{ fontSize: '13px', display: 'block', color: '#1e293b' }}>
+                      <strong style={{ fontSize: '13px', display: 'block', color: 'var(--ink)' }}>
                         {pt.name}
                       </strong>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
                         {pt.category} · {pt.kecamatan ?? 'Surabaya'}
                       </span>
                     </div>
@@ -257,13 +254,13 @@ export function JourneyPlanner({
                   </div>
 
                   {pt.bottlenecks && pt.bottlenecks.length > 0 && (
-                    <div style={{ margin: '6px 0', fontSize: '11px', color: '#b91c1c', background: '#fff1f2', padding: '4px 8px', borderRadius: '4px' }}>
+                    <div style={{ margin: '6px 0', fontSize: '11px', color: 'var(--notice-error-ink)', background: 'var(--notice-error-bg)', border: '1px solid var(--notice-error-border)', padding: '4px 8px', borderRadius: '4px' }}>
                       <strong>Akses bermasalah:</strong>{' '}
                       {pt.bottlenecks.map(getElementLabel).join(', ')}
                     </div>
                   )}
 
-                  <p style={{ margin: '6px 0 8px', fontSize: '11px', color: '#475569', lineHeight: 1.4 }}>
+                  <p style={{ margin: '6px 0 8px', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     {pt.summary}
                   </p>
 

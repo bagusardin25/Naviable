@@ -42,50 +42,47 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
       onClick={onSelect}
       aria-label={`Pilih ${place.name}: ${statusDescription}`}
     >
-      <div className="place-title-row">
-        <div>
-          <strong>{place.name}</strong>
-          <span>
-            {place.category} · {place.district} · {place.distance}
-          </span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
-          <span className={`status-badge ${meta.badgeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <Icon name={statusIcon} size={11} />
-            <span>{meta.label}</span>
-          </span>
-          <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-            <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Icon name={freshnessIcon} size={11} />
-              <span>{freshness.label}</span>
-            </span>
-            {place.needsGeocoding ? (
-              <span className="badge-needs-geocoding" title="Belum memiliki koordinat peta presisi">
-                Belum ada titik peta
-              </span>
-            ) : (
-              <span className="badge-presurvey">
-                {place.reportCount ? `${place.reportCount} laporan warga` : 'Belum diverifikasi'}
-              </span>
-            )}
-          </div>
-        </div>
+      <div className="place-card-header">
+        <strong className="place-card-title">{place.name}</strong>
+        <span className="place-card-meta">
+          {place.category} · {place.district} · {place.distance}
+        </span>
       </div>
 
-      <p>{place.chainSummary}</p>
+      <div className="place-card-badges">
+        <span className={`status-badge ${meta.badgeClass}`}>
+          <Icon name={statusIcon} size={11} />
+          <span>{meta.label}</span>
+        </span>
+        <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`}>
+          <Icon name={freshnessIcon} size={11} />
+          <span>{freshness.label}</span>
+        </span>
+        {place.needsGeocoding ? (
+          <span className="badge-needs-geocoding" title="Belum memiliki koordinat peta presisi">
+            Belum ada titik peta
+          </span>
+        ) : (
+          <span className="badge-presurvey">
+            {place.reportCount ? `${place.reportCount} laporan warga` : 'Belum diverifikasi'}
+          </span>
+        )}
+      </div>
+
+      <p className="place-card-summary">{place.chainSummary}</p>
 
       {place.bottlenecks && place.bottlenecks.length > 0 && (
-        <div style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', padding: '4px 9px', borderRadius: '6px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="place-bottleneck-warning">
           <Icon name="warning" size={14} className="flex-shrink-0" />
           <span>Perhatian: {place.bottlenecks.length} titik akses perlu diperhatikan</span>
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+      <div className="place-card-footer-meta">
         <span className="badge-evidence" title={`Sumber: ${place.evidenceLevelLabel}`}>
           {place.sourceName || 'Data publik'}
         </span>
-        <span style={{ fontSize: '11px', color: '#576479' }}>
+        <span className="place-features-count">
           {place.features && place.features.length > 0 ? `${place.features.length} fasilitas tercatat` : '0 fasilitas awal'}
         </span>
       </div>

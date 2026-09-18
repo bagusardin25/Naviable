@@ -5,7 +5,7 @@ import type { AccessibilitySettings } from '@/types';
 
 const STORAGE_KEY = 'naviable_a11y_settings';
 const CHANGE_EVENT = 'naviable-a11y-change';
-const defaults: AccessibilitySettings = { contrast: false, largeText: false, reduceMotion: false, dyslexia: false };
+const defaults: AccessibilitySettings = { darkMode: false, contrast: false, largeText: false, reduceMotion: false, dyslexia: false };
 const defaultSnapshot = JSON.stringify(defaults);
 let fallbackSnapshot = defaultSnapshot;
 
@@ -24,7 +24,13 @@ function subscribe(listener: () => void) {
 function parse(raw: string): AccessibilitySettings {
   try {
     const value = JSON.parse(raw);
-    return { contrast: value?.contrast === true, largeText: value?.largeText === true, reduceMotion: value?.reduceMotion === true, dyslexia: value?.dyslexia === true };
+    return {
+      darkMode: value?.darkMode === true,
+      contrast: value?.contrast === true,
+      largeText: value?.largeText === true,
+      reduceMotion: value?.reduceMotion === true,
+      dyslexia: value?.dyslexia === true,
+    };
   } catch { return defaults; }
 }
 function save(value: AccessibilitySettings) {
@@ -42,6 +48,7 @@ export function useAccessibility() {
   }
   return {
     settings,
+    setDarkMode: (value: boolean) => update('darkMode', value),
     setContrast: (value: boolean) => update('contrast', value),
     setLargeText: (value: boolean) => update('largeText', value),
     setReduceMotion: (value: boolean) => update('reduceMotion', value),

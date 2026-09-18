@@ -165,18 +165,7 @@ export function PlaceDetailDrawer({
       </div>
 
       {conditionChanges.length > 0 && (
-        <div
-          role="status"
-          style={{
-            margin: '10px 0',
-            padding: '10px 14px',
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '10px',
-            fontSize: '12px',
-            color: '#1e40af',
-          }}
-        >
+        <div role="status" className="drawer-history-box">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, marginBottom: '4px' }}>
             <Icon name="history" size={14} />
             <span>Riwayat pembaruan kondisi:</span>
@@ -208,12 +197,12 @@ export function PlaceDetailDrawer({
 
       {place.reportCount ? (
         <div className="presurvey-notice-box" role="note">
-          <span style={{ color: '#166534', flexShrink: 0, marginTop: '2px' }}>
+          <span style={{ flexShrink: 0, marginTop: '2px' }}>
             <Icon name="camera" size={18} />
           </span>
           <div>
             <strong>Laporan kondisi dari warga</strong>
-            <div style={{ fontSize: '11.5px', marginTop: '3px', color: '#166534', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '11.5px', marginTop: '3px', lineHeight: 1.5, opacity: 0.9 }}>
               Sudah ada {place.reportCount} laporan warga
               {place.coverage ? ` (${place.coverage.known} dari ${place.coverage.total} titik akses terkonfirmasi)` : ''}.
               {unknownElements > 0 ? ` Masih ada ${unknownElements} titik akses yang belum lengkap.` : ' Seluruh titik akses utama sudah memiliki bukti foto.'}
@@ -222,12 +211,12 @@ export function PlaceDetailDrawer({
         </div>
       ) : (
         <div className="presurvey-notice-box" role="note">
-          <span style={{ color: '#166534', flexShrink: 0, marginTop: '2px' }}>
+          <span style={{ flexShrink: 0, marginTop: '2px' }}>
             <Icon name="info" size={18} />
           </span>
           <div>
             <strong>Belum diverifikasi</strong>
-            <div style={{ fontSize: '11.5px', marginTop: '3px', color: '#166534', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '11.5px', marginTop: '3px', lineHeight: 1.5, opacity: 0.9 }}>
               Informasi awal dari data publik. Belum diverifikasi langsung di lapangan. Bantu laporkan kondisi sebenarnya dengan foto.
             </div>
           </div>
@@ -235,13 +224,13 @@ export function PlaceDetailDrawer({
       )}
 
       {place.features && place.features.length > 0 && (
-        <div style={{ margin: '12px 0', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '4px' }}>
+        <div className="drawer-features-box">
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink)', display: 'block', marginBottom: '6px' }}>
             Fasilitas yang tercatat:
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {place.features.map((feat, idx) => (
-              <span key={idx} style={{ background: '#e2e8f0', color: '#1e293b', fontSize: '11px', padding: '2px 8px', borderRadius: '4px' }}>
+              <span key={idx} className="drawer-feature-tag">
                 {feat}
               </span>
             ))}
