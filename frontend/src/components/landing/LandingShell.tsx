@@ -20,8 +20,27 @@ export function LandingShell({ children }: { children: ReactNode }) {
         if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
       }}>
         <div className={styles.headerInner}>
-          <Link href="/" className={styles.brand} aria-label="Naviable — beranda">
-            <Image src="/naviable-mark.svg" alt="" width={36} height={36} />Naviable<span className={styles.brandDot}>.</span>
+          <Link href="/" className={styles.brand} aria-label="NaviAble — beranda">
+            <span className={styles.brandHorizontal}>
+              <Image
+                src={settings.contrast ? '/branding/naviable-logo-horizontal-dark-transparent.png' : '/branding/naviable-logo-horizontal-light-transparent.png'}
+                alt="NaviAble"
+                width={101}
+                height={36}
+                priority
+                className={styles.brandLogoImg}
+              />
+            </span>
+            <span className={styles.brandMobileIcon}>
+              <Image
+                src={settings.contrast ? '/branding/naviable-logo-icon-dark.png' : '/branding/naviable-logo-icon-light.png'}
+                alt="NaviAble"
+                width={30}
+                height={30}
+                priority
+                className={styles.brandIconImg}
+              />
+            </span>
           </Link>
           <nav id="landing-navigation" aria-label="Navigasi beranda" className={styles.nav} data-open={menuOpen}>
             <a href="#cara-kerja" onClick={() => setMenuOpen(false)}>Cara kerja</a>
@@ -38,7 +57,29 @@ export function LandingShell({ children }: { children: ReactNode }) {
       {children}
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
-          <div><Link className={styles.brand} href="/" aria-label="Naviable — beranda"><Image src="/naviable-mark.svg" alt="" width={32} height={32} />Naviable<span className={styles.brandDot}>.</span></Link><p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p></div>
+          <div>
+            <Link className={styles.brand} href="/" aria-label="NaviAble — beranda">
+              <span className={styles.brandHorizontal}>
+                <Image
+                  src={settings.contrast ? '/branding/naviable-logo-horizontal-dark-transparent.png' : '/branding/naviable-logo-horizontal-light-transparent.png'}
+                  alt="NaviAble"
+                  width={90}
+                  height={32}
+                  className={styles.brandLogoImg}
+                />
+              </span>
+              <span className={styles.brandMobileIcon}>
+                <Image
+                  src={settings.contrast ? '/branding/naviable-logo-icon-dark.png' : '/branding/naviable-logo-icon-light.png'}
+                  alt="NaviAble"
+                  width={28}
+                  height={28}
+                  className={styles.brandIconImg}
+                />
+              </span>
+            </Link>
+            <p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p>
+          </div>
           <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a></nav>
           <details ref={preferences} className={styles.preferences} onKeyDown={event => {
             if (event.key === 'Escape' && preferences.current) { preferences.current.open = false; preferences.current.querySelector('summary')?.focus(); }
@@ -53,7 +94,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
             </div>
           </details>
         </div>
-        <div className={styles.footerBottom}><span>© {new Date().getFullYear()} Naviable</span><span>Dibangun untuk perjalanan yang lebih terinformasi.</span><a href="#konten-utama">Kembali ke atas ↑</a></div>
+        <div className={styles.footerBottom}><span>© {new Date().getFullYear()} NaviAble</span><span>Dibangun untuk perjalanan yang lebih terinformasi.</span><a href="#konten-utama">Kembali ke atas ↑</a></div>
       </footer>
     </div>
   );

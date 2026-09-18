@@ -3,7 +3,6 @@ import { Inter, Roboto } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
-import { AccessibilityIcon } from "./login-icons";
 import { Icon } from "@/components/ui/Icon";
 import styles from "./login.module.css";
 
@@ -11,19 +10,25 @@ const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-log
 const roboto = Roboto({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Masuk · Naviable",
+  title: "Masuk · NaviAble",
   alternates: { canonical: '/login' },
-  description: "Masuk ke Naviable untuk menjelajahi fasilitas aksesibel di sekitar Anda.",
+  description: "Masuk ke NaviAble untuk menjelajahi fasilitas aksesibel di sekitar Anda.",
 };
 
 export default function LoginPage() {
   return (
     <main className={`${styles.page} ${roboto.className} ${inter.variable}`} lang="id">
-      <section className={styles.brandPanel} aria-label="Tentang Naviable">
+      <section className={styles.brandPanel} aria-label="Tentang NaviAble">
         <div className={styles.brandContent}>
-          <Link href="/" className={styles.wordmark} aria-label="Naviable - Kembali ke Beranda">
-            <span className={styles.logoMark}><AccessibilityIcon /></span>
-            <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
+          <Link href="/" className={styles.wordmark} aria-label="NaviAble - Kembali ke Beranda">
+            <Image
+              src="/branding/naviable-logo-horizontal-light-transparent.png"
+              alt="NaviAble"
+              width={168}
+              height={60}
+              priority
+              className={styles.loginLogo}
+            />
           </Link>
 
           <p className={styles.tagline}>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
 
 type TopNavbarProps = {
@@ -28,6 +29,16 @@ export function TopNavbar({
         <Icon name="location" size={17} />
         <span>Surabaya, Indonesia</span>
       </div>
+
+      <Link href="/" className="topbar-mobile-brand" aria-label="NaviAble — kembali ke beranda">
+        <Image
+          src="/branding/naviable-logo-icon-transparent.png"
+          alt="NaviAble"
+          width={30}
+          height={30}
+          className="topbar-mobile-logo"
+        />
+      </Link>
 
       <div className="search-container">
         <label className="search-box" htmlFor="search-input">
