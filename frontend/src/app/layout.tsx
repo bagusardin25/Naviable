@@ -9,9 +9,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://naviable.vercel.app'),
   title: 'Naviable — Peta Aksesibilitas Kota Surabaya',
   description:
-    'Cari tahu kondisi akses fasilitas publik di Surabaya sebelum bepergian, dengan verifikasi langsung dan bukti foto warga.',
+    'Kenali informasi akses tempat di Surabaya, sumber datanya, dan bagian yang masih perlu diperiksa sebelum berangkat.',
   icons: {
     icon: '/naviable-mark.svg',
     shortcut: '/naviable-mark.svg',
