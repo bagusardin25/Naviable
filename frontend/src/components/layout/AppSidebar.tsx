@@ -16,7 +16,7 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
 
   return (
     <aside className="sidebar">
-      <Link href="/" className="brand" aria-label="Naviable Prototype">
+      <Link href="/" className="brand" aria-label="Naviable — kembali ke beranda">
         {!imgError ? (
           <Image
             src="/naviable-mark.svg"

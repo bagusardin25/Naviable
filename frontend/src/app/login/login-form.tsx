@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { EXPLORE_PATH } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { GoogleIcon, LoginIcon, SpeakerIcon, WaveformIcon, WhatsAppIcon } from "./login-icons";
 import styles from "./login.module.css";
@@ -40,7 +41,7 @@ export function LoginForm() {
     // Supabase restores the session from the OAuth return URL on this route.
     const { data } = supabaseBrowser().auth.onAuthStateChange((event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        router.replace("/");
+        router.replace(EXPLORE_PATH);
       }
     });
     return () => data.subscription.unsubscribe();
@@ -125,7 +126,7 @@ export function LoginForm() {
     try {
       const { error } = await supabaseBrowser().auth.verifyOtp({ phone: sentTo, token: code, type: "sms" });
       if (error) throw error;
-      router.replace("/");
+      router.replace(EXPLORE_PATH);
     } catch {
       setCodeError("Kode tidak valid atau sudah kedaluwarsa. Silakan periksa kembali atau minta kode baru.");
       codeRef.current?.focus();
@@ -207,7 +208,7 @@ export function LoginForm() {
         <button
           className={`${styles.button} ${styles.google}`}
           type="button"
-          onClick={() => router.push('/')}
+          onClick={() => router.push(EXPLORE_PATH)}
           style={{ marginTop: '8px' }}
         >
           <span>Lanjut tanpa akun (Mode Tamu) →</span>

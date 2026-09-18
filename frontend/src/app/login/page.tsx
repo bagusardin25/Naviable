@@ -12,6 +12,7 @@ const roboto = Roboto({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Masuk · Naviable",
+  alternates: { canonical: '/login' },
   description: "Masuk ke Naviable untuk menjelajahi fasilitas aksesibel di sekitar Anda.",
 };
 
@@ -48,7 +49,7 @@ export default function LoginPage() {
 
       <section className={styles.formPanel} aria-labelledby="login-heading">
         <div className={styles.formContent}>
-          <Link href="/" className={styles.backLink}>
+          <Link href="/jelajah" className={styles.backLink}>
             ← Kembali ke Peta Akses
           </Link>
           <header className={styles.heading}>
