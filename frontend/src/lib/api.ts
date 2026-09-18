@@ -1,6 +1,6 @@
 import type { AccessibilityStatus, Place, JourneyResponse } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
-import { adaptSeedRecords } from './places/seedAdapter';
+import { adaptSeedRecords, loadSeedPlaces } from './places/seedAdapter';
 import { supabaseBrowser } from './supabase';
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').replace(/\/$/, '');
@@ -58,27 +58,42 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 export async function fetchPlaces(profile?: string): Promise<Place[]> {
-  const result: Place[] = [];
-  for (let offset = 0; ; offset += 100) {
-    const query = new URLSearchParams({ limit: '100', offset: String(offset) });
-    if (profile) query.set('profile', profile);
-    const page = await request<{ places: ApiPlace[]; total: number }>(`/api/places?${query}`);
-    result.push(...page.places.map(toUiPlace));
-    if (result.length >= page.total || page.places.length === 0) return result;
+  try {
+    const result: Place[] = [];
+    for (let offset = 0; ; offset += 100) {
+      const query = new URLSearchParams({ limit: '100', offset: String(offset) });
+      if (profile) query.set('profile', profile);
+      const page = await request<{ places: ApiPlace[]; total: number }>(`/api/places?${query}`);
+      result.push(...page.places.map(toUiPlace));
+      if (result.length >= page.total || page.places.length === 0) return result;
+    }
+  } catch (error) {
+    console.warn('Backend API belum terhubung, menggunakan data lokal pratinjau:', error);
+    return loadSeedPlaces();
   }
 }
 export async function fetchPlace(id: string, profile?: string) {
-  const data = await request<{ place: ApiPlace; reports: ApiReport[] }>(`/api/places/${encodeURIComponent(id)}${profile ? `?profile=${profile}` : ''}`);
-  return { place: toUiPlace(data.place), reports: data.reports };
+  try {
+    const data = await request<{ place: ApiPlace; reports: ApiReport[] }>(`/api/places/${encodeURIComponent(id)}${profile ? `?profile=${profile}` : ''}`);
+    return { place: toUiPlace(data.place), reports: data.reports };
+  } catch {
+    const seed = loadSeedPlaces();
+    const found = seed.find(p => String(p.id) === String(id)) ?? seed[0];
+    return { place: found, reports: [] };
+  }
 }
 /**
  * Correction trail for one place, newest first. Every report is kept, including the ones
  * a later correction superseded, so the drawer can show who changed which element and when.
  */
 export async function fetchPlaceReports(id: string, limit = 20) {
-  return request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
-    `/api/places/${encodeURIComponent(id)}/reports?limit=${limit}`
-  );
+  try {
+    return await request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
+      `/api/places/${encodeURIComponent(id)}/reports?limit=${limit}`
+    );
+  } catch {
+    return { reports: [], total: 0, limit, offset: 0 };
+  }
 }
 export async function analyzePhoto(image: string, mimeType: string): Promise<ApiAnalysis> {
   return request('/api/analyze', { method: 'POST', headers: await headers(), body: JSON.stringify({ image, mimeType }) });
@@ -92,15 +107,35 @@ export async function submitReport(payload: ReportPayload, requestKey: string) {
   return { ...result, place: toUiPlace(result.place) };
 }
 export async function fetchHealth() {
-  return request<{ storage: 'local' | 'supabase'; authRequired: boolean; aiConfigured: boolean }>('/api/health');
+  try {
+    return await request<{ storage: 'local' | 'supabase'; authRequired: boolean; aiConfigured: boolean }>('/api/health');
+  } catch {
+    return { storage: 'local' as const, authRequired: false, aiConfigured: false };
+  }
 }
 export async function fetchContributions() {
-  return request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
+  try {
+    return await request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
+  } catch {
+    return { mode: 'preview', total: 0, reports: [] };
+  }
 }
 
 export async function fetchJourney(from: string, to: string, profile = 'mobilitas'): Promise<JourneyResponse> {
   const query = new URLSearchParams({ from, to, profile });
-  return request<JourneyResponse>(`/api/journey?${query}`);
+  try {
+    return await request<JourneyResponse>(`/api/journey?${query}`);
+  } catch {
+    return {
+      points: [],
+      profile,
+      hasBottlenecks: false,
+      bottleneckCount: 0,
+      geometry: null,
+      routing: false,
+      disclaimer: 'Pratinjau transit antarmuka offline (menunggu server)',
+    };
+  }
 }
 
 export function exportEvidenceCsvUrl(filters?: {
