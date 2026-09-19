@@ -23,13 +23,14 @@ export default function LoginPage() {
         <div className={styles.brandContent}>
           <Link href="/" className={styles.wordmark} aria-label="NaviAble - Kembali ke Beranda">
             <Image
-              src="/branding/naviable-logo-horizontal-light-transparent.png"
-              alt="NaviAble"
-              width={168}
-              height={60}
+              src="/logo-only-light-3.png"
+              alt="NaviAble Logo"
+              width={48}
+              height={48}
+              style={{ objectFit: 'contain' }}
               priority
-              className={styles.loginLogo}
             />
+            <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
           </Link>
 
           <p className={styles.tagline}>

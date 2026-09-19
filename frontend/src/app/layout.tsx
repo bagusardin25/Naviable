@@ -14,9 +14,9 @@ export const metadata: Metadata = {
   description:
     'Kenali informasi akses tempat di Surabaya, sumber datanya, dan bagian yang masih perlu diperiksa sebelum berangkat.',
   icons: {
-    icon: '/branding/naviable-logo-icon-light.png',
-    shortcut: '/branding/naviable-logo-icon-light.png',
-    apple: '/branding/naviable-logo-icon-light.png',
+    icon: '/logo-only-light-3.png',
+    shortcut: '/logo-only-light-3.png',
+    apple: '/logo-only-light-3.png',
   },
 };
 

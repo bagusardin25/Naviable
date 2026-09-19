@@ -162,7 +162,8 @@ button { cursor: pointer; }
   color: white;
   box-sizing: border-box;
 }
-.brand-mark { width: 40px; height: 40px; object-fit: contain; border-radius: 0; flex-shrink: 0; }
+.brand-mark { width: 40px; height: 40px; object-fit: contain; border-radius: 10px; flex-shrink: 0; }
+.sidebar .brand-mark { background: #ffffff; padding: 4px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); }
 .brand-svg-fallback { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
 .sidebar nav { display: grid; gap: 6px; padding: 18px 12px; }
 .sidebar nav button {

@@ -22,26 +22,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
       }}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand} aria-label="NaviAble — beranda">
-            <span className={styles.brandHorizontal}>
-              <Image
-                src={isDark ? '/branding/naviable-logo-horizontal-dark-transparent.png' : '/branding/naviable-logo-horizontal-light-transparent.png'}
-                alt="NaviAble"
-                width={101}
-                height={36}
-                priority
-                className={styles.brandLogoImg}
-              />
-            </span>
-            <span className={styles.brandMobileIcon}>
-              <Image
-                src={isDark ? '/branding/naviable-logo-icon-dark.png' : '/branding/naviable-logo-icon-light.png'}
-                alt="NaviAble"
-                width={30}
-                height={30}
-                priority
-                className={styles.brandIconImg}
-              />
-            </span>
+            <Image src="/logo-only-light-3.png" alt="" width={36} height={36} />NaviAble<span className={styles.brandDot}>.</span>
           </Link>
           <nav id="landing-navigation" aria-label="Navigasi beranda" className={styles.nav} data-open={menuOpen}>
             <a href="#cara-kerja" onClick={() => setMenuOpen(false)}>Cara kerja</a>
@@ -60,24 +41,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
         <div className={styles.footerTop}>
           <div>
             <Link className={styles.brand} href="/" aria-label="NaviAble — beranda">
-              <span className={styles.brandHorizontal}>
-                <Image
-                  src={isDark ? '/branding/naviable-logo-horizontal-dark-transparent.png' : '/branding/naviable-logo-horizontal-light-transparent.png'}
-                  alt="NaviAble"
-                  width={90}
-                  height={32}
-                  className={styles.brandLogoImg}
-                />
-              </span>
-              <span className={styles.brandMobileIcon}>
-                <Image
-                  src={isDark ? '/branding/naviable-logo-icon-dark.png' : '/branding/naviable-logo-icon-light.png'}
-                  alt="NaviAble"
-                  width={28}
-                  height={28}
-                  className={styles.brandIconImg}
-                />
-              </span>
+              <Image src="/logo-only-light-3.png" alt="" width={32} height={32} />NaviAble<span className={styles.brandDot}>.</span>
             </Link>
             <p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p>
           </div>

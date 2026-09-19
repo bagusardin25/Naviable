@@ -38,7 +38,7 @@ export function TopNavbar({
 
       <Link href="/" className="topbar-mobile-brand" aria-label="NaviAble — kembali ke beranda">
         <Image
-          src="/branding/naviable-logo-icon-transparent.png"
+          src="/logo-only-light-3.png"
           alt="NaviAble"
           width={30}
           height={30}

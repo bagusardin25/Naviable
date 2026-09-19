@@ -20,8 +20,8 @@ export function AppSidebar({ currentScreen, onSelectScreen, signedIn }: AppSideb
       <Link href="/" className="brand" aria-label="NaviAble — kembali ke beranda">
         {!imgError ? (
           <Image
-            src="/branding/naviable-logo-icon-transparent.png"
-            alt="NaviAble"
+            src="/logo-only-light-3.png"
+            alt="NaviAble Logo"
             width={40}
             height={40}
             className="brand-mark"
