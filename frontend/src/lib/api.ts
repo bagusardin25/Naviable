@@ -49,6 +49,10 @@ async function headers() {
     const { data } = await supabaseBrowser().auth.getSession();
     if (data.session) result.Authorization = `Bearer ${data.session.access_token}`;
   }
+  if (!result.Authorization && typeof window !== 'undefined') {
+    const demoToken = localStorage.getItem('naviable_demo_token');
+    if (demoToken) result.Authorization = `Bearer ${demoToken}`;
+  }
   if (!result.Authorization) throw new Error('Masuk terlebih dahulu untuk berkontribusi.');
   return result;
 }

@@ -12,8 +12,16 @@ export function ContributorProfile() {
     return () => { active = false; };
   }, []);
   async function signOut() {
-    await supabaseBrowser().auth.signOut();
-    setData(null); setError('Anda telah keluar.');
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      await supabaseBrowser().auth.signOut();
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('naviable_demo_token');
+      localStorage.removeItem('naviable_demo_user');
+      window.dispatchEvent(new Event('naviable_auth_change'));
+    }
+    setData(null);
+    setError('Anda telah keluar.');
   }
   return (
     <div className="page-scroll profile-page">
