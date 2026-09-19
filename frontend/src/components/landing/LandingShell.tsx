@@ -11,17 +11,37 @@ export function LandingShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const preferences = useRef<HTMLDetailsElement>(null);
-  const { settings, setContrast, setLargeText, setReduceMotion, setDyslexia, resetSettings } = useAccessibility();
+  const { settings, setDarkMode, setContrast, setLargeText, setReduceMotion, setDyslexia, resetSettings } = useAccessibility();
+  const isDark = settings.darkMode || settings.contrast;
 
   return (
-    <div className={styles.page} data-contrast={settings.contrast} data-large-text={settings.largeText} data-reduce-motion={settings.reduceMotion} data-dyslexia={settings.dyslexia}>
+    <div className={styles.page} data-dark={settings.darkMode} data-contrast={settings.contrast} data-large-text={settings.largeText} data-reduce-motion={settings.reduceMotion} data-dyslexia={settings.dyslexia}>
       <a href="#konten-utama" className={styles.skip}>Lewati ke konten utama</a>
       <header className={styles.header} onKeyDown={event => {
         if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
       }}>
         <div className={styles.headerInner}>
-          <Link href="/" className={styles.brand} aria-label="Naviable — beranda">
-            <Image src="/logo-only-light-3.png" alt="" width={36} height={36} />Naviable<span className={styles.brandDot}>.</span>
+          <Link href="/" className={styles.brand} aria-label="NaviAble — beranda">
+            <span className={styles.brandHorizontal}>
+              <Image
+                src={isDark ? '/branding/naviable-logo-horizontal-dark-transparent.png' : '/branding/naviable-logo-horizontal-light-transparent.png'}
+                alt="NaviAble"
+                width={101}
+                height={36}
+                priority
+                className={styles.brandLogoImg}
+              />
+            </span>
+            <span className={styles.brandMobileIcon}>
+              <Image
+                src={isDark ? '/branding/naviable-logo-icon-dark.png' : '/branding/naviable-logo-icon-light.png'}
+                alt="NaviAble"
+                width={30}
+                height={30}
+                priority
+                className={styles.brandIconImg}
+              />
+            </span>
           </Link>
           <nav id="landing-navigation" aria-label="Navigasi beranda" className={styles.nav} data-open={menuOpen}>
             <a href="#cara-kerja" onClick={() => setMenuOpen(false)}>Cara kerja</a>
@@ -38,13 +58,36 @@ export function LandingShell({ children }: { children: ReactNode }) {
       {children}
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
-          <div><Link className={styles.brand} href="/" aria-label="Naviable — beranda"><Image src="/logo-only-light-3.png" alt="" width={32} height={32} />Naviable<span className={styles.brandDot}>.</span></Link><p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p></div>
+          <div>
+            <Link className={styles.brand} href="/" aria-label="NaviAble — beranda">
+              <span className={styles.brandHorizontal}>
+                <Image
+                  src={isDark ? '/branding/naviable-logo-horizontal-dark-transparent.png' : '/branding/naviable-logo-horizontal-light-transparent.png'}
+                  alt="NaviAble"
+                  width={90}
+                  height={32}
+                  className={styles.brandLogoImg}
+                />
+              </span>
+              <span className={styles.brandMobileIcon}>
+                <Image
+                  src={isDark ? '/branding/naviable-logo-icon-dark.png' : '/branding/naviable-logo-icon-light.png'}
+                  alt="NaviAble"
+                  width={28}
+                  height={28}
+                  className={styles.brandIconImg}
+                />
+              </span>
+            </Link>
+            <p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p>
+          </div>
           <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a></nav>
           <details ref={preferences} className={styles.preferences} onKeyDown={event => {
             if (event.key === 'Escape' && preferences.current) { preferences.current.open = false; preferences.current.querySelector('summary')?.focus(); }
           }}>
             <summary><Icon name="access" size={18} /> Tampilan aksesibel <Icon name="chevron" size={16} /></summary>
             <div className={styles.preferenceOptions}>
+              <label><input type="checkbox" checked={settings.darkMode} onChange={e => setDarkMode(e.target.checked)} />Mode gelap</label>
               <label><input type="checkbox" checked={settings.contrast} onChange={e => setContrast(e.target.checked)} />Kontras tinggi</label>
               <label><input type="checkbox" checked={settings.largeText} onChange={e => setLargeText(e.target.checked)} />Teks lebih besar</label>
               <label><input type="checkbox" checked={settings.reduceMotion} onChange={e => setReduceMotion(e.target.checked)} />Kurangi gerakan</label>
@@ -53,7 +96,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
             </div>
           </details>
         </div>
-        <div className={styles.footerBottom}><span>© {new Date().getFullYear()} Naviable</span><span>Dibangun untuk perjalanan yang lebih terinformasi.</span><a href="#konten-utama">Kembali ke atas ↑</a></div>
+        <div className={styles.footerBottom}><span>© {new Date().getFullYear()} NaviAble</span><span>Dibangun untuk perjalanan yang lebih terinformasi.</span><a href="#konten-utama">Kembali ke atas ↑</a></div>
       </footer>
     </div>
   );

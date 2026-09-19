@@ -9,6 +9,7 @@ type AccessibilityModalProps = {
   isOpen: boolean;
   onClose: () => void;
   settings: AccessibilitySettings;
+  onToggleDarkMode: () => void;
   onToggleContrast: () => void;
   onToggleLargeText: () => void;
   onToggleReduceMotion: () => void;
@@ -20,6 +21,7 @@ export function AccessibilityModal({
   isOpen,
   onClose,
   settings,
+  onToggleDarkMode,
   onToggleContrast,
   onToggleLargeText,
   onToggleReduceMotion,
@@ -103,9 +105,16 @@ export function AccessibilityModal({
 
         <div className="settings-list">
           <AccessibleToggle
+            id="toggle-dark-mode"
+            label="Mode Gelap"
+            text="Tampilkan tema bernuansa gelap yang lebih nyaman di mata saat pencahayaan redup."
+            checked={settings.darkMode}
+            onChange={onToggleDarkMode}
+          />
+          <AccessibleToggle
             id="toggle-contrast"
             label="Mode Kontras Tinggi"
-            text="Tampilkan latar belakang gelap dengan teks terang berkontras tinggi agar lebih mudah dibaca."
+            text="Tampilkan kontras batas dan teks maksimal agar elemen antarmuka terbaca jelas."
             checked={settings.contrast}
             onChange={onToggleContrast}
           />

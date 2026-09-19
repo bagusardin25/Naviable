@@ -63,6 +63,14 @@
   text-decoration: underline;
 }
 
+.loginLogo {
+  width: auto;
+  height: calc(52 * var(--unit));
+  max-height: 54px;
+  object-fit: contain;
+  display: block;
+}
+
 .logoMark,
 .speaker {
   display: grid;

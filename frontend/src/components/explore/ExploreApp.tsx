@@ -74,6 +74,7 @@ export default function ExploreApp() {
 
   const {
     settings,
+    setDarkMode,
     setContrast,
     setLargeText,
     setReduceMotion,
@@ -174,6 +175,7 @@ export default function ExploreApp() {
 
   const appClassName = [
     'app-shell',
+    settings.darkMode ? 'dark' : '',
     settings.contrast ? 'contrast-mode' : '',
     settings.largeText ? 'large-text' : '',
     settings.reduceMotion ? 'reduce-motion' : '',
@@ -213,7 +215,12 @@ export default function ExploreApp() {
 
         {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat data tempat dari server…</p>}
         {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>Coba lagi</button></div>}
-        {storage === 'local' && <p role="note" style={{ padding: '6px 20px', background: '#fffbeb', color: '#633e10', fontSize: '12px' }}>Mode lokal / pratinjau · Periksa label sumber data. Pengiriman laporan memerlukan layanan yang terhubung.</p>}
+        {storage === 'local' && (
+          <div role="note" className="notice-banner">
+            <Icon name="info" size={14} />
+            <span>Mode lokal / pratinjau · Periksa label sumber data. Pengiriman laporan memerlukan layanan yang terhubung.</span>
+          </div>
+        )}
         {screen === 'map' && (
           <>
             <div className="mobile-view-tabs" role="tablist" aria-label="Pilih tampilan peta atau daftar">
@@ -321,7 +328,7 @@ export default function ExploreApp() {
 
                 {/* Status Filter Bar evaluated dynamically for active need profile */}
                 <div id="map-status-filters" className="status-filter-bar" role="toolbar" aria-label={`Filter kondisi untuk kebutuhan ${need}`}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
+                  <span className="status-filter-label">
                     Kondisi ({need}):
                   </span>
                   <button
@@ -467,6 +474,7 @@ export default function ExploreApp() {
         isOpen={showA11y}
         onClose={() => setShowA11y(false)}
         settings={settings}
+        onToggleDarkMode={() => setDarkMode(!settings.darkMode)}
         onToggleContrast={() => setContrast(!settings.contrast)}
         onToggleLargeText={() => setLargeText(!settings.largeText)}
         onToggleReduceMotion={() => setReduceMotion(!settings.reduceMotion)}

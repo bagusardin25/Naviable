@@ -4,7 +4,7 @@ import ExploreApp from '@/components/explore/ExploreApp';
 import 'leaflet/dist/leaflet.css';
 
 export const metadata: Metadata = {
-  title: 'Jelajahi Peta Aksesibilitas Surabaya · Naviable',
+  title: 'Jelajahi Peta Aksesibilitas Surabaya · NaviAble',
   description: 'Cari tempat, periksa informasi fasilitas, dan kenali sumber data aksesibilitas di Surabaya.',
   alternates: { canonical: '/jelajah' },
 };

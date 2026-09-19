@@ -35,19 +35,19 @@ export function ContributorProfile() {
       </section>
 
       {error && (
-        <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginTop: '16px', border: '1px solid #fecaca' }}>
-          {error} <a href="/login" style={{ color: '#6d45cc', fontWeight: 700, marginLeft: '6px', textDecoration: 'underline' }}>Masuk ke Akun</a>
+        <p role="alert" style={{ color: 'var(--notice-error-ink)', background: 'var(--notice-error-bg)', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginTop: '16px', border: '1px solid var(--notice-error-border)' }}>
+          {error} <a href="/login" style={{ color: 'var(--purple)', fontWeight: 700, marginLeft: '6px', textDecoration: 'underline' }}>Masuk ke Akun</a>
         </p>
       )}
 
-      {!data && !error && <p role="status" style={{ padding: '24px 0', color: '#64748b' }}>Memuat riwayat kontribusi…</p>}
+      {!data && !error && <p role="status" style={{ padding: '24px 0', color: 'var(--muted)' }}>Memuat riwayat kontribusi…</p>}
 
       {data && (
         <div className="profile-grid">
           <article className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <h2>Laporan Terkirim</h2>
             <strong className="big-number">{data.total}</strong>
-            <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 16px' }}>
+            <p style={{ color: 'var(--muted)', fontSize: '12px', margin: '4px 0 16px' }}>
               Laporan kondisi akses yang Anda bantu perbarui untuk fasilitas publik di Surabaya.
             </p>
             {(
@@ -69,15 +69,15 @@ export function ContributorProfile() {
                     key={r.id}
                     style={{
                       padding: '10px 12px',
-                      background: '#f8fafc',
+                      background: 'var(--surface-secondary)',
                       borderRadius: '10px',
-                      border: '1px solid var(--line)',
+                      border: '1px solid var(--border)',
                       fontSize: '12px',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700 }}>
                       <span>{r.reporterName}</span>
-                      <span style={{ fontSize: '10px', color: '#64748b' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
                         {new Date(r.createdAt).toLocaleDateString('id-ID')}
                       </span>
                     </div>

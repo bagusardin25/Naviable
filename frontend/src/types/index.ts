@@ -589,6 +589,7 @@ export const EVIDENCE_LEVEL_LABELS: Record<string, string> = {
 };
 
 export type AccessibilitySettings = {
+  darkMode: boolean;
   contrast: boolean;
   largeText: boolean;
   reduceMotion: boolean;

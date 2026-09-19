@@ -11,26 +11,25 @@ const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-log
 const roboto = Roboto({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Masuk · Naviable",
+  title: "Masuk · NaviAble",
   alternates: { canonical: '/login' },
-  description: "Masuk untuk menambahkan lokasi, melaporkan perubahan, atau menulis review di Naviable.",
+  description: "Masuk untuk menambahkan lokasi, melaporkan perubahan, atau menulis review di NaviAble.",
 };
 
 export default function LoginPage() {
   return (
     <main className={`${styles.page} ${roboto.className} ${inter.variable}`} lang="id">
-      <section className={styles.brandPanel} aria-label="Tentang Naviable">
+      <section className={styles.brandPanel} aria-label="Tentang NaviAble">
         <div className={styles.brandContent}>
-          <Link href="/" className={styles.wordmark} aria-label="Naviable - Kembali ke Beranda">
+          <Link href="/" className={styles.wordmark} aria-label="NaviAble - Kembali ke Beranda">
             <Image
-              src="/logo-only-light-3.png"
-              alt="Naviable Logo"
-              width={48}
-              height={48}
-              style={{ objectFit: 'contain' }}
+              src="/branding/naviable-logo-horizontal-light-transparent.png"
+              alt="NaviAble"
+              width={168}
+              height={60}
               priority
+              className={styles.loginLogo}
             />
-            <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
           </Link>
 
           <p className={styles.tagline}>
