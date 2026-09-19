@@ -17,7 +17,7 @@ export type ChainElementCode =
 
 export type AccessibilityNeed = 'Mobilitas' | 'Visual' | 'Auditori' | 'Sensorik';
 
-export type Screen = 'map' | 'report' | 'dashboard' | 'profile';
+export type Screen = 'map' | 'report' | 'add' | 'review' | 'dashboard' | 'profile';
 
 export type PreSurveyWheelchairStatus = 'yes' | 'limited' | 'no' | 'unknown';
 

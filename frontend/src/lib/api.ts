@@ -49,6 +49,7 @@ async function headers() {
     const { data } = await supabaseBrowser().auth.getSession();
     if (data.session) result.Authorization = `Bearer ${data.session.access_token}`;
   }
+  if (!result.Authorization) throw new Error('Masuk terlebih dahulu untuk berkontribusi.');
   return result;
 }
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -105,6 +106,18 @@ export type ReportPayload = {
 export async function submitReport(payload: ReportPayload, requestKey: string) {
   const result = await request<{ reportId: string; place: ApiPlace }>('/api/reports', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
   return { ...result, place: toUiPlace(result.place) };
+}
+export type NewLocation = { name: string; category: string; address: string; lat: number; lng: number };
+export async function submitNewPlace(payload: Omit<ReportPayload, 'placeId'> & { location: NewLocation }, requestKey: string) {
+  const result = await request<{ place: ApiPlace }>('/api/places', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
+  return { place: toUiPlace(result.place) };
+}
+export type ApiReview = { id: string; placeId: string; reviewerName: string; experience: string; createdAt: string };
+export function fetchReviews(placeId: string, offset = 0) {
+  return request<{ reviews: ApiReview[]; total: number }>(`/api/places/${encodeURIComponent(placeId)}/reviews?limit=20&offset=${offset}`);
+}
+export async function submitReview(payload: { placeId: string; reviewerName: string; experience: string }, requestKey: string) {
+  return request<{ review: ApiReview }>('/api/reviews', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
 }
 export async function fetchHealth() {
   try {

@@ -21,7 +21,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
       }}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand} aria-label="Naviable — beranda">
-            <Image src="/naviable-mark.svg" alt="" width={36} height={36} />Naviable<span className={styles.brandDot}>.</span>
+            <Image src="/logo-only-light-3.png" alt="" width={36} height={36} />Naviable<span className={styles.brandDot}>.</span>
           </Link>
           <nav id="landing-navigation" aria-label="Navigasi beranda" className={styles.nav} data-open={menuOpen}>
             <a href="#cara-kerja" onClick={() => setMenuOpen(false)}>Cara kerja</a>
@@ -38,7 +38,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
       {children}
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
-          <div><Link className={styles.brand} href="/" aria-label="Naviable — beranda"><Image src="/naviable-mark.svg" alt="" width={32} height={32} />Naviable<span className={styles.brandDot}>.</span></Link><p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p></div>
+          <div><Link className={styles.brand} href="/" aria-label="Naviable — beranda"><Image src="/logo-only-light-3.png" alt="" width={32} height={32} />Naviable<span className={styles.brandDot}>.</span></Link><p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p></div>
           <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a></nav>
           <details ref={preferences} className={styles.preferences} onKeyDown={event => {
             if (event.key === 'Escape' && preferences.current) { preferences.current.open = false; preferences.current.querySelector('summary')?.focus(); }
