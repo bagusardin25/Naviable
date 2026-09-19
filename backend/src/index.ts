@@ -8,7 +8,7 @@ const config = readConfig();
 const supabase = config.mode === "supabase" ? adminSupabase() : null;
 const store = supabase ? new SupabaseStore(supabase) : await new LocalStore(config.localDir).init();
 const app = createApp({ store, config, authenticate: async token => {
-  const { data, error } = await supabase!.auth.getUser(token);
+  const { data, error } = await (supabase ?? adminSupabase()).auth.getUser(token);
   if (error) return undefined;
   return data.user?.id;
 } });

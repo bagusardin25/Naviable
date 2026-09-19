@@ -101,6 +101,7 @@ async function main() {
     // Supabase provisions these roles itself; a bare cluster needs them first.
     await execute("bootstrap roles (local scaffolding)", script("tests/00_local_roles.sql"));
     await execute("apply 001_naviable.sql", script("migrations/001_naviable.sql"));
+    await execute("apply 003_contribution_flows.sql", script("migrations/003_contribution_flows.sql"));
 
     // 002 needs PostGIS *and* the Supabase `storage` schema, so it is opt-in.
     const { stdout: compatible } = await psql([...connect, "-d", database, "-tAc",

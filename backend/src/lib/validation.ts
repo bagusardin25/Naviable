@@ -15,6 +15,16 @@ export const ReportBody = z.object({
   elements: z.array(ElementInput).min(1).max(8).refine(items => new Set(items.map(i => i.element)).size === items.length, "Duplicate elements"),
 }).strict();
 export type ReportInput = z.infer<typeof ReportBody>;
+export const NewPlaceBody = z.object({
+  name: z.string().trim().min(2).max(160), category: z.string().trim().min(2).max(80),
+  address: z.string().trim().min(5).max(500),
+  lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180),
+}).strict();
+export const AddPlaceBody = ReportBody.omit({ placeId: true }).extend({ location: NewPlaceBody });
+export const ReviewBody = z.object({
+  placeId: PlaceId, reviewerName: z.string().trim().min(1).max(80),
+  experience: z.string().trim().min(10).max(2000),
+}).strict();
 export const AnalyzeBody = z.object({ image: z.string().min(16).max(7_000_000), mimeType: MimeType }).strict();
 export const PlaceQuery = z.object({
   profile: z.enum(USER_PROFILES).optional(), q: z.string().trim().max(120).optional(),

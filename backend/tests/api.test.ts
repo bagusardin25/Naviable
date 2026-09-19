@@ -22,7 +22,7 @@ async function fixture(mode: 'local' | 'supabase' = 'local') {
   const address = server.address() as { port: number };
   const base = `http://127.0.0.1:${address.port}`;
   const get = (path: string, headers?: Record<string, string>) => fetch(`${base}${path}`, { headers });
-  const post = (path: string, body: unknown, key = randomUUID(), token?: string) => fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
+  const post = (path: string, body: unknown, key = randomUUID(), token = mode === 'local' ? 'valid-test-token' : '') => fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
   return { directory, store, config, get, post, close: async () => {
     server.closeAllConnections(); await new Promise<void>((yes, no) => server.close(e => e ? no(e) : yes()));
     if (!resolve(directory).startsWith(resolve(tmpdir()) + '\\') && !resolve(directory).startsWith(resolve(tmpdir()) + '/')) throw new Error('Unsafe temporary path');
@@ -33,6 +33,55 @@ function report(placeId: string) {
   return { placeId, reporterName: 'Kontributor uji', image, mimeType: 'image/png', humanConfirmed: true,
     elements: [{ element: 'E5_guiding_block', status: 'TERHALANG', note: 'Terhalang kendaraan' }] };
 }
+
+test('guest reads stay public and every contribution requires auth, including local storage', async () => {
+  const f = await fixture();
+  try {
+    const id = (await f.store.listPlaces())[0].id;
+    for (const path of ['/api/places', `/api/places/${id}`, `/api/places/${id}/reports`, `/api/places/${id}/reviews`, '/api/observatory']) assert.equal((await f.get(path)).status, 200);
+    for (const path of ['/api/places', '/api/reports', '/api/reviews', '/api/analyze']) {
+      assert.equal((await f.post(path, {}, randomUUID(), '')).status, 401);
+      assert.equal((await f.post(path, {}, randomUUID(), 'expired-token')).status, 401);
+    }
+    assert.equal((await f.get('/api/me')).status, 401);
+  } finally { await f.close(); }
+});
+
+test('new location is atomic and idempotent; reviews persist without changing accessibility evidence', async () => {
+  const f = await fixture();
+  try {
+    const { placeId: _placeId, ...evidence } = report('unused');
+    const body = { ...evidence, location: { name: 'Lokasi Uji Baru', category: 'Taman Kota', address: 'Jalan Uji 10, Surabaya', lat: -7.25, lng: 112.75 } };
+    const key = randomUUID();
+    const responses = await Promise.all([f.post('/api/places', body, key), f.post('/api/places', body, key)]);
+    assert.deepEqual(responses.map(r => r.status).sort(), [200, 201]);
+    const [a, b] = await Promise.all(responses.map(r => r.json()));
+    assert.equal(a.place.id, b.place.id); assert.equal((await f.store.listPlaces()).length, 45);
+    assert.equal(a.place.reportCount, 1); assert.equal(a.place.verifiedByTeam, false);
+    assert.equal(Object.keys(a.place.elements).length, 1);
+    assert.equal((await f.post('/api/places', { ...body, location: { ...body.location, name: 'Changed' } }, key)).status, 409);
+    assert.equal((await f.post('/api/places', { ...body, image: 'invalid photo bytes' })).status, 400);
+    assert.equal((await f.post('/api/places', { ...body, location: { ...body.location, lat: 100 } })).status, 400);
+    assert.equal((await f.store.listPlaces()).length, 45);
+    const before = await f.store.getPlace(a.place.id);
+    const review = { placeId: a.place.id, reviewerName: 'Pengunjung Uji', experience: 'Petugas membantu saya saat berkunjung.' };
+    const reviewKey = randomUUID();
+    assert.equal((await f.post('/api/reviews', review, reviewKey)).status, 201);
+    assert.equal((await f.post('/api/reviews', review, reviewKey)).status, 200);
+    assert.equal((await f.post('/api/reviews', { ...review, experience: 'Pengalaman lain yang berbeda.' }, reviewKey)).status, 409);
+    assert.equal((await f.post('/api/reviews', { ...review, elements: [] })).status, 400);
+    assert.equal((await f.post('/api/reviews', { ...review, placeId: 'missing' })).status, 404);
+    assert.deepEqual(await f.store.getPlace(a.place.id), before);
+    const publicReviews = await (await f.get(`/api/places/${a.place.id}/reviews`)).json();
+    assert.equal(publicReviews.total, 1); assert.equal(publicReviews.reviews[0].actorId, undefined);
+    assert.equal(publicReviews.reviews[0].requestKey, undefined);
+    const restored = await new LocalStore(f.directory).init();
+    assert.deepEqual(await restored.getPlace(a.place.id), before);
+    assert.equal((await restored.listReviews(a.place.id, 20, 0)).reviews[0].experience, review.experience);
+    const photo = await f.get(`/api/photos/${a.reportId}`);
+    assert.equal(photo.status, 200);
+  } finally { await f.close(); }
+});
 
 test('seed, filters, pagination, unknown coordinates and evidence boundaries', async () => {
   const f = await fixture();
@@ -87,7 +136,7 @@ test('publish persists across restart; retries and concurrent corrections preser
     const history = await (await f.get(`/api/places/${id}/reports?limit=1`)).json();
     assert.equal(history.total, 2); assert.equal(history.reports.length, 1);
     assert.equal(history.reports[0].actorId, undefined); assert.equal(history.reports[0].inputHash, undefined);
-    assert.equal((await (await f.get('/api/me')).json()).total, 2);
+    assert.equal((await (await f.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json()).total, 2);
     const csv = await f.get('/api/evidence.csv');
     assert.match(csv.headers.get('content-disposition')!, /attachment/);
     assert.match(await csv.text(), /Hambatan sudah dipindahkan/);

@@ -13,18 +13,22 @@ export type Report = {
   elements: ReportInput["elements"]; photoPath: string; mimeType: string; createdAt: string;
 };
 export type PublishInput = Omit<Report, "id" | "photoPath" | "mimeType" | "createdAt">;
+export type Review = { id: string; placeId: string; actorId: string; reviewerName: string; experience: string; createdAt: string; requestKey: string; inputHash: string };
+export type ReviewInput = Omit<Review, "id" | "createdAt">;
 export interface Store {
   listPlaces(): Promise<Place[]>;
   getPlace(id: string): Promise<Place | undefined>;
   listReports(placeId: string, limit?: number, offset?: number): Promise<Report[]>;
   getReport(id: string): Promise<Report | undefined>;
   contributions(actorId: string): Promise<{ total: number; reports: Report[] }>;
-  publish(input: PublishInput, photo: Photo): Promise<{ report: Report; replayed: boolean }>;
+  publish(input: PublishInput, photo: Photo, newPlace?: Place): Promise<{ report: Report; replayed: boolean }>;
+  listReviews(placeId: string, limit: number, offset: number): Promise<{ reviews: Review[]; total: number }>;
+  review(input: ReviewInput): Promise<{ review: Review; replayed: boolean }>;
   photo(report: Report): Promise<{ bytes: Buffer; mimeType: string } | { url: string }>;
   health(): Promise<void>;
 }
 
-type State = { version: 1; places: Place[]; reports: Report[] };
+type State = { version: 1; places: Place[]; reports: Report[]; reviews?: Review[] };
 export class LocalStore implements Store {
   private state!: State;
   private queue: Promise<unknown> = Promise.resolve();
@@ -60,7 +64,29 @@ export class LocalStore implements Store {
   // avoiding complex local DB setups. In production, SupabaseStore replaces this with
   // PostgreSQL transactions + publish_report RPC.
   // WARNING: Idempotency check prevents duplicate submissions on retry.
-  publish(input: PublishInput, photo: Photo) {
+  async listReviews(placeId: string, limit: number, offset: number) {
+    const reviews = (this.state.reviews ?? []).filter(r => r.placeId === placeId).reverse();
+    return { reviews: structuredClone(reviews.slice(offset, offset + limit)), total: reviews.length };
+  }
+  review(input: ReviewInput) {
+    const operation = this.queue.then(async () => {
+      const existing = (this.state.reviews ?? []).find(r => r.actorId === input.actorId && r.requestKey === input.requestKey);
+      if (existing) {
+        if (existing.inputHash !== input.inputHash) throw new ApiError(409, "Kunci pengiriman sudah digunakan untuk review berbeda");
+        return { review: structuredClone(existing), replayed: true };
+      }
+      if (!this.state.places.some(p => p.id === input.placeId)) throw new ApiError(404, "Lokasi tidak ditemukan");
+      const next = structuredClone(this.state);
+      const review = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
+      (next.reviews ??= []).push(review);
+      await this.persist(next);
+      this.state = next;
+      return { review: structuredClone(review), replayed: false };
+    });
+    this.queue = operation.catch(() => {});
+    return operation;
+  }
+  publish(input: PublishInput, photo: Photo, newPlace?: Place) {
     const operation = this.queue.then(async () => {
       const existing = this.state.reports.find(r => r.actorId === input.actorId && r.requestKey === input.requestKey);
       if (existing) {
@@ -68,6 +94,7 @@ export class LocalStore implements Store {
         return { report: structuredClone(existing), replayed: true };
       }
       const next = structuredClone(this.state);
+      if (newPlace) next.places.push(structuredClone(newPlace));
       const place = next.places.find(p => p.id === input.placeId);
       if (!place) throw new ApiError(404, "Lokasi tidak ditemukan");
       const id = randomUUID();
@@ -142,14 +169,26 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.client.storage.from("photos").createSignedUrl(report.photoPath, 300);
     dbError(error); return { url: data!.signedUrl };
   }
-  async publish(input: PublishInput, photo: Photo) {
+  async listReviews(placeId: string, limit: number, offset: number) {
+    const { data, error, count } = await this.client.from("reviews").select("payload", { count: "exact" }).eq("place_id", placeId).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    dbError(error); return { reviews: (data ?? []).map(r => r.payload as Review), total: count ?? 0 };
+  }
+  async review(input: ReviewInput) {
+    const review: Review = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
+    const { data, error } = await this.client.rpc("publish_review", { p_review: review });
+    dbError(error);
+    return { review: data as Review, replayed: data.id !== review.id };
+  }
+  async publish(input: PublishInput, photo: Photo, newPlace?: Place) {
     const id = randomUUID();
     const report: Report = { ...input, id, photoPath: `reports/${id}.${photo.extension}`, mimeType: photo.mimeType, createdAt: new Date().toISOString() };
     const { error: uploadError } = await this.client.storage.from("photos").upload(report.photoPath, photo.bytes, { contentType: photo.mimeType, upsert: false });
     dbError(uploadError);
     // Cleanup only when the DB definitively rejects or returns a previous report.
     // An ambiguous network failure may have committed; retain its photo for retry/reconciliation.
-    const { data, error } = await this.client.rpc("publish_report", { p_report: report });
+    const { data, error } = newPlace
+      ? await this.client.rpc("create_place_report", { p_place: toPlaceRow(newPlace), p_report: report })
+      : await this.client.rpc("publish_report", { p_report: report });
     if (error) {
       if (error.code && /^\d|^P\d/.test(error.code)) await this.client.storage.from("photos").remove([report.photoPath]);
       dbError(error);
