@@ -79,15 +79,15 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
             aria-modal="true"
             aria-labelledby="csv-export-title"
             onMouseDown={(e) => e.stopPropagation()}
-            style={{ maxWidth: '520px' }}
+            style={{ maxWidth: '520px', width: 'min(520px, 94vw)', maxHeight: '90vh', overflowY: 'auto' }}
           >
             <div className="modal-header">
               <div>
                 <span className="eyebrow">Unduh Data Riset</span>
-                <h2 id="csv-export-title" style={{ fontSize: '18px', margin: 0 }}>
+                <h2 id="csv-export-title" style={{ fontSize: 'var(--text-lg)', margin: 0, overflowWrap: 'break-word' }}>
                   Unduh Data Keterbukaan Akses
                 </h2>
-                <p style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>
+                <p style={{ fontSize: 'var(--text-xs)', opacity: 0.9, marginTop: '4px', overflowWrap: 'break-word' }}>
                   Saring data sebelum mengunduh agar sesuai dengan kebutuhan advokasi atau penelitian Anda.
                 </p>
               </div>
@@ -103,7 +103,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
 
             <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label htmlFor="csv-filter-district" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-district" style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Kecamatan
                 </label>
                 <select
@@ -121,7 +121,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-category" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-category" style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Kategori Fasilitas
                 </label>
                 <select
@@ -139,7 +139,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-profile" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-profile" style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Kebutuhan Akses
                 </label>
                 <select
@@ -158,7 +158,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-element" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-element" style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Bagian Fasilitas
                 </label>
                 <select
@@ -181,7 +181,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
               </div>
 
               <div>
-                <label htmlFor="csv-filter-status" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="csv-filter-status" style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
                   Status Kondisi
                 </label>
                 <select
@@ -206,7 +206,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
                   border: '1px solid var(--border)',
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  fontSize: '11px',
+                  fontSize: 'var(--text-xs)',
                   color: 'var(--text-secondary)',
                   lineHeight: 1.4,
                   display: 'flex',
@@ -222,7 +222,7 @@ export function EvidenceExportButton({ places }: { places: Place[] }) {
             </div>
 
             {error && (
-              <div role="alert" style={{ color: '#dc2626', fontSize: '11px', marginTop: '8px' }}>
+              <div role="alert" style={{ color: '#dc2626', fontSize: 'var(--text-xs)', marginTop: '8px', padding: '0 24px' }}>
                 {error}
               </div>
             )}

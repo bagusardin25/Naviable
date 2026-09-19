@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
+import { useAccessibility } from '@/hooks/useAccessibility';
 
 type TopNavbarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onOpenAccessibility: () => void;
+  onOpenAccessibility?: () => void;
   accountHref: string;
   signedIn: boolean;
   onOpenAuth?: () => void;
@@ -23,11 +24,20 @@ export function TopNavbar({
   onOpenAuth,
 }: TopNavbarProps) {
   const [voiceNotice, setVoiceNotice] = useState(false);
+  const { isWidgetOpen, toggleWidget } = useAccessibility();
 
   function handleVoiceSearch() {
     setVoiceNotice(true);
     setTimeout(() => setVoiceNotice(false), 2500);
   }
+
+  const handleAccessibilityClick = () => {
+    if (onOpenAccessibility) {
+      onOpenAccessibility();
+    } else {
+      toggleWidget();
+    }
+  };
 
   return (
     <header className="topbar">
@@ -107,8 +117,13 @@ export function TopNavbar({
         <button
           id="btn-accessibility"
           type="button"
-          className="a11y-button"
-          onClick={onOpenAccessibility}
+          className={`a11y-button ${isWidgetOpen ? 'active' : ''}`}
+          onClick={handleAccessibilityClick}
+          aria-expanded={isWidgetOpen}
+          aria-haspopup="dialog"
+          aria-controls="a11y-widget-panel"
+          aria-label={isWidgetOpen ? 'Tutup panel aksesibilitas' : 'Buka panel aksesibilitas'}
+          title="Pengaturan Aksesibilitas"
         >
           <Icon name="access" />
           <span>Aksesibilitas</span>

@@ -147,7 +147,7 @@ export function PlaceDetailDrawer({
       <div className="detail-title">
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
           <span className="eyebrow">Profil {activeNeed}</span>
-          <span className={`status-badge ${meta.badgeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span className={`status-badge ${meta.badgeClass}`} data-status={meta.status} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Icon name={statusIcon} size={11} />
             <span>{meta.label}</span>
           </span>

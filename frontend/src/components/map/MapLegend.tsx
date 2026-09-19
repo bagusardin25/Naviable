@@ -12,7 +12,7 @@ export function MapLegend() {
         Akses Terbatas
       </span>
       <span title="Akses dilaporkan belum memadai">
-        <i style={{ width: 8, height: 8, borderRadius: '50%', background: '#df3a43', display: 'inline-block' }} aria-hidden="true" />
+        <i className="dot tidak_ada" aria-hidden="true" />
         Belum Aksesibel
       </span>
       <span title="Informasi akses belum dilaporkan">

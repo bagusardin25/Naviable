@@ -37,6 +37,14 @@ import {
   Clock,
   Sparkles,
   SlidersHorizontal,
+  MousePointerClick,
+  Type,
+  Baseline,
+  Contrast,
+  Palette,
+  Link2,
+  BookOpen,
+  Move,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -81,7 +89,15 @@ export type IconName =
   | 'list'
   | 'clock'
   | 'sparkles'
-  | 'filter';
+  | 'filter'
+  | 'motor'
+  | 'type'
+  | 'text'
+  | 'contrast'
+  | 'palette'
+  | 'link'
+  | 'reading-guide'
+  | 'move';
 
 const iconMap: Record<string, LucideIcon> = {
   map: LucideMap,
@@ -125,6 +141,14 @@ const iconMap: Record<string, LucideIcon> = {
   clock: Clock,
   sparkles: Sparkles,
   filter: SlidersHorizontal,
+  motor: MousePointerClick,
+  type: Type,
+  text: Baseline,
+  contrast: Contrast,
+  palette: Palette,
+  link: Link2,
+  'reading-guide': BookOpen,
+  move: Move,
 };
 
 export type IconProps = {

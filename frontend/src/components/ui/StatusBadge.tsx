@@ -33,6 +33,7 @@ export function StatusBadge({ status, size = 'sm', className = '', variant = 'pi
 
   return (
     <span
+      data-status={status}
       className={`status-badge ${statusClassMap[status]} ${size === 'md' ? 'status-badge-md' : ''} ${variant === 'compact' ? 'status-badge-compact' : ''} ${className}`}
       title={`${meta.label}: ${meta.short}`}
       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}

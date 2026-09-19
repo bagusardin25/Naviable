@@ -50,7 +50,7 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
       </div>
 
       <div className="place-card-badges">
-        <span className={`status-badge ${meta.badgeClass}`}>
+        <span className={`status-badge ${meta.badgeClass}`} data-status={meta.status}>
           <Icon name={statusIcon} size={11} />
           <span>{meta.label}</span>
         </span>

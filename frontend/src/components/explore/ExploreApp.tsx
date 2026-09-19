@@ -29,7 +29,6 @@ import { EvidenceExportButton } from '@/components/observatory/EvidenceExportBut
 import { DataQualityCard } from '@/components/observatory/DataQualityCard';
 import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
-import { AccessibilityModal } from '@/components/accessibility/AccessibilityModal';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Icon } from '@/components/ui/Icon';
 
@@ -93,20 +92,11 @@ export default function ExploreApp() {
   const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
   const [statusFilter, setStatusFilter] = useState<ProfileStatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [showA11y, setShowA11y] = useState(false);
   const [showJourney, setShowJourney] = useState(false);
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const {
-    settings,
-    setDarkMode,
-    setContrast,
-    setLargeText,
-    setReduceMotion,
-    setDyslexia,
-    resetSettings,
-  } = useAccessibility();
+  const { toggleWidget } = useAccessibility();
 
   useEffect(() => {
     let active = true;
@@ -199,16 +189,7 @@ export default function ExploreApp() {
     setScreen('map');
   }
 
-  const appClassName = [
-    'app-shell',
-    settings.darkMode ? 'dark' : '',
-    settings.contrast ? 'contrast-mode' : '',
-    settings.largeText ? 'large-text' : '',
-    settings.reduceMotion ? 'reduce-motion' : '',
-    settings.dyslexia ? 'dyslexia-mode' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const appClassName = 'app-shell';
 
   const hasActiveFilters =
     statusFilter !== 'all' || categoryFilter !== 'all' || searchQuery.trim().length > 0;
@@ -233,7 +214,7 @@ export default function ExploreApp() {
         <TopNavbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onOpenAccessibility={() => setShowA11y(true)}
+          onOpenAccessibility={toggleWidget}
           accountHref={auth.user ? screenHref('profile') : loginHref(screenHref(screen))}
           signedIn={Boolean(auth.user)}
           onOpenAuth={() => setShowAuthModal(true)}
@@ -359,6 +340,7 @@ export default function ExploreApp() {
                   </span>
                   <button
                     type="button"
+                    data-status="all"
                     className={`status-pill-btn ${statusFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('all')}
                   >
@@ -366,6 +348,7 @@ export default function ExploreApp() {
                   </button>
                   <button
                     type="button"
+                    data-status="UTUH"
                     className={`status-pill-btn ${statusFilter === 'UTUH' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('UTUH')}
                   >
@@ -374,6 +357,7 @@ export default function ExploreApp() {
                   </button>
                   <button
                     type="button"
+                    data-status="TERHALANG"
                     className={`status-pill-btn ${statusFilter === 'TERHALANG' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TERHALANG')}
                   >
@@ -382,6 +366,7 @@ export default function ExploreApp() {
                   </button>
                   <button
                     type="button"
+                    data-status="TIDAK_STANDAR"
                     className={`status-pill-btn ${statusFilter === 'TIDAK_STANDAR' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_STANDAR')}
                   >
@@ -390,6 +375,7 @@ export default function ExploreApp() {
                   </button>
                   <button
                     type="button"
+                    data-status="TIDAK_ADA"
                     className={`status-pill-btn ${statusFilter === 'TIDAK_ADA' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_ADA')}
                   >
@@ -398,6 +384,7 @@ export default function ExploreApp() {
                   </button>
                   <button
                     type="button"
+                    data-status="BELUM_DIKETAHUI"
                     className={`status-pill-btn ${statusFilter === 'BELUM_DIKETAHUI' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('BELUM_DIKETAHUI')}
                   >
@@ -497,18 +484,6 @@ export default function ExploreApp() {
 
         {screen === 'profile' && <ContributorProfile />}
       </section>
-
-      <AccessibilityModal
-        isOpen={showA11y}
-        onClose={() => setShowA11y(false)}
-        settings={settings}
-        onToggleDarkMode={() => setDarkMode(!settings.darkMode)}
-        onToggleContrast={() => setContrast(!settings.contrast)}
-        onToggleLargeText={() => setLargeText(!settings.largeText)}
-        onToggleReduceMotion={() => setReduceMotion(!settings.reduceMotion)}
-        onToggleDyslexia={() => setDyslexia(!settings.dyslexia)}
-        onReset={resetSettings}
-      />
 
       <AuthModal
         isOpen={showAuthModal}

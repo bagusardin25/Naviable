@@ -492,27 +492,27 @@
 }
 
 .badgeSubmitted {
-  background-color: var(--notice-warning-bg);
-  color: var(--notice-warning-ink);
-  border: 1px solid var(--notice-warning-border);
+  background-color: var(--status-warning-bg, var(--notice-warning-bg));
+  color: var(--status-warning-ink, var(--notice-warning-ink));
+  border: 1px dashed var(--status-warning-border, var(--notice-warning-border));
 }
 
 .badgeApproved {
-  background-color: var(--notice-success-bg);
-  color: var(--notice-success-ink);
-  border: 1px solid var(--notice-success-border);
+  background-color: var(--status-positive-bg, var(--notice-success-bg));
+  color: var(--status-positive-ink, var(--notice-success-ink));
+  border: 1px solid var(--status-positive-border, var(--notice-success-border));
 }
 
 .badgeRevision {
-  background-color: #fefce8;
-  color: #a16207;
-  border: 1px solid #fef08a;
+  background-color: var(--status-attention-bg, #fefce8);
+  color: var(--status-attention-ink, #a16207);
+  border: 1.5px dotted var(--status-attention-border, #fef08a);
 }
 
 .badgeRejected {
-  background-color: var(--notice-error-bg);
-  color: var(--notice-error-ink);
-  border: 1px solid var(--notice-error-border);
+  background-color: var(--status-negative-bg, var(--notice-error-bg));
+  color: var(--status-negative-ink, var(--notice-error-ink));
+  border: 2px double var(--status-negative-border, var(--notice-error-border));
 }
 
 /* ===== Review Detail Grid ===== */

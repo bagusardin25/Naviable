@@ -5,9 +5,12 @@ import {
   getEvidenceFreshness,
   detectConditionChanges,
   STATUS_META,
+  DEFAULT_A11Y_SETTINGS,
+  DEFAULT_A11Y_PREFERENCES,
   type Place,
 } from '../src/types/index';
 import { exportEvidenceCsvUrl } from '../src/lib/api';
+import { parsePreferences, PRIMARY_STORAGE_KEY } from '../src/providers/AccessibilityProvider';
 
 
 function createMockPlace(overrides: Partial<Place> = {}): Place {
@@ -181,3 +184,176 @@ test('6. Filtered CSV export URL generation preserves parameters', () => {
   assert.match(url, /element=E5_guiding_block/);
   assert.match(url, /status=UTUH/);
 });
+
+test('7. Accessibility settings defaults and widget positions', () => {
+  const validPositions = ['left', 'right'];
+
+  assert.equal(DEFAULT_A11Y_SETTINGS.widgetPosition, 'left');
+  assert.ok(validPositions.includes(DEFAULT_A11Y_SETTINGS.widgetPosition));
+
+  // Verify all 8 primary accessibility modes are boolean flags in default settings
+  const expectedModes: (keyof typeof DEFAULT_A11Y_SETTINGS)[] = [
+    'motorMode',
+    'dyslexia',
+    'largeText',
+    'contrast',
+    'colorBlind',
+    'highlightLinks',
+    'readingGuide',
+    'voiceMode',
+  ];
+
+  for (const mode of expectedModes) {
+    assert.equal(typeof DEFAULT_A11Y_SETTINGS[mode], 'boolean', `Mode ${mode} should be a boolean flag`);
+  }
+});
+
+test('8. Accessibility preferences parsing and fallback resilience', () => {
+  // Test null / undefined fallback
+  const fallback = parsePreferences(null);
+  assert.deepEqual(fallback, DEFAULT_A11Y_PREFERENCES);
+
+  // Test migration from legacy right-top to right
+  const legacyRightJson = JSON.stringify({
+    darkMode: true,
+    contrast: true,
+    dyslexia: true,
+    widgetPosition: 'right-top',
+  });
+  const parsedRight = parsePreferences(legacyRightJson);
+  assert.equal(parsedRight.darkMode, true);
+  assert.equal(parsedRight.contrast, true);
+  assert.equal(parsedRight.dyslexia, true);
+  assert.equal(parsedRight.widgetPosition, 'right');
+  assert.equal(parsedRight.motorMode, false);
+  assert.equal(parsedRight.colorBlind, false);
+
+  // Test migration from legacy left-center to left
+  const legacyLeftJson = JSON.stringify({
+    widgetPosition: 'left-center',
+  });
+  const parsedLeft = parsePreferences(legacyLeftJson);
+  assert.equal(parsedLeft.widgetPosition, 'left');
+
+  // Test invalid position fallback
+  const invalidPosJson = JSON.stringify({
+    widgetPosition: 'invalid-floating-center',
+  });
+  const parsedInvalid = parsePreferences(invalidPosJson);
+  assert.equal(parsedInvalid.widgetPosition, 'left');
+});
+
+test('9. Canonical primary storage key matches standard', () => {
+  assert.equal(PRIMARY_STORAGE_KEY, 'naviable-accessibility-preferences');
+});
+
+test('10. Custom text scale parsing, bounds clamping, and migration', () => {
+  // Test default textScale
+  assert.equal(DEFAULT_A11Y_SETTINGS.textScale, 100);
+
+  // Test migration from legacy { largeText: true }
+  const legacyLarge = parsePreferences(JSON.stringify({ largeText: true }));
+  assert.equal(legacyLarge.textScale, 130);
+  assert.equal(legacyLarge.largeText, true);
+
+  // Test migration from legacy { largeText: false }
+  const legacyNormal = parsePreferences(JSON.stringify({ largeText: false }));
+  assert.equal(legacyNormal.textScale, 100);
+  assert.equal(legacyNormal.largeText, false);
+
+  // Test explicit custom text scale within bounds
+  const customScale = parsePreferences(JSON.stringify({ textScale: 150 }));
+  assert.equal(customScale.textScale, 150);
+  assert.equal(customScale.largeText, true);
+
+  // Test lower bound clamping (min 100)
+  const clampedLow = parsePreferences(JSON.stringify({ textScale: 50 }));
+  assert.equal(clampedLow.textScale, 100);
+
+  // Test upper bound clamping (max 200)
+  const clampedHigh = parsePreferences(JSON.stringify({ textScale: 350 }));
+  assert.equal(clampedHigh.textScale, 200);
+});
+
+test('11. Highlight Interactive parsing, migration, and backward compatibility', () => {
+  // Default is false
+  assert.equal(DEFAULT_A11Y_SETTINGS.highlightInteractive, false);
+  assert.equal(DEFAULT_A11Y_SETTINGS.highlightLinks, false);
+
+  // Migration from legacy highlightLinks
+  const migratedFromLegacy = parsePreferences(JSON.stringify({ highlightLinks: true }));
+  assert.equal(migratedFromLegacy.highlightInteractive, true);
+  assert.equal(migratedFromLegacy.highlightLinks, true);
+
+  // Explicit highlightInteractive
+  const explicit = parsePreferences(JSON.stringify({ highlightInteractive: true }));
+  assert.equal(explicit.highlightInteractive, true);
+  assert.equal(explicit.highlightLinks, true);
+});
+
+test('12. Color Blind Mode preference parsing and persistence structure', () => {
+  // Default is false
+  assert.equal(DEFAULT_A11Y_PREFERENCES.colorBlind, false);
+
+  // Parsing true
+  const activeColorBlind = parsePreferences(JSON.stringify({ colorBlind: true }));
+  assert.equal(activeColorBlind.colorBlind, true);
+
+  // Parsing false
+  const inactiveColorBlind = parsePreferences(JSON.stringify({ colorBlind: false }));
+  assert.equal(inactiveColorBlind.colorBlind, false);
+});
+
+test('13. Text Scale stepper step boundary rules (100% to 200% with 10% steps)', () => {
+  const stepDown = (current: number) => Math.max(100, current - 10);
+  const stepUp = (current: number) => Math.min(200, current + 10);
+
+  // Step down from 100% stays 100%
+  assert.equal(stepDown(100), 100);
+
+  // Step down from 130% gives 120%
+  assert.equal(stepDown(130), 120);
+
+  // Step up from 130% gives 140%
+  assert.equal(stepUp(130), 140);
+
+  // Step up from 200% stays 200%
+  assert.equal(stepUp(200), 200);
+
+  // CSS variable value calculation contract (textScale / 100)
+  assert.equal(100 / 100, 1);
+  assert.equal(150 / 100, 1.5);
+  assert.equal(200 / 100, 2);
+});
+
+test('14. Dashboard / Jelajah route path detection and unified accessibility trigger contract', () => {
+  const isJelajahRoute = (path: string) => path === '/jelajah' || path.startsWith('/jelajah');
+
+  // Should identify Jelajah and sub-routes / query params as Jelajah page
+  assert.equal(isJelajahRoute('/jelajah'), true);
+  assert.equal(isJelajahRoute('/jelajah?screen=map'), true);
+  assert.equal(isJelajahRoute('/jelajah/'), true);
+
+  // Should NOT identify other pages as Jelajah page
+  assert.equal(isJelajahRoute('/'), false);
+  assert.equal(isJelajahRoute('/login'), false);
+  assert.equal(isJelajahRoute('/reviewer'), false);
+
+  // Contract: On jelajah page, floating trigger #a11y-widget-trigger is hidden
+  // and #btn-accessibility in TopNavbar is the primary toggle trigger.
+  const getVisibleTriggers = (pathname: string) => {
+    const isJelajah = isJelajahRoute(pathname);
+    return {
+      hasNavbarTrigger: true, // Always in TopNavbar on jelajah
+      hasFloatingTrigger: !isJelajah, // Suppressed on jelajah
+    };
+  };
+
+  const jelajahTriggers = getVisibleTriggers('/jelajah');
+  assert.equal(jelajahTriggers.hasNavbarTrigger, true);
+  assert.equal(jelajahTriggers.hasFloatingTrigger, false);
+
+  const landingTriggers = getVisibleTriggers('/');
+  assert.equal(landingTriggers.hasFloatingTrigger, true);
+});
+

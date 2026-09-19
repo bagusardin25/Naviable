@@ -10,11 +10,10 @@ import styles from '@/app/landing.module.css';
 export function LandingShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
-  const preferences = useRef<HTMLDetailsElement>(null);
-  const { settings, setDarkMode, setContrast, setLargeText, setReduceMotion, setDyslexia, resetSettings } = useAccessibility();
+  const { openWidget } = useAccessibility();
 
   return (
-    <div className={styles.page} data-dark={settings.darkMode} data-contrast={settings.contrast} data-large-text={settings.largeText} data-reduce-motion={settings.reduceMotion} data-dyslexia={settings.dyslexia}>
+    <div className={styles.page}>
       <a href="#konten-utama" className={styles.skip}>Lewati ke konten utama</a>
       <header className={styles.header} onKeyDown={event => {
         if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
@@ -45,19 +44,28 @@ export function LandingShell({ children }: { children: ReactNode }) {
             <p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p>
           </div>
           <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a><Link href="/login?mode=reviewer" style={{ opacity: 0.8 }}>Portal Reviewer</Link></nav>
-          <details ref={preferences} className={styles.preferences} onKeyDown={event => {
-            if (event.key === 'Escape' && preferences.current) { preferences.current.open = false; preferences.current.querySelector('summary')?.focus(); }
-          }}>
-            <summary><Icon name="access" size={18} /> Tampilan aksesibel <Icon name="chevron" size={16} /></summary>
-            <div className={styles.preferenceOptions}>
-              <label><input type="checkbox" checked={settings.darkMode} onChange={e => setDarkMode(e.target.checked)} />Mode gelap</label>
-              <label><input type="checkbox" checked={settings.contrast} onChange={e => setContrast(e.target.checked)} />Kontras tinggi</label>
-              <label><input type="checkbox" checked={settings.largeText} onChange={e => setLargeText(e.target.checked)} />Teks lebih besar</label>
-              <label><input type="checkbox" checked={settings.reduceMotion} onChange={e => setReduceMotion(e.target.checked)} />Kurangi gerakan</label>
-              <label><input type="checkbox" checked={settings.dyslexia} onChange={e => setDyslexia(e.target.checked)} />Font alternatif</label>
-              <button type="button" onClick={resetSettings}>Kembalikan ke awal</button>
-            </div>
-          </details>
+          <button
+            type="button"
+            onClick={openWidget}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              minHeight: '44px',
+              background: 'transparent',
+              color: 'var(--lp-purple, #6d45cc)',
+              border: '1px solid var(--lp-line, #e2e8f0)',
+              borderRadius: '10px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginTop: '4px',
+            }}
+          >
+            <Icon name="access" size={18} />
+            <span>Pengaturan Aksesibilitas</span>
+          </button>
         </div>
         <div className={styles.footerBottom}><span>© {new Date().getFullYear()} NaviAble</span><span>Dibangun untuk perjalanan yang lebih terinformasi.</span><a href="#konten-utama">Kembali ke atas ↑</a></div>
       </footer>

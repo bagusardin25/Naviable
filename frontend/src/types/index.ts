@@ -588,13 +588,46 @@ export const EVIDENCE_LEVEL_LABELS: Record<string, string> = {
   operator_statement_reported_by_news: 'Keterangan pengelola via berita',
 };
 
-export type AccessibilitySettings = {
+export type AccessibilityWidgetPosition =
+  | 'left'
+  | 'right';
+
+export interface AccessibilityPreferences {
   darkMode: boolean;
   contrast: boolean;
-  largeText: boolean;
+  textScale: number;
   reduceMotion: boolean;
   dyslexia: boolean;
+  motorMode: boolean;
+  colorBlind: boolean;
+  highlightInteractive: boolean;
+  readingGuide: boolean;
+  voiceMode: boolean;
+  widgetPosition: AccessibilityWidgetPosition;
+  // Backward compatibility properties
+  largeText: boolean;
+  highlightLinks: boolean;
+}
+
+export type AccessibilitySettings = AccessibilityPreferences;
+
+export const DEFAULT_A11Y_PREFERENCES: AccessibilityPreferences = {
+  darkMode: false,
+  contrast: false,
+  textScale: 100,
+  reduceMotion: false,
+  dyslexia: false,
+  motorMode: false,
+  colorBlind: false,
+  highlightInteractive: false,
+  readingGuide: false,
+  voiceMode: false,
+  widgetPosition: 'left',
+  largeText: false,
+  highlightLinks: false,
 };
+
+export const DEFAULT_A11Y_SETTINGS: AccessibilitySettings = DEFAULT_A11Y_PREFERENCES;
 
 export type ReportDraft = {
   placeName: string;

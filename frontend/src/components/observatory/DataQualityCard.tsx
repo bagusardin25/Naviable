@@ -16,51 +16,53 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
   return (
     <div
       className="card"
-      style={{ marginTop: '16px', padding: '16px 20px' }}
+      style={{ marginTop: '16px', padding: '16px 20px', minWidth: 0 }}
       aria-label="Kelengkapan data lokasi"
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', minWidth: 0 }}>
+        <div style={{ minWidth: 0 }}>
           <span className="eyebrow">Kelengkapan Data</span>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '2px 0 4px', color: 'var(--ink)' }}>
+          <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, margin: '2px 0 4px', color: 'var(--ink)', overflowWrap: 'break-word' }}>
             Kelengkapan Titik di Peta
           </h2>
-          <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', margin: 0, overflowWrap: 'break-word' }}>
             Perbandingan tempat yang sudah memiliki koordinat peta dengan tempat yang masih butuh penandaan lokasi.
           </p>
         </div>
         <span
           style={{
             padding: '4px 10px',
-            borderRadius: '20px',
-            fontSize: '12px',
+            borderRadius: '9999px',
+            fontSize: 'var(--text-xs)',
             fontWeight: 700,
             background: percentage >= 80 ? 'var(--notice-success-bg)' : 'var(--notice-warning-bg)',
             color: percentage >= 80 ? 'var(--notice-success-ink)' : 'var(--notice-warning-ink)',
             border: `1px solid ${percentage >= 80 ? 'var(--notice-success-border)' : 'var(--notice-warning-border)'}`,
+            whiteSpace: 'normal',
+            textAlign: 'center',
           }}
         >
           {percentage}% Sudah Ada Titik Peta
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
-        <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-          <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Titik Peta Tersedia</span>
-          <strong style={{ fontSize: '18px', color: 'var(--green)' }}>{geocoded}</strong>
-          <span style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>Bisa dilihat langsung di peta</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px', marginBottom: '14px' }}>
+        <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: '8px', border: '1px solid var(--border)', minWidth: 0 }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Titik Peta Tersedia</span>
+          <strong style={{ fontSize: 'var(--text-xl)', color: 'var(--green)', display: 'block', margin: '2px 0' }}>{geocoded}</strong>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Bisa dilihat langsung di peta</span>
         </div>
 
-        <div style={{ padding: '10px 14px', background: 'var(--notice-warning-bg)', borderRadius: '8px', border: '1px solid var(--notice-warning-border)' }}>
-          <span style={{ fontSize: '11px', color: 'var(--notice-warning-ink)', display: 'block' }}>Belum Ada Titik Peta</span>
-          <strong style={{ fontSize: '18px', color: 'var(--orange)' }}>{needsGeocoding}</strong>
-          <span style={{ fontSize: '10px', color: 'var(--notice-warning-ink)', display: 'block' }}>Masih butuh bantuan penandaan lokasi</span>
+        <div style={{ padding: '10px 14px', background: 'var(--notice-warning-bg)', borderRadius: '8px', border: '1px solid var(--notice-warning-border)', minWidth: 0 }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--notice-warning-ink)', display: 'block', overflowWrap: 'break-word' }}>Belum Ada Titik Peta</span>
+          <strong style={{ fontSize: 'var(--text-xl)', color: 'var(--orange)', display: 'block', margin: '2px 0' }}>{needsGeocoding}</strong>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--notice-warning-ink)', display: 'block', overflowWrap: 'break-word' }}>Masih butuh bantuan penandaan lokasi</span>
         </div>
 
-        <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-          <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Total Tempat Terdata</span>
-          <strong style={{ fontSize: '18px', color: 'var(--ink)' }}>{total}</strong>
-          <span style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>Fasilitas publik yang tercatat</span>
+        <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: '8px', border: '1px solid var(--border)', minWidth: 0 }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Total Tempat Terdata</span>
+          <strong style={{ fontSize: 'var(--text-xl)', color: 'var(--ink)', display: 'block', margin: '2px 0' }}>{total}</strong>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Fasilitas publik yang tercatat</span>
         </div>
       </div>
 
@@ -71,9 +73,10 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
           borderLeft: '4px solid var(--purple)',
           padding: '10px 14px',
           borderRadius: '0 8px 8px 0',
-          fontSize: '11px',
+          fontSize: 'var(--text-xs)',
           color: 'var(--text-secondary)',
           lineHeight: 1.5,
+          overflowWrap: 'break-word',
         }}
       >
         <strong style={{ color: 'var(--ink)' }}>Mengapa semua tempat tetap dicatat?</strong> Tempat yang belum memiliki titik peta tetap kami tampilkan agar tidak terlewatkan. Relawan dapat membantu menambahkan lokasi saat survei ke lapangan.

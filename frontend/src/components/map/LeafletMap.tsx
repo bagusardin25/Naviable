@@ -252,6 +252,7 @@ function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import(
   const statusClass = meta.status.toLowerCase();
   const marker = document.createElement('div');
   marker.className = `marker marker-${statusClass} ${isSelectedClass}`;
+  marker.setAttribute('data-status', meta.status);
   marker.title = `${place.name} — Kebutuhan ${activeNeed}: ${meta.label}`;
   const symbol = document.createElement('span');
   symbol.setAttribute('aria-hidden', 'true');
