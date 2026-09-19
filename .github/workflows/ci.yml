@@ -56,6 +56,8 @@ jobs:
         run: npm --prefix backend run build
 
       - name: Seed Database & Run E2E Smoke Test Loop
+        env:
+          SMOKE_AUTH_TOKEN: local-dev-token
         run: |
           npm --prefix backend run seed
 

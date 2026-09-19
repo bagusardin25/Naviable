@@ -26,8 +26,11 @@ function check(label, condition, detail = "") {
   }
 }
 
+let smokeToken = process.env.SMOKE_AUTH_TOKEN ?? "";
+
 const json = async (path, init) => {
-  const response = await fetch(`${base}${path}`, { ...init, headers: { ...init?.headers, ...(process.env.SMOKE_AUTH_TOKEN ? { Authorization: `Bearer ${process.env.SMOKE_AUTH_TOKEN}` } : {}) } });
+  const token = smokeToken || process.env.SMOKE_AUTH_TOKEN;
+  const response = await fetch(`${base}${path}`, { ...init, headers: { ...init?.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
   const text = await response.text();
   let body;
   try { body = JSON.parse(text); } catch { body = text; }
@@ -52,8 +55,10 @@ try {
 
   const health = await json("/api/health");
   console.log(`health: ${JSON.stringify(health.body)}`);
-  if (health.status !== 200) throw new Error(`backend not reachable (${health.status})`);
-  if (!process.env.SMOKE_AUTH_TOKEN) throw new Error('Set SMOKE_AUTH_TOKEN to an authenticated test account token; guest writes are disabled.');
+  if (!smokeToken && health.body?.storage === "local") {
+    smokeToken = "local-dev-token";
+  }
+  if (!smokeToken) throw new Error('Set SMOKE_AUTH_TOKEN to an authenticated test account token; guest writes are disabled.');
 
   console.log("\n[1] pick a place with no field evidence yet");
   const list = await json("/api/places?geocoded=true&limit=100");

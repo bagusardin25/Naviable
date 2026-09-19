@@ -12,7 +12,6 @@ export function LandingShell({ children }: { children: ReactNode }) {
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const preferences = useRef<HTMLDetailsElement>(null);
   const { settings, setDarkMode, setContrast, setLargeText, setReduceMotion, setDyslexia, resetSettings } = useAccessibility();
-  const isDark = settings.darkMode || settings.contrast;
 
   return (
     <div className={styles.page} data-dark={settings.darkMode} data-contrast={settings.contrast} data-large-text={settings.largeText} data-reduce-motion={settings.reduceMotion} data-dyslexia={settings.dyslexia}>

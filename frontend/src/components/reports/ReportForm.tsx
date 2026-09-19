@@ -145,8 +145,8 @@ export function ReportForm({
     }
     if (!photo || !confirmed) { setError('Unggah foto dan centang konfirmasi kondisi terlebih dahulu.'); return; }
     if (adding && !coordinatesConfirmed) { setError('Periksa dan konfirmasi titik koordinat lokasi baru.'); return; }
-    const payload: ReportPayload = { placeId, reporterName, ...photo, humanConfirmed: true, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
-    const { placeId: _placeId, ...evidence } = payload;
+    const evidence = { reporterName, ...photo, humanConfirmed: true as const, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
+    const payload: ReportPayload = { placeId, ...evidence };
     const newPayload = { ...evidence, location };
     const signature = JSON.stringify(adding ? newPayload : payload);
     if (attempt.current?.signature !== signature) attempt.current = { signature, key: crypto.randomUUID() };

@@ -43,8 +43,11 @@ export default function ExploreApp() {
 
   useEffect(() => {
     if (screen === 'add' && auth.ready && !auth.user && authModalShownFor !== 'add') {
-      setAuthModalShownFor('add');
-      setShowAuthModal(true);
+      const timer = setTimeout(() => {
+        setAuthModalShownFor('add');
+        setShowAuthModal(true);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [screen, auth.ready, auth.user, authModalShownFor]);
 
@@ -68,7 +71,6 @@ export default function ExploreApp() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showA11y, setShowA11y] = useState(false);
   const [showJourney, setShowJourney] = useState(false);
-  const [reportTargetPlaceName, setReportTargetPlaceName] = useState<string | undefined>(undefined);
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -162,7 +164,7 @@ export default function ExploreApp() {
   }
 
   function handleCorrectPlace(place: Place) {
-    setReportTargetPlaceName(place.name);
+    setSelectedPlace(place);
     setScreen('report');
   }
 
@@ -408,7 +410,7 @@ export default function ExploreApp() {
                 place={selectedPlace}
                 onClose={() => setSelectedPlace(null)}
                 onCorrectPlace={handleCorrectPlace}
-                onWriteReview={place => {
+                onWriteReview={() => {
                   if (!auth.user) {
                     setShowAuthModal(true);
                   }
