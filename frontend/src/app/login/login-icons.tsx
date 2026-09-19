@@ -20,11 +20,37 @@ export function GoogleIcon() {
   );
 }
 
-export function WhatsAppIcon() {
+export function MailIcon() {
   return (
-    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path d="M27.5 15.5a11.5 11.5 0 0 1-17.1 10L4 27l1.6-6.1A11.5 11.5 0 1 1 27.5 15.5Z" stroke="currentColor" strokeWidth="2.3" strokeLinejoin="round" />
-      <path d="m11.2 9.4 1.5 3c.2.5-.3 1-.9 1.6-.4.4.6 2 1.8 3.1 1.2 1.2 2.7 1.9 3.1 1.5l1.4-1.6c.3-.3.7-.2 1.1 0l2.7 1.4c.4.2.5.5.3 1-.6 2-1.9 2.6-3.6 2.3-2.7-.5-5.3-2.1-7.1-4.1-1.9-2.1-3.2-4.4-2.8-6.1.2-1.1 1.1-2.4 1.8-2.4.4 0 .5 0 .7.3Z" fill="currentColor" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" strokeWidth="2" />
+      <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
