@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { EXPLORE_PATH } from "@/lib/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { contributionLabel, loginHref, parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { GoogleIcon, LoginIcon, SpeakerIcon, WaveformIcon, WhatsAppIcon } from "./login-icons";
 import styles from "./login.module.css";
@@ -23,6 +23,11 @@ function normalizePhone(value: string) {
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const destination = safeReturnTo(searchParams.get('next'));
+  const returnQuery = destination.split('?')[1] ?? '';
+  const guestDestination = screenHref('map', returnQuery);
+  const action = contributionLabel(parseScreen(new URLSearchParams(returnQuery).get('screen')));
   const phoneRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -41,11 +46,11 @@ export function LoginForm() {
     // Supabase restores the session from the OAuth return URL on this route.
     const { data } = supabaseBrowser().auth.onAuthStateChange((event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        router.replace(EXPLORE_PATH);
+        router.replace(destination);
       }
     });
     return () => data.subscription.unsubscribe();
-  }, [router]);
+  }, [router, destination]);
 
   useEffect(() => {
     if (sentTo) codeRef.current?.focus();
@@ -62,7 +67,7 @@ export function LoginForm() {
     try {
       const { error } = await supabaseBrowser().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/login` },
+        options: { redirectTo: `${window.location.origin}${loginHref(destination)}` },
       });
       if (error) throw error;
     } catch {
@@ -126,7 +131,7 @@ export function LoginForm() {
     try {
       const { error } = await supabaseBrowser().auth.verifyOtp({ phone: sentTo, token: code, type: "sms" });
       if (error) throw error;
-      router.replace(EXPLORE_PATH);
+      router.replace(destination);
     } catch {
       setCodeError("Kode tidak valid atau sudah kedaluwarsa. Silakan periksa kembali atau minta kode baru.");
       codeRef.current?.focus();
@@ -143,6 +148,7 @@ export function LoginForm() {
   return (
     <>
       <form className={styles.form} onSubmit={submit} noValidate aria-busy={busy}>
+        {searchParams.has('next') && <p role="note" className={styles.status}>Masuk untuk {action}. Setelah masuk, Anda akan kembali ke aksi ini. Peta dan informasi lokasi tetap bisa dibaca tanpa akun.</p>}
         <div className={styles.socialButtons}>
           <button className={`${styles.button} ${styles.google}`} type="button" onClick={signInWithGoogle} disabled={busy}>
             <GoogleIcon />
@@ -208,7 +214,7 @@ export function LoginForm() {
         <button
           className={`${styles.button} ${styles.google}`}
           type="button"
-          onClick={() => router.push(EXPLORE_PATH)}
+          onClick={() => router.push(guestDestination)}
           style={{ marginTop: '8px' }}
         >
           <span>Lanjut tanpa akun (Mode Tamu) →</span>

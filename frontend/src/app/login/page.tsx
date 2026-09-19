@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from 'react';
 import { Inter, Roboto } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
-import { AccessibilityIcon } from "./login-icons";
 import { Icon } from "@/components/ui/Icon";
 import styles from "./login.module.css";
 
@@ -13,7 +13,7 @@ const roboto = Roboto({ subsets: ["latin"], display: "swap" });
 export const metadata: Metadata = {
   title: "Masuk · Naviable",
   alternates: { canonical: '/login' },
-  description: "Masuk ke Naviable untuk menjelajahi fasilitas aksesibel di sekitar Anda.",
+  description: "Masuk untuk menambahkan lokasi, melaporkan perubahan, atau menulis review di Naviable.",
 };
 
 export default function LoginPage() {
@@ -22,7 +22,14 @@ export default function LoginPage() {
       <section className={styles.brandPanel} aria-label="Tentang Naviable">
         <div className={styles.brandContent}>
           <Link href="/" className={styles.wordmark} aria-label="Naviable - Kembali ke Beranda">
-            <span className={styles.logoMark}><AccessibilityIcon /></span>
+            <Image
+              src="/logo-only-light-3.png"
+              alt="Naviable Logo"
+              width={48}
+              height={48}
+              style={{ objectFit: 'contain' }}
+              priority
+            />
             <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
           </Link>
 
@@ -54,9 +61,9 @@ export default function LoginPage() {
           </Link>
           <header className={styles.heading}>
             <h1 id="login-heading">Selamat Datang di Naviable</h1>
-            <p>Masuk untuk merekam kontribusi Anda atau menjelajahi kondisi aksesibilitas di Surabaya.</p>
+            <p>Masuk untuk berkontribusi. Jelajahi peta dan baca informasi lokasi tanpa akun.</p>
           </header>
-          <LoginForm />
+          <Suspense fallback={<p role="status">Menyiapkan halaman masuk…</p>}><LoginForm /></Suspense>
         </div>
       </section>
     </main>
