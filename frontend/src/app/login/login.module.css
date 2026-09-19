@@ -162,17 +162,14 @@
 .button svg { flex: 0 0 auto; width: calc(26 * var(--unit)); height: calc(26 * var(--unit)); }
 .google { border: 2px solid #e2e9f2; color: var(--ink); background: #fff; }
 .google:hover:not(:disabled) { background: #f7f9fb; border-color: #cbd5e1; }
-.whatsapp { color: #fff; background: #1dcf60; }
-.whatsapp:hover:not(:disabled) { background: #16b853; }
-.whatsapp svg { width: calc(30 * var(--unit)); height: calc(30 * var(--unit)); }
 
 .divider {
   display: flex;
   align-items: center;
   gap: calc(16 * var(--unit));
-  margin: calc(34 * var(--unit)) 0 calc(36 * var(--unit));
+  margin: calc(28 * var(--unit)) 0 calc(24 * var(--unit));
   color: #94a3bc;
-  font-size: calc(16 * var(--unit));
+  font-size: calc(15 * var(--unit));
   line-height: 1.5;
   white-space: nowrap;
 }
@@ -180,62 +177,156 @@
 .divider::before,
 .divider::after { content: ""; height: 1px; flex: 1; background: #e2e9f2; }
 
-.field { display: grid; gap: calc(10 * var(--unit)); }
-.field label { font-size: calc(16 * var(--unit)); font-weight: 700; line-height: 1.2; }
+.modeTabs {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: calc(12 * var(--unit));
+  margin-bottom: calc(20 * var(--unit));
+  gap: 4px;
+}
+
+.tabBtn {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: calc(10 * var(--unit)) calc(8 * var(--unit));
+  border-radius: calc(8 * var(--unit));
+  font-family: inherit;
+  font-size: calc(15 * var(--unit));
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 140ms ease;
+  text-align: center;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+}
+
+.tabActive {
+  background: white;
+  color: var(--purple);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.field { display: grid; gap: calc(8 * var(--unit)); }
+.fieldHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.field label { font-size: calc(15 * var(--unit)); font-weight: 700; line-height: 1.2; color: #334155; }
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.inputIcon {
+  position: absolute;
+  left: calc(16 * var(--unit));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.inputIcon svg {
+  width: calc(22 * var(--unit));
+  height: calc(22 * var(--unit));
+}
 
 .field input {
   width: 100%;
   min-width: 0;
-  height: calc(56 * var(--unit));
-  padding: 0 calc(20 * var(--unit));
-  border: calc(2.3 * var(--unit)) solid #cdd7e5;
+  height: calc(54 * var(--unit));
+  padding: 0 calc(18 * var(--unit)) 0 calc(48 * var(--unit));
+  border: calc(2 * var(--unit)) solid #cdd7e5;
   border-radius: calc(14 * var(--unit));
   outline-offset: 4px;
   color: var(--ink);
   background: white;
   font: inherit;
-  font-size: calc(20 * var(--unit));
-  text-align: center;
+  font-size: calc(17 * var(--unit));
+  text-align: left;
 }
 
 .field input::placeholder { color: #969da9; opacity: 1; }
 .field input[aria-invalid="true"] { border-color: #b42318; }
 .field input[readonly] { background: #f7f9fb; }
+.field input:focus { border-color: var(--purple); }
 
-.audioCaptcha {
+.toggleVisibility {
+  position: absolute;
+  right: calc(14 * var(--unit));
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  padding: 4px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: calc(14 * var(--unit));
-  width: 100%;
-  min-height: calc(84 * var(--unit));
-  margin-top: calc(20 * var(--unit));
-  padding: calc(14 * var(--unit)) calc(18 * var(--unit));
-  border: 2px solid #e2e9f2;
-  border-radius: calc(14 * var(--unit));
-  background: #f7f9fc;
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
+  justify-content: center;
+  border-radius: 6px;
 }
 
-.audioCaptcha:hover:not(:disabled) { border-color: #bba6e6; background: #f4f1fb; }
-.speaker svg { width: 56%; height: 56%; }
-.audioCopy { display: grid; flex: 1; gap: calc(3 * var(--unit)); }
-.audioCopy strong { font-size: calc(16 * var(--unit)); line-height: 1.4; }
-.audioCopy > span { color: var(--muted); font-size: calc(14 * var(--unit)); line-height: 1.5; }
-.waveform { flex: 0 0 auto; width: calc(40 * var(--unit)); color: #825acf; }
-.waveform svg { width: 100%; height: auto; }
+.toggleVisibility:hover {
+  color: var(--ink);
+}
+
+.toggleVisibility svg {
+  width: calc(20 * var(--unit));
+  height: calc(20 * var(--unit));
+}
+
+.helperText {
+  margin: calc(8 * var(--unit)) 0 0;
+  color: var(--muted);
+  font-size: calc(14 * var(--unit));
+  line-height: 1.5;
+}
 
 .loginButton {
-  min-height: calc(60 * var(--unit));
-  margin-top: calc(28 * var(--unit));
+  min-height: calc(56 * var(--unit));
+  margin-top: calc(24 * var(--unit));
   background: var(--purple);
   color: white;
-  font-size: calc(20 * var(--unit));
+  font-size: calc(18 * var(--unit));
 }
 
 .loginButton:hover:not(:disabled) { background: #5c36af; }
-.loginButton svg { width: calc(24 * var(--unit)); height: calc(24 * var(--unit)); }
+.loginButton svg { width: calc(22 * var(--unit)); height: calc(22 * var(--unit)); }
+
+.demoButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(8 * var(--unit));
+  width: 100%;
+  min-height: calc(48 * var(--unit));
+  margin-top: calc(10 * var(--unit));
+  padding: calc(10 * var(--unit)) calc(14 * var(--unit));
+  border: 1.5px dashed #cbd5e1;
+  border-radius: calc(12 * var(--unit));
+  font: inherit;
+  font-size: calc(15 * var(--unit));
+  font-weight: 600;
+  color: #475569;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.demoButton:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
 .page button:disabled { cursor: wait; opacity: 0.65; }
 .page :is(button, input):focus-visible { outline: 3px solid #4c2795; outline-offset: 4px; }
 
@@ -317,8 +408,7 @@
 @media (prefers-contrast: more) {
   .page { --muted: #45546b; }
   .divider, .legal { color: #45546b; }
-  .whatsapp { background: #087d38; }
   .field input { border-color: #536279; }
   .field input::placeholder { color: #536279; }
-  .google, .audioCaptcha, .badges li { border-color: #536279; }
+  .google, .badges li { border-color: #536279; }
 }

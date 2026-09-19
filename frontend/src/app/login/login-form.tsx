@@ -4,46 +4,40 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { contributionLabel, loginHref, parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
-import { GoogleIcon, LoginIcon, SpeakerIcon, WaveformIcon, WhatsAppIcon } from "./login-icons";
+import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from "./login-icons";
 import styles from "./login.module.css";
 
 const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
-const unavailableMessage = "Layanan masuk akun sedang disiapkan. Silakan jelajahi langsung atau coba lagi nanti.";
 
-// Accept the local Indonesian format shown in the design, or an international number.
-function normalizePhone(value: string) {
-  const compact = value.replace(/[\s()-]/g, "");
-  if (/^08\d{8,11}$/.test(compact)) return `+62${compact.slice(1)}`;
-  if (/^8\d{8,11}$/.test(compact)) return `+62${compact}`;
-  if (/^628\d{8,11}$/.test(compact)) return `+${compact}`;
-  return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
-}
+type AuthMode = "signin" | "signup" | "magiclink";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const destination = safeReturnTo(searchParams.get('next'));
-  const returnQuery = destination.split('?')[1] ?? '';
-  const guestDestination = screenHref('map', returnQuery);
-  const action = contributionLabel(parseScreen(new URLSearchParams(returnQuery).get('screen')));
-  const phoneRef = useRef<HTMLInputElement>(null);
-  const codeRef = useRef<HTMLInputElement>(null);
+  const destination = safeReturnTo(searchParams.get("next"));
+  const returnQuery = destination.split("?")[1] ?? "";
+  const guestDestination = screenHref("map", returnQuery);
+  const action = contributionLabel(parseScreen(new URLSearchParams(returnQuery).get("screen")));
+
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
+
+  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
-  const [pending, setPending] = useState<"google" | "sms" | "whatsapp" | "verify" | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
-  const [code, setCode] = useState("");
-  const [codeError, setCodeError] = useState("");
+  const [pending, setPending] = useState<"google" | "email" | "magiclink" | null>(null);
   const [policy, setPolicy] = useState("Ketentuan Layanan");
   const busy = pending !== null;
 
   useEffect(() => {
     if (!authConfigured) return;
-    // Supabase restores the session from the OAuth return URL on this route.
     const { data } = supabaseBrowser().auth.onAuthStateChange((event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
         router.replace(destination);
@@ -52,15 +46,11 @@ export function LoginForm() {
     return () => data.subscription.unsubscribe();
   }, [router, destination]);
 
-  useEffect(() => {
-    if (sentTo) codeRef.current?.focus();
-  }, [sentTo]);
-
   async function signInWithGoogle() {
     if (busy) return;
     setMessage("");
     if (!authConfigured) {
-      setMessage(unavailableMessage);
+      setMessage("Kunci Supabase belum disetel di lingkungan ini. Anda dapat menggunakan 'Masuk Cepat Mode Uji Coba (Demo)' di bawah.");
       return;
     }
     setPending("google");
@@ -72,69 +62,112 @@ export function LoginForm() {
       if (error) throw error;
     } catch {
       setMessage("Tidak dapat terhubung ke Google. Silakan coba lagi.");
-    } finally {
       setPending(null);
     }
   }
 
-  async function requestCode(channel: "sms" | "whatsapp") {
-    if (busy) return;
-    setMessage("");
-    const normalized = normalizePhone(phone);
-    if (!normalized) {
-      setPhoneError("Masukkan nomor ponsel yang valid, contoh: 0812-3456-7890.");
-      phoneRef.current?.focus();
-      return;
-    }
-    setPhoneError("");
-    if (!authConfigured) {
-      setMessage(unavailableMessage);
-      return;
-    }
-    setPending(channel);
-    try {
-      const { error } = await supabaseBrowser().auth.signInWithOtp({
-        phone: normalized,
-        options: { channel },
-      });
-      if (error) throw error;
-      setSentTo(normalized);
-      setMessage(`Kode verifikasi telah dikirim melalui ${channel === "sms" ? "SMS" : "WhatsApp"}.`);
-    } catch {
-      setMessage(`Tidak dapat mengirim kode melalui ${channel === "sms" ? "SMS" : "WhatsApp"}. Silakan coba lagi atau gunakan akun Google.`);
-    } finally {
-      setPending(null);
+  function signInAsDemo() {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("naviable_demo_token", "demo-relawan-surabaya");
+      localStorage.setItem(
+        "naviable_demo_user",
+        JSON.stringify({
+          id: "00000000-0000-4000-8000-000000000001",
+          email: "relawan@naviable.org",
+          role: "authenticated",
+          user_metadata: { name: "Relawan Naviable" },
+        })
+      );
+      window.dispatchEvent(new Event("naviable_auth_change"));
+      router.replace(destination);
     }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    if (!sentTo) {
-      await requestCode("sms");
-      return;
-    }
-    if (!/^\d{6,8}$/.test(code)) {
-      setCodeError("Masukkan kode verifikasi yang Anda terima.");
-      codeRef.current?.focus();
-      return;
-    }
-    setCodeError("");
     setMessage("");
+    setEmailError("");
+    setPasswordError("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setEmailError("Masukkan alamat email yang valid (contoh: relawan@naviable.org).");
+      emailRef.current?.focus();
+      return;
+    }
+
+    if (authMode !== "magiclink") {
+      if (!password || password.length < 6) {
+        setPasswordError("Kata sandi minimal terdiri dari 6 karakter.");
+        passwordRef.current?.focus();
+        return;
+      }
+    }
 
     if (!authConfigured) {
-      setMessage(unavailableMessage);
+      setMessage(
+        "Kunci Supabase belum disetel. Anda dapat menggunakan tombol '⚡ Masuk Cepat Mode Uji Coba (Demo)' di bawah untuk langsung mencoba."
+      );
       return;
     }
 
-    setPending("verify");
+    if (authMode === "magiclink") {
+      setPending("magiclink");
+      try {
+        const { error } = await supabaseBrowser().auth.signInWithOtp({
+          email: trimmedEmail,
+          options: {
+            emailRedirectTo: `${window.location.origin}${loginHref(destination)}`,
+          },
+        });
+        if (error) throw error;
+        setMessage(`Tautan masuk telah dikirim ke ${trimmedEmail}. Silakan periksa kotak masuk atau spam email Anda.`);
+      } catch (err: unknown) {
+        const errMessage = err instanceof Error ? err.message : "Gagal mengirim tautan masuk.";
+        setMessage(errMessage);
+      } finally {
+        setPending(null);
+      }
+      return;
+    }
+
+    if (authMode === "signup") {
+      setPending("email");
+      try {
+        const { data, error } = await supabaseBrowser().auth.signUp({
+          email: trimmedEmail,
+          password,
+        });
+        if (error) throw error;
+        if (data.session) {
+          router.replace(destination);
+        } else {
+          setMessage(`Pendaftaran berhasil! Silakan periksa email ${trimmedEmail} untuk mengonfirmasi akun Anda.`);
+        }
+      } catch (err: unknown) {
+        const errMessage = err instanceof Error ? err.message : "Gagal mendaftarkan akun.";
+        setMessage(errMessage);
+      } finally {
+        setPending(null);
+      }
+      return;
+    }
+
+    // mode === "signin"
+    setPending("email");
     try {
-      const { error } = await supabaseBrowser().auth.verifyOtp({ phone: sentTo, token: code, type: "sms" });
+      const { data, error } = await supabaseBrowser().auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
       if (error) throw error;
-      router.replace(destination);
+      if (data.session) {
+        router.replace(destination);
+      }
     } catch {
-      setCodeError("Kode tidak valid atau sudah kedaluwarsa. Silakan periksa kembali atau minta kode baru.");
-      codeRef.current?.focus();
+      setPasswordError("Email atau kata sandi tidak cocok. Silakan periksa kembali atau pilih tab 'Magic Link'.");
+      passwordRef.current?.focus();
     } finally {
       setPending(null);
     }
@@ -148,74 +181,211 @@ export function LoginForm() {
   return (
     <>
       <form className={styles.form} onSubmit={submit} noValidate aria-busy={busy}>
-        {searchParams.has('next') && <p role="note" className={styles.status}>Masuk untuk {action}. Setelah masuk, Anda akan kembali ke aksi ini. Peta dan informasi lokasi tetap bisa dibaca tanpa akun.</p>}
-        <div className={styles.socialButtons}>
-          <button className={`${styles.button} ${styles.google}`} type="button" onClick={signInWithGoogle} disabled={busy}>
-            <GoogleIcon />
-            <span>{pending === "google" ? "Menghubungkan ke Google…" : "Masuk dengan Google"}</span>
-          </button>
-          <button className={`${styles.button} ${styles.whatsapp}`} type="button" onClick={() => requestCode("whatsapp")} disabled={busy || Boolean(sentTo)}>
-            <WhatsAppIcon />
-            <span>{pending === "whatsapp" ? "Mengirim kode…" : "Masuk dengan WhatsApp"}</span>
-          </button>
-        </div>
-
-        <div className={styles.divider}><span>atau gunakan nomor ponsel</span></div>
-
-        <div className={styles.field}>
-          <label htmlFor="phone-number">Nomor Ponsel</label>
-          <input
-            ref={phoneRef}
-            id="phone-number"
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="0812-3456-7890"
-            value={phone}
-            maxLength={24}
-            required
-            readOnly={Boolean(sentTo)}
-            disabled={busy}
-            aria-invalid={Boolean(phoneError)}
-            aria-describedby={phoneError ? "phone-error" : undefined}
-            onChange={(event) => { setPhone(event.target.value); setPhoneError(""); setMessage(""); }}
-          />
-          {phoneError && <p id="phone-error" className={styles.fieldError} role="alert">{phoneError}</p>}
-        </div>
-
-        {sentTo ? (
-          <div className={`${styles.field} ${styles.codeField}`}>
-            <label htmlFor="verification-code">Kode Verifikasi</label>
-            <input ref={codeRef} id="verification-code" name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="Masukkan kode" value={code} maxLength={8} disabled={busy} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "code-error" : undefined} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "")); setCodeError(""); }} />
-            {codeError && <p id="code-error" className={styles.fieldError} role="alert">{codeError}</p>}
-            <button className={styles.textButton} type="button" disabled={busy} onClick={() => { setSentTo(null); setCode(""); setCodeError(""); setMessage(""); phoneRef.current?.focus(); }}>Ganti nomor atau minta kode baru</button>
-          </div>
-        ) : (
-          <button
-            className={styles.audioCaptcha}
-            type="button"
-            disabled={busy}
-            onClick={() => setMessage("Verifikasi suara sedang dalam pengembangan. Anda dapat masuk dengan akun Google atau meminta kode ponsel.")}
-          >
-            <span className={styles.speaker}><SpeakerIcon /></span>
-            <span className={styles.audioCopy}><strong>Verifikasi Suara</strong><span>Ketuk untuk mendengarkan kode</span></span>
-            <span className={styles.waveform}><WaveformIcon /></span>
-          </button>
+        {searchParams.has("next") && (
+          <p role="note" className={styles.status}>
+            Masuk untuk {action}. Setelah masuk, Anda akan langsung kembali ke aksi ini. Peta dan informasi lokasi tetap bisa dijelajahi tanpa akun.
+          </p>
         )}
 
-        {message && <p className={styles.status} role="status">{message}</p>}
+        {/* Google OAuth */}
+        <div className={styles.socialButtons}>
+          <button
+            className={`${styles.button} ${styles.google}`}
+            type="button"
+            onClick={signInWithGoogle}
+            disabled={busy}
+          >
+            <GoogleIcon />
+            <span>{pending === "google" ? "Menghubungkan Google…" : "Lanjut dengan Google"}</span>
+          </button>
+        </div>
 
+        <div className={styles.divider}>
+          <span>atau masuk dengan email</span>
+        </div>
+
+        {/* Auth Mode Switcher Tabs */}
+        <div className={styles.modeTabs} role="tablist" aria-label="Pilihan Masuk atau Daftar">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={authMode === "signin"}
+            className={`${styles.tabBtn} ${authMode === "signin" ? styles.tabActive : ""}`}
+            onClick={() => {
+              setAuthMode("signin");
+              setEmailError("");
+              setPasswordError("");
+              setMessage("");
+            }}
+          >
+            Masuk
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={authMode === "signup"}
+            className={`${styles.tabBtn} ${authMode === "signup" ? styles.tabActive : ""}`}
+            onClick={() => {
+              setAuthMode("signup");
+              setEmailError("");
+              setPasswordError("");
+              setMessage("");
+            }}
+          >
+            Daftar Akun
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={authMode === "magiclink"}
+            className={`${styles.tabBtn} ${authMode === "magiclink" ? styles.tabActive : ""}`}
+            onClick={() => {
+              setAuthMode("magiclink");
+              setEmailError("");
+              setPasswordError("");
+              setMessage("");
+            }}
+          >
+            Magic Link
+          </button>
+        </div>
+
+        {/* Email Field */}
+        <div className={styles.field}>
+          <label htmlFor="auth-email">Alamat Email</label>
+          <div className={styles.inputWrapper}>
+            <span className={styles.inputIcon} aria-hidden="true">
+              <MailIcon />
+            </span>
+            <input
+              ref={emailRef}
+              id="auth-email"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="nama@domain.com"
+              value={email}
+              required
+              disabled={busy}
+              aria-invalid={Boolean(emailError)}
+              aria-describedby={emailError ? "email-error" : undefined}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setEmailError("");
+                setMessage("");
+              }}
+            />
+          </div>
+          {emailError && (
+            <p id="email-error" className={styles.fieldError} role="alert">
+              {emailError}
+            </p>
+          )}
+        </div>
+
+        {/* Password Field (hidden in magic link mode) */}
+        {authMode !== "magiclink" ? (
+          <div className={styles.field} style={{ marginTop: "16px" }}>
+            <div className={styles.fieldHeader}>
+              <label htmlFor="auth-password">Kata Sandi</label>
+              {authMode === "signin" && (
+                <button
+                  type="button"
+                  className={styles.textButton}
+                  onClick={() => {
+                    setAuthMode("magiclink");
+                    setMessage("Masukkan email Anda di atas untuk menerima tautan masuk instan.");
+                  }}
+                >
+                  Lupa kata sandi?
+                </button>
+              )}
+            </div>
+            <div className={styles.inputWrapper}>
+              <span className={styles.inputIcon} aria-hidden="true">
+                <LockIcon />
+              </span>
+              <input
+                ref={passwordRef}
+                id="auth-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+                placeholder={authMode === "signup" ? "Minimal 6 karakter" : "Masukkan kata sandi"}
+                value={password}
+                required
+                disabled={busy}
+                aria-invalid={Boolean(passwordError)}
+                aria-describedby={passwordError ? "password-error" : undefined}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setPasswordError("");
+                  setMessage("");
+                }}
+              />
+              <button
+                type="button"
+                className={styles.toggleVisibility}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
+            {passwordError && (
+              <p id="password-error" className={styles.fieldError} role="alert">
+                {passwordError}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className={styles.helperText}>
+            Kami akan mengirimkan email berisi tautan langsung untuk masuk tanpa memerlukan kata sandi.
+          </p>
+        )}
+
+        {message && (
+          <p className={styles.status} role="status">
+            {message}
+          </p>
+        )}
+
+        {/* Submit Button */}
         <button className={`${styles.button} ${styles.loginButton}`} type="submit" disabled={busy}>
           <LoginIcon />
-          <span>{pending === "sms" ? "Mengirim kode…" : pending === "verify" ? "Memverifikasi…" : sentTo ? "Verifikasi & Masuk" : "Lanjut Masuk"}</span>
+          <span>
+            {pending === "email"
+              ? authMode === "signup"
+                ? "Mendaftarkan…"
+                : "Masuk ke Akun…"
+              : pending === "magiclink"
+              ? "Mengirim Magic Link…"
+              : authMode === "signup"
+              ? "Daftar Akun Baru"
+              : authMode === "magiclink"
+              ? "Kirim Tautan Masuk"
+              : "Masuk Sekarang"}
+          </span>
         </button>
 
+        {/* Demo Fallback Button for fast local testing */}
+        <button
+          className={styles.demoButton}
+          type="button"
+          onClick={signInAsDemo}
+          title="Masuk langsung untuk mencoba fitur tanpa setup Supabase cloud"
+        >
+          <span>⚡ Masuk Cepat Mode Uji Coba (Demo)</span>
+        </button>
+
+        {/* Guest destination */}
         <button
           className={`${styles.button} ${styles.google}`}
           type="button"
           onClick={() => router.push(guestDestination)}
-          style={{ marginTop: '8px' }}
+          style={{ marginTop: "8px" }}
         >
           <span>Lanjut tanpa akun (Mode Tamu) →</span>
         </button>
@@ -223,14 +393,26 @@ export function LoginForm() {
 
       <p className={styles.legal}>
         Dengan masuk, Anda menyetujui{" "}
-        <button type="button" onClick={() => openPolicy("Ketentuan Layanan")}>Ketentuan Layanan</button>{" "}
-        dan{" "}<button type="button" onClick={() => openPolicy("Kebijakan Privasi")}>Kebijakan Privasi</button> Naviable.
+        <button type="button" onClick={() => openPolicy("Ketentuan Layanan")}>
+          Ketentuan Layanan
+        </button>{" "}
+        dan{" "}
+        <button type="button" onClick={() => openPolicy("Kebijakan Privasi")}>
+          Kebijakan Privasi
+        </button>{" "}
+        Naviable.
       </p>
 
       <dialog ref={dialogRef} className={styles.policyDialog} aria-labelledby="policy-title">
         <h2 id="policy-title">{policy}</h2>
         <p>Dokumen {policy.toLowerCase()} Naviable sedang diselaraskan. Anda dapat menjelajahi peta langsung tanpa mendaftar.</p>
-        <button className={`${styles.button} ${styles.loginButton}`} type="button" onClick={() => dialogRef.current?.close()}>Tutup</button>
+        <button
+          className={`${styles.button} ${styles.loginButton}`}
+          type="button"
+          onClick={() => dialogRef.current?.close()}
+        >
+          Tutup
+        </button>
       </dialog>
     </>
   );
