@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { parseScreen, screenHref } from '@/lib/navigation';
+import { loginHref, parseScreen, screenHref } from '@/lib/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Place,
   Screen,
@@ -20,6 +21,7 @@ import { MapView } from '@/components/map/MapView';
 import { PlaceList } from '@/components/places/PlaceList';
 import { PlaceDetailDrawer } from '@/components/places/PlaceDetailDrawer';
 import { ReportForm } from '@/components/reports/ReportForm';
+import { ReviewForm } from '@/components/places/ReviewForm';
 import { DashboardStats } from '@/components/observatory/DashboardStats';
 import { StatusDistribution } from '@/components/observatory/StatusDistribution';
 import { DistrictSnapshot } from '@/components/observatory/DistrictSnapshot';
@@ -28,13 +30,28 @@ import { DataQualityCard } from '@/components/observatory/DataQualityCard';
 import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
 import { AccessibilityModal } from '@/components/accessibility/AccessibilityModal';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { Icon } from '@/components/ui/Icon';
 
 export default function ExploreApp() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const screen = parseScreen(searchParams.get('screen'));
+  const auth = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (screen === 'add' && auth.ready && !auth.user && authModalShownFor !== 'add') {
+      setAuthModalShownFor('add');
+      setShowAuthModal(true);
+    }
+  }, [screen, auth.ready, auth.user, authModalShownFor]);
+
   function setScreen(next: Screen) {
+    if (next === 'add' && !auth.user) {
+      setShowAuthModal(true);
+    }
     if (next !== screen) {
       router.push(screenHref(next, searchParams.toString()));
     }
@@ -176,13 +193,20 @@ export default function ExploreApp() {
         {liveAnnouncement}
       </div>
 
-      <AppSidebar currentScreen={screen} onSelectScreen={setScreen} />
+      <AppSidebar
+        currentScreen={screen}
+        onSelectScreen={setScreen}
+        signedIn={Boolean(auth.user)}
+      />
 
       <section id="main-content" className="workspace">
         <TopNavbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onOpenAccessibility={() => setShowA11y(true)}
+          accountHref={auth.user ? screenHref('profile') : loginHref(screenHref(screen))}
+          signedIn={Boolean(auth.user)}
+          onOpenAuth={() => setShowAuthModal(true)}
         />
 
         {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat data tempat dari server…</p>}
@@ -365,18 +389,39 @@ export default function ExploreApp() {
                 place={selectedPlace}
                 onClose={() => setSelectedPlace(null)}
                 onCorrectPlace={handleCorrectPlace}
+                onWriteReview={place => {
+                  if (!auth.user) {
+                    setShowAuthModal(true);
+                  }
+                  setScreen('review');
+                }}
+                signedIn={Boolean(auth.user)}
                 activeNeed={need}
               />
             </div>
           </>
         )}
 
-        {screen === 'report' && (
+        {(screen === 'add' || screen === 'report') && (
           <ReportForm
             places={places}
-            key={reportTargetPlaceName ?? "new-report"}
-            defaultPlaceName={reportTargetPlaceName}
+            key={`${screen}:${selectedPlace?.id ?? 'new'}:${auth.user?.id ?? 'guest'}`}
+            mode={screen === 'add' ? 'add' : 'correction'}
+            targetPlace={screen === 'report' ? selectedPlace ?? undefined : undefined}
+            draftOwner={auth.user?.id ?? 'guest'}
+            signedIn={Boolean(auth.user)}
+            onRequireAuth={() => setShowAuthModal(true)}
+            onCancel={() => setScreen('map')}
             onSubmitReport={handleSubmitReport}
+          />
+        )}
+
+        {screen === 'review' && selectedPlace && (
+          <ReviewForm
+            key={String(selectedPlace.id)}
+            place={selectedPlace}
+            onCancel={() => setScreen('map')}
+            onSubmitted={() => setScreen('map')}
           />
         )}
 
@@ -415,6 +460,21 @@ export default function ExploreApp() {
         onToggleReduceMotion={() => setReduceMotion(!settings.reduceMotion)}
         onToggleDyslexia={() => setDyslexia(!settings.dyslexia)}
         onReset={resetSettings}
+      />
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => setShowAuthModal(false)}
+        actionDescription={
+          screen === 'add'
+            ? 'menambahkan lokasi baru'
+            : screen === 'report'
+            ? 'melaporkan perubahan kondisi'
+            : screen === 'review'
+            ? 'menulis review pengalaman'
+            : 'berkontribusi di Naviable'
+        }
       />
     </main>
   );

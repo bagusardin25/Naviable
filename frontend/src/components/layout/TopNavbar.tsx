@@ -8,12 +8,18 @@ type TopNavbarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onOpenAccessibility: () => void;
+  accountHref: string;
+  signedIn: boolean;
+  onOpenAuth?: () => void;
 };
 
 export function TopNavbar({
   searchQuery,
   onSearchChange,
   onOpenAccessibility,
+  accountHref,
+  signedIn,
+  onOpenAuth,
 }: TopNavbarProps) {
   const [voiceNotice, setVoiceNotice] = useState(false);
 
@@ -58,14 +64,35 @@ export function TopNavbar({
       </div>
 
       <div className="topbar-actions">
-        <Link
-          href="/login"
-          className="topbar-icon-button"
-          aria-label="Masuk ke akun atau ganti kontributor"
-          title="Masuk / Akun"
-        >
-          <Icon name="user" size={18} />
-        </Link>
+        {signedIn ? (
+          <Link
+            href={accountHref}
+            className="topbar-icon-button"
+            aria-label="Kontribusi Saya"
+            title="Profil Kontributor"
+          >
+            <Icon name="user" size={18} />
+          </Link>
+        ) : onOpenAuth ? (
+          <button
+            type="button"
+            className="topbar-icon-button"
+            onClick={onOpenAuth}
+            aria-label="Masuk untuk berkontribusi"
+            title="Masuk / Daftar"
+          >
+            <Icon name="user" size={18} />
+          </button>
+        ) : (
+          <Link
+            href={accountHref}
+            className="topbar-icon-button"
+            aria-label="Masuk untuk berkontribusi"
+            title="Masuk / Akun"
+          >
+            <Icon name="user" size={18} />
+          </Link>
+        )}
         <button
           id="btn-accessibility"
           type="button"

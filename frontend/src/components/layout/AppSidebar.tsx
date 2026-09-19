@@ -9,9 +9,10 @@ import { Icon } from '@/components/ui/Icon';
 type AppSidebarProps = {
   currentScreen: Screen;
   onSelectScreen: (screen: Screen) => void;
+  signedIn: boolean;
 };
 
-export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
+export function AppSidebar({ currentScreen, onSelectScreen, signedIn }: AppSidebarProps) {
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -19,7 +20,7 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
       <Link href="/" className="brand" aria-label="Naviable — kembali ke beranda">
         {!imgError ? (
           <Image
-            src="/naviable-mark.svg"
+            src="/logo-only-light-3.png"
             alt="Naviable Logo"
             width={40}
             height={40}
@@ -44,50 +45,55 @@ export function AppSidebar({ currentScreen, onSelectScreen }: AppSidebarProps) {
           type="button"
           className={currentScreen === 'map' ? 'active' : ''}
           onClick={() => onSelectScreen('map')}
-          aria-label="Peta Aksesibilitas"
+          aria-label="Jelajahi"
+          aria-current={currentScreen === 'map' ? 'page' : undefined}
         >
           <Icon name="map" />
-          <span>Peta</span>
+          <span>Jelajahi</span>
         </button>
         <button
           id="nav-report"
           type="button"
-          className={currentScreen === 'report' ? 'active' : ''}
-          onClick={() => onSelectScreen('report')}
-          aria-label="Laporkan Tempat"
+          className={currentScreen === 'add' ? 'active' : ''}
+          onClick={() => onSelectScreen('add')}
+          aria-label="Tambah Lokasi"
+          aria-current={currentScreen === 'add' ? 'page' : undefined}
         >
           <Icon name="report" />
-          <span className="nav-label-full">Laporkan Tempat</span>
-          <span className="nav-label-mobile">Lapor</span>
+          <span className="nav-label-full">Tambah Lokasi</span>
+          <span className="nav-label-mobile">Tambah</span>
         </button>
         <button
           id="nav-dashboard"
           type="button"
           className={currentScreen === 'dashboard' ? 'active' : ''}
           onClick={() => onSelectScreen('dashboard')}
-          aria-label="Dashboard Data Keterbukaan Akses"
+          aria-label="Informasi Aksesibilitas"
+          aria-current={currentScreen === 'dashboard' ? 'page' : undefined}
         >
           <Icon name="dashboard" />
-          <span className="nav-label-full">Data Kota</span>
-          <span className="nav-label-mobile">Data</span>
+          <span className="nav-label-full">Informasi Aksesibilitas</span>
+          <span className="nav-label-mobile">Informasi</span>
         </button>
         <button
           id="nav-profile"
           type="button"
           className={currentScreen === 'profile' ? 'active' : ''}
           onClick={() => onSelectScreen('profile')}
-          aria-label="Profil Kontributor"
+          aria-label={signedIn ? 'Kontribusi Saya' : 'Masuk'}
+          aria-current={currentScreen === 'profile' ? 'page' : undefined}
         >
           <Icon name="user" />
-          <span>Profil</span>
+          <span className="nav-label-full">{signedIn ? 'Kontribusi Saya' : 'Masuk'}</span>
+          <span className="nav-label-mobile">{signedIn ? 'Akun' : 'Masuk'}</span>
         </button>
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="avatar">AR</div>
+        <div className="avatar"><Icon name="user" /></div>
         <div>
-          <strong>Ahmad Rizki</strong>
-          <span>Relawan Surabaya</span>
+          <strong>{signedIn ? 'Akun kontributor' : 'Mode tamu'}</strong>
+          <span>{signedIn ? 'Terima kasih telah berbagi' : 'Jelajahi tanpa akun'}</span>
         </div>
       </div>
     </aside>
