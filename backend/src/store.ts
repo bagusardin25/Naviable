@@ -11,8 +11,13 @@ export type Photo = ReturnType<typeof decodePhoto>;
 export type Report = {
   id: string; placeId: string; actorId: string; reporterName: string; requestKey: string; inputHash: string;
   elements: ReportInput["elements"]; photoPath: string; mimeType: string; createdAt: string;
+  reviewStatus: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "NEEDS_REVISION" | "APPROVED" | "REJECTED" | "PUBLISHED";
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  reviewChecklist?: Record<string, boolean> | null;
 };
-export type PublishInput = Omit<Report, "id" | "photoPath" | "mimeType" | "createdAt">;
+export type PublishInput = Omit<Report, "id" | "photoPath" | "mimeType" | "createdAt" | "reviewStatus" | "reviewedBy" | "reviewedAt" | "reviewNote" | "reviewChecklist">;
 export type Review = { id: string; placeId: string; actorId: string; reviewerName: string; experience: string; createdAt: string; requestKey: string; inputHash: string };
 export type ReviewInput = Omit<Review, "id" | "createdAt">;
 export interface Store {
@@ -20,6 +25,9 @@ export interface Store {
   getPlace(id: string): Promise<Place | undefined>;
   listReports(placeId: string, limit?: number, offset?: number): Promise<Report[]>;
   getReport(id: string): Promise<Report | undefined>;
+  listAllReports(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<{ reports: (Report & { placeName?: string; placeAddress?: string | null })[]; total: number }>;
+  getReviewerStats(): Promise<{ submitted: number; approvedToday: number; needsRevision: number; rejected: number; total: number }>;
+  reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean> }): Promise<Report>;
   contributions(actorId: string): Promise<{ total: number; reports: Report[] }>;
   publish(input: PublishInput, photo: Photo, newPlace?: Place): Promise<{ report: Report; replayed: boolean }>;
   listReviews(placeId: string, limit: number, offset: number): Promise<{ reviews: Review[]; total: number }>;
@@ -40,7 +48,95 @@ export class LocalStore implements Store {
       if (this.state.version !== 1 || !Array.isArray(this.state.places) || !Array.isArray(this.state.reports)) throw new Error("Unsupported local database");
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      this.state = { version: 1, places: await loadSeed(), reports: [] };
+      const seedPlaces = await loadSeed();
+      const demoReports: Report[] = [
+        {
+          id: "10000000-0000-4000-8000-000000000001",
+          placeId: seedPlaces[3]?.id ?? "osm-node-4794254291",
+          actorId: "00000000-0000-4000-8000-000000000001",
+          reporterName: "Ahmad Rizki",
+          requestKey: "20000000-0000-4000-8000-000000000001",
+          inputHash: "demo-hash-1",
+          elements: [{ element: "E2_ramp", status: "TERHALANG", note: "Ramp akses kursi roda tertutup parkir motor dan barang pedagang." }],
+          photoPath: "photos/demo-ramp.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-18T10:15:00.000Z",
+          reviewStatus: "SUBMITTED",
+          reviewedBy: null,
+          reviewedAt: null,
+          reviewNote: null,
+          reviewChecklist: null,
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000002",
+          placeId: seedPlaces[0]?.id ?? "osm-node-659961942",
+          actorId: "00000000-0000-4000-8000-000000000002",
+          reporterName: "Siti Nurhaliza",
+          requestKey: "20000000-0000-4000-8000-000000000002",
+          inputHash: "demo-hash-2",
+          elements: [{ element: "E5_guiding_block", status: "UTUH", note: "Jalur pemandu kuning terhubung rapi dari trotoar pintu masuk utama." }],
+          photoPath: "photos/demo-tactile.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-19T07:20:00.000Z",
+          reviewStatus: "APPROVED",
+          reviewedBy: "reviewer.naviable",
+          reviewedAt: "2026-09-19T08:30:00.000Z",
+          reviewNote: "Foto jelas dan menunjukkan jalur pemandu terpasang utuh sesuai standar.",
+          reviewChecklist: { photoMatchesPlace: true, photoShowsElement: true, descriptionMatchesEvidence: true, notDuplicate: true, accessStatusMatchesEvidence: true },
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000003",
+          placeId: seedPlaces[1]?.id ?? "osm-node-4191188521",
+          actorId: "00000000-0000-4000-8000-000000000003",
+          reporterName: "Budi Wicaksono",
+          requestKey: "20000000-0000-4000-8000-000000000003",
+          inputHash: "demo-hash-3",
+          elements: [{ element: "E1_door", status: "UTUH", note: "Pintu masuk lebar tanpa undakan, ramah pengguna kursi roda." }],
+          photoPath: "photos/demo-door.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-19T11:20:00.000Z",
+          reviewStatus: "SUBMITTED",
+          reviewedBy: null,
+          reviewedAt: null,
+          reviewNote: null,
+          reviewChecklist: null,
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000004",
+          placeId: seedPlaces[2]?.id ?? "osm-node-4191209387",
+          actorId: "00000000-0000-4000-8000-000000000004",
+          reporterName: "Dewi Lestari",
+          requestKey: "20000000-0000-4000-8000-000000000004",
+          inputHash: "demo-hash-4",
+          elements: [{ element: "E4_lift", status: "TIDAK_STANDAR", note: "Tombol lift tidak ada huruf braille dan posisinya terlalu tinggi." }],
+          photoPath: "photos/demo-lift.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-18T14:40:00.000Z",
+          reviewStatus: "NEEDS_REVISION",
+          reviewedBy: "reviewer.naviable",
+          reviewedAt: "2026-09-19T09:10:00.000Z",
+          reviewNote: "Foto belum memperlihatkan tombol lift secara keseluruhan. Mohon kirimkan foto yang lebih fokus.",
+          reviewChecklist: { photoMatchesPlace: true, photoShowsElement: false, descriptionMatchesEvidence: true, notDuplicate: true, accessStatusMatchesEvidence: false },
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000005",
+          placeId: seedPlaces[4]?.id ?? "osm-node-5873197056",
+          actorId: "00000000-0000-4000-8000-000000000005",
+          reporterName: "Anonim",
+          requestKey: "20000000-0000-4000-8000-000000000005",
+          inputHash: "demo-hash-5",
+          elements: [{ element: "E8_crossing", status: "TIDAK_ADA", note: "Tidak ada penyeberangan aman" }],
+          photoPath: "photos/demo-crossing.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-18T16:00:00.000Z",
+          reviewStatus: "REJECTED",
+          reviewedBy: "reviewer.naviable",
+          reviewedAt: "2026-09-18T17:20:00.000Z",
+          reviewNote: "Foto buram dan tidak menunjukkan titik lokasi penyeberangan yang dilaporkan.",
+          reviewChecklist: { photoMatchesPlace: false, photoShowsElement: false, descriptionMatchesEvidence: false, notDuplicate: true, accessStatusMatchesEvidence: false },
+        }
+      ];
+      this.state = { version: 1, places: seedPlaces, reports: demoReports };
       await this.persist(this.state);
     }
     return this;
@@ -56,9 +152,98 @@ export class LocalStore implements Store {
   async getPlace(id: string) { return structuredClone(this.state.places.find(p => p.id === id)); }
   async listReports(placeId: string, limit = 50, offset = 0) { return structuredClone(this.state.reports.filter(r => r.placeId === placeId).reverse().slice(offset, offset + limit)); }
   async getReport(id: string) { return structuredClone(this.state.reports.find(r => r.id === id)); }
+  async listAllReports(options: { status?: string; search?: string; limit?: number; offset?: number } = {}) {
+    const { status, search, limit = 50, offset = 0 } = options;
+    const placesMap = new Map(this.state.places.map(p => [p.id, p]));
+    let filtered = structuredClone(this.state.reports);
+    if (status && status !== "all") {
+      filtered = filtered.filter(r => r.reviewStatus === status);
+    }
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter(r => {
+        const place = placesMap.get(r.placeId);
+        const name = (place?.name ?? "").toLowerCase();
+        const address = (place?.address ?? "").toLowerCase();
+        const reporter = (r.reporterName ?? "").toLowerCase();
+        return name.includes(q) || address.includes(q) || reporter.includes(q);
+      });
+    }
+    // Newest first
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const total = filtered.length;
+    const slice = filtered.slice(offset, offset + limit).map(r => {
+      const place = placesMap.get(r.placeId);
+      return { ...r, placeName: place?.name ?? r.placeId, placeAddress: place?.address ?? null };
+    });
+    return { reports: slice, total };
+  }
+  async getReviewerStats() {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    let submitted = 0;
+    let approvedToday = 0;
+    let needsRevision = 0;
+    let rejected = 0;
+    for (const r of this.state.reports) {
+      if (r.reviewStatus === "SUBMITTED" || r.reviewStatus === "UNDER_REVIEW") submitted++;
+      else if (r.reviewStatus === "APPROVED" || r.reviewStatus === "PUBLISHED") {
+        if (r.reviewedAt && r.reviewedAt.slice(0, 10) === todayStr) approvedToday++;
+      } else if (r.reviewStatus === "NEEDS_REVISION") needsRevision++;
+      else if (r.reviewStatus === "REJECTED") rejected++;
+    }
+    return { submitted, approvedToday, needsRevision, rejected, total: this.state.reports.length };
+  }
+  async reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean> }) {
+    const operation = this.queue.then(async () => {
+      const report = this.state.reports.find(r => r.id === id);
+      if (!report) throw new ApiError(404, "Laporan tidak ditemukan");
+      if ((input.decision === "NEEDS_REVISION" || input.decision === "REJECTED") && (!input.note || !input.note.trim())) {
+        throw new ApiError(400, "Catatan reviewer wajib diisi untuk minta revisi atau tolak laporan");
+      }
+      const next = structuredClone(this.state);
+      const targetReport = next.reports.find(r => r.id === id)!;
+      targetReport.reviewStatus = input.decision;
+      targetReport.reviewedBy = input.reviewer;
+      targetReport.reviewedAt = new Date().toISOString();
+      targetReport.reviewNote = input.note;
+      targetReport.reviewChecklist = input.checklist ?? null;
+
+      if (input.decision === "APPROVED") {
+        const place = next.places.find(p => p.id === targetReport.placeId);
+        if (place) {
+          place.verifiedByTeam = true;
+          for (const el of targetReport.elements) {
+            place.elements[el.element] = {
+              status: el.status,
+              note: el.note ?? null,
+              photoUrl: `/api/photos/${targetReport.id}`,
+              lockedBy: "kontributor",
+              aiConfidence: null,
+            };
+          }
+          place.updatedAt = targetReport.reviewedAt;
+        }
+      }
+
+      await this.persist(next);
+      this.state = next;
+      return structuredClone(targetReport);
+    });
+    this.queue = operation.catch(() => {});
+    return operation;
+  }
   async contributions(actorId: string) { const reports = this.state.reports.filter(r => r.actorId === actorId); return { total: reports.length, reports: structuredClone(reports.slice(-50).reverse()) }; }
   async health() { await readFile(join(this.directory, "database.json"), "utf8"); }
-  async photo(report: Report) { return { bytes: await readFile(join(this.directory, report.photoPath)), mimeType: report.mimeType }; }
+  async photo(report: Report) {
+    try {
+      return { bytes: await readFile(join(this.directory, report.photoPath)), mimeType: report.mimeType };
+    } catch {
+      // Fallback 1x1 SVG image if photo file not present locally
+      const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="#e2e8f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#64748b">Bukti Foto Laporan</text></svg>`);
+      return { bytes: svg, mimeType: "image/svg+xml" };
+    }
+  }
   // WHY: Sequential queue ensures zero write collisions in local dev mode.
   // TRADE-OFF: LocalStore serializes writes in-memory with atomic JSON file rename,
   // avoiding complex local DB setups. In production, SupabaseStore replaces this with
@@ -98,10 +283,27 @@ export class LocalStore implements Store {
       const place = next.places.find(p => p.id === input.placeId);
       if (!place) throw new ApiError(404, "Lokasi tidak ditemukan");
       const id = randomUUID();
-      const report: Report = { ...input, id, photoPath: `photos/${id}.${photo.extension}`, mimeType: photo.mimeType, createdAt: new Date().toISOString() };
-      for (const el of input.elements) place.elements[el.element] = {
-        status: el.status, note: el.note ?? null, photoUrl: `/api/photos/${id}`, lockedBy: "kontributor", aiConfidence: null,
+      const report: Report = {
+        ...input,
+        id,
+        photoPath: `photos/${id}.${photo.extension}`,
+        mimeType: photo.mimeType,
+        createdAt: new Date().toISOString(),
+        reviewStatus: "SUBMITTED",
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewNote: null,
+        reviewChecklist: null,
       };
+      for (const el of input.elements) {
+        place.elements[el.element] = {
+          status: el.status,
+          note: el.note ?? null,
+          photoUrl: `/api/photos/${id}`,
+          lockedBy: "kontributor",
+          aiConfidence: null,
+        };
+      }
       place.updatedAt = report.createdAt;
       place.reportCount++;
       place.photoCount++;
@@ -116,6 +318,7 @@ export class LocalStore implements Store {
     return operation;
   }
 }
+
 
 export function toPlaceRow(p: Place) {
   return { id: p.id, name: p.name, category: p.category, city: p.city, address: p.address, lat: p.lat, lng: p.lng,
@@ -173,6 +376,63 @@ export class SupabaseStore implements Store {
     const { data, error, count } = await this.client.from("reviews").select("payload", { count: "exact" }).eq("place_id", placeId).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
     dbError(error); return { reviews: (data ?? []).map(r => r.payload as Review), total: count ?? 0 };
   }
+  async listAllReports(options: { status?: string; search?: string; limit?: number; offset?: number } = {}) {
+    const { status, search, limit = 50, offset = 0 } = options;
+    let query = this.client.from("reports").select("*, places(name, address)", { count: "exact" });
+    if (status && status !== "all") {
+      query = query.eq("review_status", status);
+    }
+    const { data, error, count } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    dbError(error);
+    type ReportJoined = { payload: Report; review_status?: string; places?: { name: string; address?: string | null } };
+    const list = ((data ?? []) as ReportJoined[]).map(row => {
+      const r = row.payload;
+      return {
+        ...r,
+        reviewStatus: (row.review_status as Report["reviewStatus"]) ?? r.reviewStatus ?? "SUBMITTED",
+        placeName: row.places?.name ?? r.placeId,
+        placeAddress: row.places?.address ?? null,
+      };
+    });
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      const filtered = list.filter(r => (r.placeName ?? "").toLowerCase().includes(q) || (r.reporterName ?? "").toLowerCase().includes(q));
+      return { reports: filtered, total: filtered.length };
+    }
+    return { reports: list, total: count ?? list.length };
+  }
+  async getReviewerStats() {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const { data, error } = await this.client.from("reports").select("review_status, reviewed_at");
+    dbError(error);
+    let submitted = 0;
+    let approvedToday = 0;
+    let needsRevision = 0;
+    let rejected = 0;
+    for (const r of (data ?? []) as { review_status?: string; reviewed_at?: string }[]) {
+      const st = r.review_status ?? "SUBMITTED";
+      if (st === "SUBMITTED" || st === "UNDER_REVIEW") submitted++;
+      else if (st === "APPROVED" || st === "PUBLISHED") {
+        if (r.reviewed_at && r.reviewed_at.slice(0, 10) === todayStr) approvedToday++;
+      } else if (st === "NEEDS_REVISION") needsRevision++;
+      else if (st === "REJECTED") rejected++;
+    }
+    return { submitted, approvedToday, needsRevision, rejected, total: data?.length ?? 0 };
+  }
+  async reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean> }) {
+    if ((input.decision === "NEEDS_REVISION" || input.decision === "REJECTED") && (!input.note || !input.note.trim())) {
+      throw new ApiError(400, "Catatan reviewer wajib diisi untuk minta revisi atau tolak laporan");
+    }
+    const { data, error } = await this.client.rpc("review_report", {
+      p_report_id: id,
+      p_reviewer: input.reviewer,
+      p_decision: input.decision,
+      p_note: input.note,
+      p_checklist: input.checklist ?? {},
+    });
+    dbError(error);
+    return data as Report;
+  }
   async review(input: ReviewInput) {
     const review: Review = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
     const { data, error } = await this.client.rpc("publish_review", { p_review: review });
@@ -181,7 +441,18 @@ export class SupabaseStore implements Store {
   }
   async publish(input: PublishInput, photo: Photo, newPlace?: Place) {
     const id = randomUUID();
-    const report: Report = { ...input, id, photoPath: `reports/${id}.${photo.extension}`, mimeType: photo.mimeType, createdAt: new Date().toISOString() };
+    const report: Report = {
+      ...input,
+      id,
+      photoPath: `reports/${id}.${photo.extension}`,
+      mimeType: photo.mimeType,
+      createdAt: new Date().toISOString(),
+      reviewStatus: "SUBMITTED",
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNote: null,
+      reviewChecklist: null,
+    };
     const { error: uploadError } = await this.client.storage.from("photos").upload(report.photoPath, photo.bytes, { contentType: photo.mimeType, upsert: false });
     dbError(uploadError);
     // Cleanup only when the DB definitively rejects or returns a previous report.
@@ -199,3 +470,4 @@ export class SupabaseStore implements Store {
     return { report: saved, replayed };
   }
 }
+

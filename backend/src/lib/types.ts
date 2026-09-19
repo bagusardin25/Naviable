@@ -148,3 +148,18 @@ export function summarizePlace(place: Place, profile?: UserProfile) {
     coverage: { known, total: relevant.length }
   };
 }
+
+export type UserRole = "USER" | "REVIEWER";
+
+export const REPORT_REVIEW_STATUSES = [
+  "DRAFT",
+  "SUBMITTED",
+  "UNDER_REVIEW",
+  "NEEDS_REVISION",
+  "APPROVED",
+  "REJECTED",
+  "PUBLISHED",
+] as const;
+
+export type ReportReviewStatus = (typeof REPORT_REVIEW_STATUSES)[number];
+

@@ -213,3 +213,56 @@ test('production cannot silently run local storage', () => {
     if (previousStore === undefined) delete process.env.DATA_STORE; else process.env.DATA_STORE = previousStore;
   }
 });
+
+test('reviewer workflow: list, detail, approve, revise with notes, reject, and audit trail', async () => {
+  const f = await fixture();
+  try {
+    const statsRes = await f.get('/api/reviewer/stats');
+    assert.equal(statsRes.status, 200);
+    const stats = await statsRes.json();
+    assert.ok(typeof stats.submitted === 'number');
+
+    const reportsRes = await f.get('/api/reviewer/reports?status=SUBMITTED');
+    assert.equal(reportsRes.status, 200);
+    const reportList = await reportsRes.json();
+    assert.ok(reportList.reports.length > 0);
+    const target = reportList.reports[0];
+
+    const detailRes = await f.get(`/api/reviewer/reports/${target.id}`);
+    assert.equal(detailRes.status, 200);
+    const detail = await detailRes.json();
+    assert.equal(detail.report.id, target.id);
+
+    // Needs revision requires note
+    const badRev = await f.post(`/api/reviewer/reports/${target.id}/review`, {
+      decision: 'NEEDS_REVISION',
+      reviewer: 'reviewer.naviable',
+      note: '   ',
+    });
+    assert.equal(badRev.status, 400);
+
+    // Approve report
+    const approveRes = await f.post(`/api/reviewer/reports/${target.id}/review`, {
+      decision: 'APPROVED',
+      reviewer: 'reviewer.naviable',
+      note: 'Bukti foto jelas dan konsisten.',
+      checklist: { photo_clear: true, elements_match: true },
+    });
+    assert.equal(approveRes.status, 200);
+    const approved = await approveRes.json();
+    assert.equal(approved.report.reviewStatus, 'APPROVED');
+    assert.equal(approved.report.reviewedBy, 'reviewer.naviable');
+
+    // Check place was updated with verifiedByTeam = true
+    const place = await f.store.getPlace(target.placeId);
+    assert.ok(place);
+    assert.equal(place.verifiedByTeam, true);
+
+    // Check history
+    const historyRes = await f.get('/api/reviewer/history');
+    assert.equal(historyRes.status, 200);
+    const history = await historyRes.json();
+    assert.ok(history.history.some((h: { id: string }) => h.id === target.id));
+  } finally { await f.close(); }
+});
+

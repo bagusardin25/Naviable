@@ -72,6 +72,7 @@ export function ReportForm({
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittedSuccessPlace, setSubmittedSuccessPlace] = useState<Place | null>(null);
   const attempt = useRef<{ signature: string; key: string } | null>(null);
   const busy = submitting || reading;
   const currentElement = targetPlace?.elements.find(element => element.code === elementCode);
@@ -158,14 +159,48 @@ export function ReportForm({
       } catch {
         // ignore
       }
-      onSubmitReport(result.place);
+      setSubmittedSuccessPlace(result.place);
     }
     catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum berhasil dikirim. Silakan coba lagi.'); }
     finally { setSubmitting(false); }
   }
 
+  if (submittedSuccessPlace) {
+    return (
+      <div className="page-scroll">
+        <div className="card form-card" style={{ maxWidth: '560px', margin: '40px auto', textAlign: 'center', padding: '32px 24px' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--notice-warning-bg)', border: '1px solid var(--notice-warning-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--orange)' }}>
+            <Icon name="check" size={28} />
+          </div>
+          <span className="eyebrow" style={{ color: 'var(--orange)', fontWeight: 700 }}>Status Laporan</span>
+          <h1 style={{ fontSize: '1.4rem', margin: '6px 0 12px', color: 'var(--ink)' }}>MENUNGGU REVIEW</h1>
+          <p style={{ color: 'var(--ink)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '16px' }}>
+            Laporan untuk <strong>{submittedSuccessPlace.name}</strong> telah berhasil dikirim ke antrean review Naviable.
+          </p>
+          <div style={{ background: 'var(--surface-secondary)', border: '1px solid var(--line)', borderRadius: '10px', padding: '12px 16px', marginBottom: '24px', fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'left' }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--ink)' }}>
+              Proses Kurasi & Verifikasi:
+            </p>
+            <p style={{ margin: 0, lineHeight: 1.5 }}>
+              Reviewer Naviable akan memeriksa bukti foto, kesesuaian elemen akses, dan titik lokasi sebelum laporan dipublikasikan sebagai data terverifikasi (Bukti telah diperiksa).
+            </p>
+          </div>
+          <button
+            type="button"
+            className="primary-action"
+            onClick={() => onSubmitReport(submittedSuccessPlace)}
+            style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+          >
+            Selesai & Buka Peta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-scroll">
+
       <button type="button" className="secondary-action" onClick={onCancel}>← {adding ? 'Kembali ke Jelajahi' : 'Kembali ke detail lokasi'}</button>
       <div className="page-title"><div><span className="eyebrow">Kontribusi warga</span><h1>{adding ? 'Tambah Lokasi Baru' : 'Laporkan Perubahan'}</h1><p>{adding ? 'Untuk tempat yang belum ada di Naviable. Periksa nama lokasi agar tidak membuat duplikat, lalu tambahkan bukti kondisi awal.' : `Koreksi informasi aksesibilitas ${targetPlace?.name}. Pilih bagian yang berubah, jelaskan kondisi terbaru, dan sertakan foto lapangan.`}</p></div></div>
       {!signedIn && (

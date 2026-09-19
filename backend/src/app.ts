@@ -155,6 +155,78 @@ export function createApp({ store, config, authenticate, analyze = analyzeAccess
     if ([from, to].some(p => p.needsGeocoding || p.lat === null || p.lng === null)) throw new ApiError(422, "Koordinat asal dan tujuan belum tersedia");
     res.json(journeyHint(await store.listPlaces(), from, to, input.profile));
   });
+  // Reviewer Endpoints
+  app.get("/api/reviewer/stats", async (_req, res) => {
+    res.json(await store.getReviewerStats());
+  });
+  app.get("/api/reviewer/reports", async (req, res) => {
+    const status = typeof req.query.status === "string" ? req.query.status : undefined;
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+    const offset = Math.max(0, Number(req.query.offset) || 0);
+    const result = await store.listAllReports({ status, search, limit, offset });
+    res.json({
+      reports: result.reports.map(r => ({
+        id: r.id,
+        placeId: r.placeId,
+        placeName: r.placeName,
+        placeAddress: r.placeAddress,
+        reporterName: r.reporterName,
+        elements: r.elements,
+        createdAt: r.createdAt,
+        photoUrl: `/api/photos/${r.id}`,
+        reviewStatus: r.reviewStatus,
+        reviewedBy: r.reviewedBy,
+        reviewedAt: r.reviewedAt,
+        reviewNote: r.reviewNote,
+        reviewChecklist: r.reviewChecklist,
+      })),
+      total: result.total,
+      limit,
+      offset,
+    });
+  });
+  app.get("/api/reviewer/reports/:id", async (req, res) => {
+    const report = await store.getReport(z.uuid().parse(req.params.id));
+    if (!report) throw new ApiError(404, "Laporan tidak ditemukan");
+    const place = await store.getPlace(report.placeId);
+    res.json({
+      report: {
+        ...report,
+        placeName: place?.name ?? report.placeId,
+        placeAddress: place?.address ?? null,
+        photoUrl: `/api/photos/${report.id}`,
+      },
+      place: place ? summarizePlace(place) : null,
+    });
+  });
+  app.post("/api/reviewer/reports/:id/review", async (req, res) => {
+    const ReviewDecisionBody = z.object({
+      decision: z.enum(["APPROVED", "NEEDS_REVISION", "REJECTED", "UNDER_REVIEW"]),
+      reviewer: z.string().min(1).default("reviewer.naviable"),
+      note: z.string().default(""),
+      checklist: z.record(z.string(), z.boolean()).optional(),
+    });
+    const body = ReviewDecisionBody.parse(req.body);
+    const reportId = z.uuid().parse(req.params.id);
+    const updated = await store.reviewReport(reportId, body);
+    res.json({ ok: true, report: updated });
+  });
+  app.get("/api/reviewer/history", async (req, res) => {
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+    const offset = Math.max(0, Number(req.query.offset) || 0);
+    const result = await store.listAllReports({ limit: 1000 });
+    const reviewed = result.reports
+      .filter(r => r.reviewStatus === "APPROVED" || r.reviewStatus === "NEEDS_REVISION" || r.reviewStatus === "REJECTED" || r.reviewStatus === "PUBLISHED")
+      .sort((a, b) => new Date(b.reviewedAt ?? b.createdAt).getTime() - new Date(a.reviewedAt ?? a.createdAt).getTime());
+    res.json({
+      history: reviewed.slice(offset, offset + limit),
+      total: reviewed.length,
+      limit,
+      offset,
+    });
+  });
+
   app.use((_req, res) => res.status(404).json({ error: "Endpoint tidak ditemukan" }));
   const errors: ErrorRequestHandler = (error, _req, res, _next) => {
     if (error instanceof ZodError) { res.status(400).json({ error: "Data permintaan tidak valid", issues: error.issues.map(i => ({ path: i.path, message: i.message })) }); return; }

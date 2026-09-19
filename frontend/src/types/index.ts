@@ -604,3 +604,98 @@ export type ReportDraft = {
   photoUrl?: string | null;
 };
 
+// ==========================================
+// ROLE & REVIEWER WORKFLOW TYPES
+// ==========================================
+
+export type UserRole = 'USER' | 'REVIEWER';
+
+export type ReportReviewStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'UNDER_REVIEW'
+  | 'NEEDS_REVISION'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PUBLISHED';
+
+export const REVIEW_STATUS_META: Record<
+  ReportReviewStatus,
+  { label: string; badgeClass: string; description: string }
+> = {
+  DRAFT: {
+    label: 'Draf',
+    badgeClass: 'status-belum_diketahui',
+    description: 'Draf laporan lokal pengisi',
+  },
+  SUBMITTED: {
+    label: 'Menunggu Review',
+    badgeClass: 'status-terhalang',
+    description: 'Laporan telah dikirim warga, menunggu pemeriksaan reviewer',
+  },
+  UNDER_REVIEW: {
+    label: 'Sedang Diperiksa',
+    badgeClass: 'status-tidak_standar',
+    description: 'Reviewer sedang memeriksa bukti foto dan kesesuaian lokasi',
+  },
+  NEEDS_REVISION: {
+    label: 'Perlu Revisi',
+    badgeClass: 'status-tidak_standar',
+    description: 'Bukti kurang jelas atau memerlukan konfirmasi ulang dari pelapor',
+  },
+  APPROVED: {
+    label: 'Disetujui',
+    badgeClass: 'status-utuh',
+    description: 'Bukti foto dan elemen telah diperiksa dan disetujui reviewer',
+  },
+  REJECTED: {
+    label: 'Ditolak',
+    badgeClass: 'status-tidak_ada',
+    description: 'Laporan tidak sesuai, foto tidak relevan, atau spam',
+  },
+  PUBLISHED: {
+    label: 'Dipublikasikan',
+    badgeClass: 'status-utuh',
+    description: 'Telah diperiksa dan dipublikasikan ke peta sebagai data terverifikasi',
+  },
+};
+
+export type ReviewerVerificationChecklist = {
+  photoMatchesPlace: boolean;
+  photoShowsElement: boolean;
+  descriptionMatchesEvidence: boolean;
+  notDuplicate: boolean;
+  accessStatusMatchesEvidence: boolean;
+};
+
+export type ReviewDecision = 'APPROVED' | 'NEEDS_REVISION' | 'REJECTED';
+
+export type ReviewerAuditItem = {
+  id: string;
+  placeId: string;
+  placeName: string;
+  placeAddress?: string | null;
+  reporterName: string;
+  createdAt: string;
+  photoUrl: string;
+  elements: Array<{ element: string; status: AccessibilityStatus; note?: string }>;
+  reviewStatus: ReportReviewStatus;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  reviewChecklist?: Partial<ReviewerVerificationChecklist> | null;
+  aiAnalysis?: {
+    drafts: Array<{ element: string; status: AccessibilityStatus; confidence: string; reason: string }>;
+    disclaimer: string;
+  } | null;
+};
+
+export type ReviewerStats = {
+  submitted: number;
+  approvedToday: number;
+  needsRevision: number;
+  rejected: number;
+  total: number;
+};
+
+

@@ -11,7 +11,7 @@ const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
 
-type AuthMode = "signin" | "signup" | "magiclink";
+type AuthMode = "signin" | "signup" | "magiclink" | "reviewer";
 
 export function LoginForm() {
   const router = useRouter();
@@ -23,9 +23,15 @@ export function LoginForm() {
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const reviewerPasswordRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const initialMode: AuthMode =
+    searchParams.get("mode") === "reviewer" || searchParams.get("role") === "reviewer" || destination.startsWith("/reviewer")
+      ? "reviewer"
+      : "signin";
+
+  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +40,15 @@ export function LoginForm() {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState<"google" | "email" | "magiclink" | null>(null);
   const [policy, setPolicy] = useState("Ketentuan Layanan");
-  const busy = pending !== null;
+
+  // Reviewer specific states
+  const [reviewerUsername, setReviewerUsername] = useState("reviewer.naviable");
+  const [reviewerPassword, setReviewerPassword] = useState("");
+  const [reviewerError, setReviewerError] = useState("");
+  const [reviewerPending, setReviewerPending] = useState(false);
+
+  const busy = pending !== null || reviewerPending;
+
 
   useEffect(() => {
     if (!authConfigured) return;
@@ -91,8 +105,46 @@ export function LoginForm() {
     setPasswordError("");
 
     const trimmedEmail = email.trim();
+    const isReviewerHandle =
+      trimmedEmail.toLowerCase() === "reviewer.naviable" ||
+      trimmedEmail.toLowerCase() === "reviewer@naviable.org";
+
+    if (isReviewerHandle) {
+      if (!password) {
+        setPasswordError("Masukkan kata sandi reviewer.");
+        passwordRef.current?.focus();
+        return;
+      }
+      setPending("email");
+      try {
+        const res = await fetch("/api/auth/reviewer-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: trimmedEmail,
+            password,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          router.replace("/reviewer");
+          return;
+        } else {
+          setPasswordError(data.error || "Username atau password tidak sesuai.");
+          passwordRef.current?.focus();
+          return;
+        }
+      } catch {
+        setPasswordError("Username atau password tidak sesuai.");
+        passwordRef.current?.focus();
+        return;
+      } finally {
+        setPending(null);
+      }
+    }
+
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError("Masukkan alamat email yang valid (contoh: relawan@naviable.org).");
+      setEmailError("Masukkan alamat email yang valid (contoh: relawan@naviable.org) atau 'reviewer.naviable'.");
       emailRef.current?.focus();
       return;
     }
@@ -173,14 +225,159 @@ export function LoginForm() {
     }
   }
 
+  async function submitReviewerLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    setReviewerError("");
+
+    if (!reviewerUsername.trim()) {
+      setReviewerError("Masukkan username reviewer.");
+      return;
+    }
+    if (!reviewerPassword) {
+      setReviewerError("Masukkan kata sandi reviewer.");
+      reviewerPasswordRef.current?.focus();
+      return;
+    }
+
+    setReviewerPending(true);
+    try {
+      const res = await fetch("/api/auth/reviewer-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: reviewerUsername.trim(),
+          password: reviewerPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setReviewerError(data.error || "Username atau password tidak sesuai.");
+        return;
+      }
+
+      // Successfully authenticated as REVIEWER
+      router.replace("/reviewer");
+    } catch {
+      setReviewerError("Username atau password tidak sesuai.");
+    } finally {
+      setReviewerPending(false);
+    }
+  }
+
   function openPolicy(title: string) {
     setPolicy(title);
     dialogRef.current?.showModal();
   }
 
+  if (authMode === "reviewer") {
+    return (
+      <div className={styles.form}>
+        <button
+          type="button"
+          className={styles.textButton}
+          onClick={() => {
+            setAuthMode("signin");
+            setReviewerError("");
+          }}
+          style={{ alignSelf: "flex-start", marginBottom: "8px", fontSize: "13px" }}
+        >
+          ← Kembali ke Masuk Pengguna Umum
+        </button>
+
+        <header style={{ marginBottom: "16px" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--ink)", margin: "0 0 4px" }}>
+            Masuk sebagai Reviewer
+          </h2>
+          <p style={{ fontSize: "0.875rem", color: "var(--muted)", margin: 0 }}>
+            Gunakan akun reviewer Naviable.
+          </p>
+        </header>
+
+        <form onSubmit={submitReviewerLogin} noValidate aria-busy={busy}>
+          {/* Username Field */}
+          <div className={styles.field}>
+            <label htmlFor="reviewer-username">Username</label>
+            <div className={styles.inputWrapper}>
+              <span className={styles.inputIcon} aria-hidden="true">
+                <MailIcon />
+              </span>
+              <input
+                id="reviewer-username"
+                name="reviewer-username"
+                type="text"
+                autoComplete="username"
+                placeholder="reviewer.naviable"
+                value={reviewerUsername}
+                required
+                disabled={busy}
+                onChange={(e) => {
+                  setReviewerUsername(e.target.value);
+                  setReviewerError("");
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div className={styles.field} style={{ marginTop: "16px" }}>
+            <label htmlFor="reviewer-password">Password</label>
+            <div className={styles.inputWrapper}>
+              <span className={styles.inputIcon} aria-hidden="true">
+                <LockIcon />
+              </span>
+              <input
+                ref={reviewerPasswordRef}
+                id="reviewer-password"
+                name="reviewer-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Masukkan kata sandi"
+                value={reviewerPassword}
+                required
+                disabled={busy}
+                onChange={(e) => {
+                  setReviewerPassword(e.target.value);
+                  setReviewerError("");
+                }}
+              />
+              <button
+                type="button"
+                className={styles.toggleVisibility}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
+          </div>
+
+          {reviewerError && (
+            <p className={styles.fieldError} role="alert" style={{ marginTop: "12px" }}>
+              {reviewerError}
+            </p>
+          )}
+
+          <button
+            className={`${styles.button} ${styles.loginButton}`}
+            type="submit"
+            disabled={busy}
+            style={{ marginTop: "20px" }}
+          >
+            <LoginIcon />
+            <span>{reviewerPending ? "Memeriksa…" : "Masuk"}</span>
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <>
       <form className={styles.form} onSubmit={submit} noValidate aria-busy={busy}>
+
         {searchParams.has("next") && (
           <p role="note" className={styles.status}>
             Masuk untuk {action}. Setelah masuk, Anda akan langsung kembali ke aksi ini. Peta dan informasi lokasi tetap bisa dijelajahi tanpa akun.
@@ -248,11 +445,23 @@ export function LoginForm() {
           >
             Magic Link
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={false}
+            className={styles.tabBtn}
+            onClick={() => {
+              setAuthMode("reviewer");
+              setReviewerError("");
+            }}
+          >
+            Reviewer
+          </button>
         </div>
 
-        {/* Email Field */}
+        {/* Email / Username Field */}
         <div className={styles.field}>
-          <label htmlFor="auth-email">Alamat Email</label>
+          <label htmlFor="auth-email">Alamat Email / Username Reviewer</label>
           <div className={styles.inputWrapper}>
             <span className={styles.inputIcon} aria-hidden="true">
               <MailIcon />
@@ -261,10 +470,9 @@ export function LoginForm() {
               ref={emailRef}
               id="auth-email"
               name="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="nama@domain.com"
+              type="text"
+              autoComplete="username email"
+              placeholder="nama@domain.com atau reviewer.naviable"
               value={email}
               required
               disabled={busy}
@@ -389,7 +597,35 @@ export function LoginForm() {
         >
           <span>Lanjut tanpa akun (Mode Tamu) →</span>
         </button>
+
+        {/* Subtle Reviewer Login Entry Point */}
+        <div style={{ marginTop: "22px", paddingTop: "14px", borderTop: "1px dashed var(--line)", textAlign: "center" }}>
+          <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
+            Untuk tim Naviable:{" "}
+            <button
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--purple)",
+                fontWeight: 600,
+                textDecoration: "underline",
+                cursor: "pointer",
+                padding: 0,
+                font: "inherit",
+                fontSize: "12px",
+              }}
+              onClick={() => {
+                setAuthMode("reviewer");
+                setReviewerError("");
+              }}
+            >
+              Masuk sebagai reviewer
+            </button>
+          </p>
+        </div>
       </form>
+
 
       <p className={styles.legal}>
         Dengan masuk, Anda menyetujui{" "}

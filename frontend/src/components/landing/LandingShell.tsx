@@ -44,7 +44,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
             </Link>
             <p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p>
           </div>
-          <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a></nav>
+          <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a><Link href="/login?mode=reviewer" style={{ opacity: 0.8 }}>Portal Reviewer</Link></nav>
           <details ref={preferences} className={styles.preferences} onKeyDown={event => {
             if (event.key === 'Escape' && preferences.current) { preferences.current.open = false; preferences.current.querySelector('summary')?.focus(); }
           }}>
