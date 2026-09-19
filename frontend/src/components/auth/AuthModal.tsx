@@ -110,8 +110,9 @@ export function AuthModal({
         options: { redirectTo: returnUrl },
       });
       if (error) throw error;
-    } catch {
-      setMessage('Tidak dapat terhubung ke Google. Silakan coba lagi.');
+    } catch (err: unknown) {
+      const errMessage = err instanceof Error ? err.message : 'Tidak dapat terhubung ke Google. Silakan coba lagi.';
+      setMessage(errMessage);
       setPending(null);
     }
   }

@@ -15,6 +15,7 @@ id_ed25519*
 *credentials*.json
 *service-account*.json
 *token*.json
+*client_secret*.json
 
 # ===== Local Data Store & Uploads =====
 **/.local/

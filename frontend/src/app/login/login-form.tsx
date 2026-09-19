@@ -71,11 +71,12 @@ export function LoginForm() {
     try {
       const { error } = await supabaseBrowser().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}${loginHref(destination)}` },
+        options: { redirectTo: `${window.location.origin}${destination}` },
       });
       if (error) throw error;
-    } catch {
-      setMessage("Tidak dapat terhubung ke Google. Silakan coba lagi.");
+    } catch (err: unknown) {
+      const errMessage = err instanceof Error ? err.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.";
+      setMessage(errMessage);
       setPending(null);
     }
   }
@@ -396,6 +397,12 @@ export function LoginForm() {
             <span>{pending === "google" ? "Menghubungkan Google…" : "Lanjut dengan Google"}</span>
           </button>
         </div>
+
+        {message && pending === null && (
+          <p className={styles.status} role="alert" style={{ margin: "12px 0", color: "#b42318", background: "#fef3f2", border: "1px solid #fee4e2" }}>
+            {message}
+          </p>
+        )}
 
         <div className={styles.divider}>
           <span>atau masuk dengan email</span>

@@ -75,6 +75,10 @@ export default function ExploreApp() {
   }
 
   function setScreen(next: Screen) {
+    if (next === 'profile' && !auth.user) {
+      setShowAuthModal(true);
+      return;
+    }
     if (next === 'add' && !auth.user) {
       setShowAuthModal(true);
     }
