@@ -12,7 +12,7 @@
 .page :where(main):focus { outline: none; }
 .skip { position: fixed; left: 16px; top: -100px; z-index: 100; padding: 12px 20px; background: var(--lp-paper); border: 2px solid var(--lp-purple); }
 .skip:focus { top: 10px; }
-.header { position: sticky; top: 0; z-index: 30; background: var(--lp-paper); border-bottom: 1px solid var(--lp-line); }
+.header { position: sticky; top: 0; z-index: 50; background: var(--lp-paper); border-bottom: 1px solid var(--lp-line); }
 .headerInner { max-width: 1280px; margin: auto; min-height: 88px; padding: 16px 40px; display: flex; align-items: center; gap: 32px; }
 .brand { display: inline-flex; align-items: center; flex-shrink: 0; text-decoration: none; }
 .brandHorizontal { display: inline-flex; align-items: center; }

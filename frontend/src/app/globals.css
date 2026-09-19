@@ -103,7 +103,11 @@
 }
 
 * { box-sizing: border-box; }
-html, body {
+html {
+  min-height: 100%;
+  overflow-x: clip;
+}
+body {
   margin: 0;
   min-height: 100%;
   background: var(--bg);
@@ -113,7 +117,7 @@ html, body {
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
@@ -237,9 +241,10 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
-  z-index: 15;
+  z-index: 50;
   backdrop-filter: blur(12px);
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 .location-chip {
   flex-shrink: 0;
@@ -670,6 +675,7 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--notice-warning-border);
   font-size: 12px;
   line-height: 1.45;
+  flex-shrink: 0;
 }
 .presurvey-notice-box {
   background: var(--notice-success-bg);
@@ -1673,6 +1679,41 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
   top: 16px;
   outline: 3px solid #fde047;
   outline-offset: 2px;
+}
+
+/* Desktop App Containment - Keeps navbar & sidebar pinned */
+@media (min-width: 901px) {
+  .app-shell {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  .workspace {
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .workspace > .page-scroll {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .map-layout {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+  .map-panel {
+    height: 100%;
+    min-height: 0;
+  }
+  .places-panel {
+    height: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+  }
 }
 
 /* Responsive Breakpoints */

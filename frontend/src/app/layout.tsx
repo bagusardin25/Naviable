@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`h-full antialiased ${inter.variable}`}>
+    <html lang="id" className={`min-h-full antialiased ${inter.variable}`}>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );
