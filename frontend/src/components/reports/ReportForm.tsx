@@ -32,6 +32,13 @@ type ReportFormProps = {
   places: Place[];
   mode: 'add' | 'correction';
   targetPlace?: Place;
+  initialLocation?: {
+    lat: number;
+    lng: number;
+    name?: string;
+    category?: string;
+    address?: string;
+  };
   draftOwner: string;
   signedIn?: boolean;
   onRequireAuth?: () => void;
@@ -42,6 +49,7 @@ export function ReportForm({
   places,
   mode,
   targetPlace,
+  initialLocation,
   draftOwner,
   signedIn = false,
   onRequireAuth,
@@ -52,8 +60,24 @@ export function ReportForm({
   const placeId = adding ? '' : String(targetPlace?.id ?? '');
   const draftKey = `naviable_report_draft_v2:${draftOwner}:${mode}:${placeId}`;
   const [draft] = useState(() => readLocalDraft(draftKey));
-  const [location, setLocation] = useState<NewLocation>(draft?.location ?? { name: '', category: '', address: '', lat: -7.2575, lng: 112.7521 });
-  const [coordinatesConfirmed, setCoordinatesConfirmed] = useState(false);
+  const hasMapCoordinates = Boolean(
+    initialLocation &&
+    typeof initialLocation.lat === 'number' &&
+    typeof initialLocation.lng === 'number'
+  );
+  const [location, setLocation] = useState<NewLocation>(() => {
+    if (hasMapCoordinates && initialLocation) {
+      return {
+        name: draft?.location?.name ?? initialLocation.name ?? '',
+        category: draft?.location?.category ?? initialLocation.category ?? '',
+        address: draft?.location?.address ?? initialLocation.address ?? '',
+        lat: initialLocation.lat,
+        lng: initialLocation.lng,
+      };
+    }
+    return draft?.location ?? { name: '', category: '', address: '', lat: -7.2575, lng: 112.7521 };
+  });
+  const [coordinatesConfirmed, setCoordinatesConfirmed] = useState<boolean>(hasMapCoordinates);
   const [reporterName, setReporterName] = useState<string>(draft?.reporterName ?? '');
   const [elementCode, setElementCode] = useState<ChainElementCode>(
     draft?.elementCode && CHAIN_ELEMENT_MAP[draft.elementCode] ? draft.elementCode : 'E5'
@@ -269,11 +293,54 @@ export function ReportForm({
             <label htmlFor="new-place-category">Kategori<input id="new-place-category" list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
             <datalist id="place-categories">{Array.from(new Set(places.map(p => p.category))).map(category => <option key={category} value={category} />)}</datalist>
             <label htmlFor="new-place-address">Alamat lengkap<input id="new-place-address" value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
+            {hasMapCoordinates && (
+              <div
+                style={{
+                  background: 'var(--purple-100)',
+                  border: '1px solid #cabaf5',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--purple-700)' }}>
+                  <Icon name="map-pin-plus" size={16} />
+                  <span>
+                    Titik dipilih dari peta: <strong>{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--purple)',
+                    color: 'var(--purple)',
+                    borderRadius: '6px',
+                    padding: '3px 8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Ubah di peta
+                </button>
+              </div>
+            )}
             <div className="coordinate-fields">
               <label htmlFor="new-place-lat">Lintang<input id="new-place-lat" type="number" step="any" min={-90} max={90} value={location.lat} required onChange={e => { setLocation({ ...location, lat: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
               <label htmlFor="new-place-lng">Bujur<input id="new-place-lng" type="number" step="any" min={-180} max={180} value={location.lng} required onChange={e => { setLocation({ ...location, lng: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
             </div>
-            <p className="flow-help">Koordinat awal adalah pusat Surabaya. Ganti dengan koordinat tempat yang Anda kunjungi.</p>
+            <p className="flow-help">
+              {hasMapCoordinates
+                ? 'Titik koordinat sudah diisi otomatis dari peta. Anda dapat menyesuaikan angka di atas jika diperlukan.'
+                : 'Koordinat awal adalah pusat Surabaya. Ganti dengan koordinat tempat yang Anda kunjungi atau klik langsung titik di peta.'}
+            </p>
             <label className="flow-check"><input type="checkbox" required checked={coordinatesConfirmed} onChange={e => setCoordinatesConfirmed(e.target.checked)} />Saya sudah memastikan koordinat menunjuk lokasi ini.</label>
           </> : <div className="flow-notice"><strong>{targetPlace?.name}</strong><p>{targetPlace?.address}</p><span>Lokasi laporan ini tidak dapat diganti. Kembali ke Jelajahi untuk memilih lokasi lain.</span></div>}
           <label htmlFor="reporter-name">

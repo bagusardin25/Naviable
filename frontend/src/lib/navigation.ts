@@ -18,6 +18,10 @@ export function safeReturnTo(value: string | null): string {
   const query = new URLSearchParams();
   const place = url.searchParams.get('place');
   if (place && /^[a-zA-Z0-9_-]{1,120}$/.test(place)) query.set('place', place);
+  const lat = url.searchParams.get('lat');
+  const lng = url.searchParams.get('lng');
+  if (lat && !isNaN(Number(lat)) && Number(lat) >= -90 && Number(lat) <= 90) query.set('lat', lat);
+  if (lng && !isNaN(Number(lng)) && Number(lng) >= -180 && Number(lng) <= 180) query.set('lng', lng);
   return screenHref(parseScreen(url.searchParams.get('screen')), query.toString());
 }
 export function loginHref(destination: string): string {

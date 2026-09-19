@@ -1,15 +1,21 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Place, placeStatusMeta } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+
+export interface SelectedMapLocation {
+  lat: number;
+  lng: number;
+}
 
 type LeafletMapProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  onAddPlaceAtLocation?: (location: SelectedMapLocation) => void;
   activeNeed?: import('@/types').AccessibilityNeed;
 };
 
@@ -178,6 +184,68 @@ function UserLocationButton() {
   );
 }
 
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth radius in meters
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
+}
+
+function createTemporaryMarkerIcon() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'temporary-pin-wrapper';
+  wrapper.innerHTML = `
+    <div class="temporary-pin-pulse"></div>
+    <div class="temporary-pin">
+      <div class="temporary-pin-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0Z"/>
+          <line x1="12" y1="7" x2="12" y2="13"/>
+          <line x1="9" y1="10" x2="15" y2="10"/>
+        </svg>
+      </div>
+    </div>
+  `;
+  return L.divIcon({
+    className: 'temporary-location-pin',
+    html: wrapper,
+    iconSize: [36, 36],
+    iconAnchor: [18, 36],
+    popupAnchor: [0, -36],
+  });
+}
+
+function MapClickHandler({
+  onMapClick,
+}: {
+  onMapClick: (lat: number, lng: number) => void;
+}) {
+  useMapEvents({
+    click: (e) => {
+      const target = e.originalEvent?.target as Element | null;
+      if (
+        target &&
+        typeof target.closest === 'function' &&
+        (target.closest('.leaflet-marker-icon') ||
+          target.closest('.leaflet-control') ||
+          target.closest('.leaflet-popup'))
+      ) {
+        return;
+      }
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
 function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import('@/types').AccessibilityNeed = 'Mobilitas') {
   const meta = placeStatusMeta(place, activeNeed);
   const isSelectedClass = isSelected ? 'selected' : '';
@@ -200,7 +268,15 @@ function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import(
   });
 }
 
-export default function LeafletMap({ places, selectedPlace, onSelectPlace, activeNeed = 'Mobilitas' }: LeafletMapProps) {
+export default function LeafletMap({
+  places,
+  selectedPlace,
+  onSelectPlace,
+  onAddPlaceAtLocation,
+  activeNeed = 'Mobilitas',
+}: LeafletMapProps) {
+  const [selectedLocation, setSelectedLocation] = useState<SelectedMapLocation | null>(null);
+
   // CRITICAL: Filter only places with valid lat/lng and not marked as needsGeocoding
   const validPlaces = places.filter(
     (p): p is Place & { lat: number; lng: number } =>
@@ -210,6 +286,24 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
       !isNaN(p.lng) &&
       !p.needsGeocoding
   );
+
+  const nearbyPlaces = useMemo(() => {
+    if (!selectedLocation) return [];
+    return validPlaces
+      .map((p) => ({
+        place: p,
+        distance: getDistanceMeters(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng),
+      }))
+      .filter((item) => item.distance <= 50)
+      .sort((a, b) => a.distance - b.distance);
+  }, [selectedLocation, validPlaces]);
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setSelectedLocation({
+      lat: Number(lat.toFixed(6)),
+      lng: Number(lng.toFixed(6)),
+    });
+  };
 
   return (
     <MapContainer
@@ -228,6 +322,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
       <MapPanController selectedPlace={selectedPlace} />
       <MapResizeController />
       <UserLocationButton />
+      <MapClickHandler onMapClick={handleMapClick} />
 
       {validPlaces.map((place) => {
         const isSelected = selectedPlace?.id === place.id;
@@ -241,7 +336,11 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
             title={`${place.name} — Kebutuhan ${activeNeed}: ${meta.label}`}
             icon={icon}
             eventHandlers={{
-              click: () => onSelectPlace(place),
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                setSelectedLocation(null);
+                onSelectPlace(place);
+              },
             }}
           >
             <Popup>
@@ -295,6 +394,125 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
           </Marker>
         );
       })}
+
+      {selectedLocation && (
+        <>
+          <Marker
+            position={[selectedLocation.lat, selectedLocation.lng]}
+            draggable={true}
+            icon={createTemporaryMarkerIcon()}
+            eventHandlers={{
+              dragend: (e) => {
+                const marker = e.target;
+                const pos = marker.getLatLng();
+                setSelectedLocation({
+                  lat: Number(pos.lat.toFixed(6)),
+                  lng: Number(pos.lng.toFixed(6)),
+                });
+              },
+            }}
+          />
+          <Popup
+            position={[selectedLocation.lat, selectedLocation.lng]}
+            offset={[0, -36]}
+            autoPan={true}
+            closeButton={false}
+            closeOnClick={false}
+          >
+            <div className="add-place-popup-card">
+              <div className="add-place-header">
+                <div className="add-place-icon" aria-hidden="true">
+                  <Icon name="map-pin-plus" size={16} />
+                </div>
+                <h4 className="add-place-title">Tambahkan tempat</h4>
+                <button
+                  type="button"
+                  className="add-place-close-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedLocation(null);
+                  }}
+                  title="Tutup popup"
+                  aria-label="Tutup popup"
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+              <p className="add-place-desc">
+                Tambahkan informasi kondisi akses di lokasi ini.
+              </p>
+              <div className="add-place-coords">
+                <Icon name="map-pin" size={13} className="text-muted flex-shrink-0" />
+                <span>
+                  {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
+                </span>
+              </div>
+
+              {nearbyPlaces.length > 0 ? (
+                <div className="popup-nearby-warning" role="alert">
+                  <div className="nearby-warning-title">
+                    <Icon name="info" size={14} />
+                    <span>Tempat terdaftar di dekat sini:</span>
+                  </div>
+                  <span className="nearby-place-name">
+                    {nearbyPlaces[0].place.name} (±{nearbyPlaces[0].distance}m)
+                  </span>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'inherit' }}>
+                    Lokasi ini mungkin sudah memiliki data. Periksa tempat ini sebelum menambahkan tempat baru.
+                  </p>
+                  <div className="popup-btn-row">
+                    <button
+                      type="button"
+                      className="popup-btn-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const target = nearbyPlaces[0].place;
+                        setSelectedLocation(null);
+                        onSelectPlace(target);
+                      }}
+                    >
+                      Lihat Tempat
+                    </button>
+                    <button
+                      type="button"
+                      className="popup-btn-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddPlaceAtLocation?.(selectedLocation);
+                      }}
+                    >
+                      Tetap Tambahkan
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="popup-btn-row">
+                  <button
+                    type="button"
+                    className="popup-btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedLocation(null);
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    className="popup-btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddPlaceAtLocation?.(selectedLocation);
+                    }}
+                  >
+                    Tambahkan Tempat
+                  </button>
+                </div>
+              )}
+            </div>
+          </Popup>
+        </>
+      )}
     </MapContainer>
   );
 }

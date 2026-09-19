@@ -40,6 +40,17 @@ export default function ExploreApp() {
   const auth = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
+  const latParam = searchParams.get('lat');
+  const lngParam = searchParams.get('lng');
+  const initialMapLocation = useMemo(() => {
+    if (!latParam || !lngParam) return undefined;
+    const lat = parseFloat(latParam);
+    const lng = parseFloat(lngParam);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat, lng };
+    }
+    return undefined;
+  }, [latParam, lngParam]);
 
   useEffect(() => {
     if (screen === 'add' && auth.ready && !auth.user && authModalShownFor !== 'add') {
@@ -50,6 +61,19 @@ export default function ExploreApp() {
       return () => clearTimeout(timer);
     }
   }, [screen, auth.ready, auth.user, authModalShownFor]);
+
+  function handleAddPlaceAtLocation(location: { lat: number; lng: number }) {
+    const latStr = location.lat.toFixed(6);
+    const lngStr = location.lng.toFixed(6);
+    const targetUrl = `/jelajah?screen=add&lat=${latStr}&lng=${lngStr}`;
+
+    if (!auth.user) {
+      router.push(targetUrl);
+      setShowAuthModal(true);
+    } else {
+      router.push(targetUrl);
+    }
+  }
 
   function setScreen(next: Screen) {
     if (next === 'add' && !auth.user) {
@@ -386,6 +410,7 @@ export default function ExploreApp() {
                   places={filteredPlaces}
                   selectedPlace={selectedPlace}
                   onSelectPlace={handleSelectPlace}
+                  onAddPlaceAtLocation={handleAddPlaceAtLocation}
                   activeNeed={need}
                 />
               </section>
@@ -426,9 +451,10 @@ export default function ExploreApp() {
         {(screen === 'add' || screen === 'report') && (
           <ReportForm
             places={places}
-            key={`${screen}:${selectedPlace?.id ?? 'new'}:${auth.user?.id ?? 'guest'}`}
+            key={`${screen}:${selectedPlace?.id ?? 'new'}:${auth.user?.id ?? 'guest'}:${latParam ?? 'none'}:${lngParam ?? 'none'}`}
             mode={screen === 'add' ? 'add' : 'correction'}
             targetPlace={screen === 'report' ? selectedPlace ?? undefined : undefined}
+            initialLocation={initialMapLocation}
             draftOwner={auth.user?.id ?? 'guest'}
             signedIn={Boolean(auth.user)}
             onRequireAuth={() => setShowAuthModal(true)}

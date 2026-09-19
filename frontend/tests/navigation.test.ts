@@ -14,6 +14,11 @@ test('contribution login preserves the exact action and stable place ID, never a
     assert.equal(new URL(loginHref(target), 'https://example.test').searchParams.get('next'), target);
   }
   assert.equal(safeReturnTo('/jelajah?screen=add'), '/jelajah?screen=add');
+  assert.equal(
+    safeReturnTo('/jelajah?screen=add&lat=-7.265321&lng=112.752214'),
+    '/jelajah?lat=-7.265321&lng=112.752214&screen=add'
+  );
+  assert.equal(safeReturnTo('/jelajah?screen=add&lat=invalid&lng=999'), '/jelajah?screen=add');
   for (const unsafe of ['https://evil.test', '//evil.test', '/jelajah/../evil', '/jelajah\\evil', 'javascript:alert(1)']) assert.equal(safeReturnTo(unsafe), '/jelajah');
   assert.equal(safeReturnTo('/jelajah?screen=report&place=bad%2Fid&next=https://evil.test'), '/jelajah?screen=report');
 });

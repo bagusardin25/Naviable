@@ -20,10 +20,17 @@ type MapViewProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  onAddPlaceAtLocation?: (location: { lat: number; lng: number }) => void;
   activeNeed?: AccessibilityNeed;
 };
 
-export function MapView({ places, selectedPlace, onSelectPlace, activeNeed = 'Mobilitas' }: MapViewProps) {
+export function MapView({
+  places,
+  selectedPlace,
+  onSelectPlace,
+  onAddPlaceAtLocation,
+  activeNeed = 'Mobilitas',
+}: MapViewProps) {
   const [mapMode, setMapMode] = useState<'osm' | 'canvas'>('osm');
   const [optionsOpen, setOptionsOpen] = useState(false);
 
@@ -73,6 +80,7 @@ export function MapView({ places, selectedPlace, onSelectPlace, activeNeed = 'Mo
             places={places}
             selectedPlace={selectedPlace}
             onSelectPlace={onSelectPlace}
+            onAddPlaceAtLocation={onAddPlaceAtLocation}
             activeNeed={activeNeed}
           />
         </div>

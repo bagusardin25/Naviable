@@ -11,6 +11,8 @@ import {
   Camera,
   Download,
   MapPin,
+  MapPinPlus,
+  Plus,
   ChevronRight,
   ShieldCheck,
   Image as LucideImage,
@@ -43,6 +45,9 @@ export type IconName =
   | 'report'
   | 'dashboard'
   | 'user'
+  | 'plus'
+  | 'map-pin'
+  | 'map-pin-plus'
   | 'search'
   | 'mic'
   | 'access'
@@ -92,6 +97,9 @@ const iconMap: Record<string, LucideIcon> = {
   camera: Camera,
   download: Download,
   location: MapPin,
+  'map-pin': MapPin,
+  'map-pin-plus': MapPinPlus,
+  plus: Plus,
   chevron: ChevronRight,
   shield: ShieldCheck,
   photo: LucideImage,
