@@ -6,9 +6,10 @@ type StatusBadgeProps = {
   status: AccessibilityStatus;
   size?: 'sm' | 'md';
   className?: string;
+  variant?: 'pill' | 'compact';
 };
 
-export function StatusBadge({ status, size = 'sm', className = '' }: StatusBadgeProps) {
+export function StatusBadge({ status, size = 'sm', className = '', variant = 'pill' }: StatusBadgeProps) {
   const meta = STATUS_META[status];
 
   const statusClassMap: Record<AccessibilityStatus, string> = {
@@ -21,7 +22,7 @@ export function StatusBadge({ status, size = 'sm', className = '' }: StatusBadge
 
   const statusIcon =
     status === 'UTUH'
-      ? 'check-circle'
+      ? variant === 'compact' ? 'check' : 'check-circle'
       : status === 'TERHALANG'
       ? 'warning'
       : status === 'TIDAK_STANDAR'
@@ -32,12 +33,12 @@ export function StatusBadge({ status, size = 'sm', className = '' }: StatusBadge
 
   return (
     <span
-      className={`status-badge ${statusClassMap[status]} ${size === 'md' ? 'status-badge-md' : ''} ${className}`}
+      className={`status-badge ${statusClassMap[status]} ${size === 'md' ? 'status-badge-md' : ''} ${variant === 'compact' ? 'status-badge-compact' : ''} ${className}`}
       title={`${meta.label}: ${meta.short}`}
       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
     >
       <Icon name={statusIcon} size={size === 'md' ? 13 : 11} />
-      <span>{meta.label}</span>
+      <span>{variant === 'compact' && status === 'TIDAK_ADA' ? 'Tidak ada' : meta.label}</span>
     </span>
   );
 }

@@ -290,7 +290,7 @@ export function PlaceDetailDrawer({
       <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '16px 0 8px', color: '#1e293b' }}>
         Kondisi akses
       </h3>
-      <AccessibilityChain elements={place.elements} />
+      <AccessibilityChain key={`chain-${place.id}`} elements={place.elements} />
 
       <CorrectionHistory
         reports={historySettled ? history.reports : []}

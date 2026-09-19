@@ -67,18 +67,25 @@ function MapResizeController() {
   const map = useMap();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 150);
+    const container = map.getContainer();
+    let frame = 0;
 
     function handleResize() {
-      map.invalidateSize();
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (container.clientWidth > 0 && container.clientHeight > 0) {
+          map.invalidateSize({ pan: false });
+        }
+      });
     }
 
-    window.addEventListener('resize', handleResize);
+    // Tab visibility and toolbar changes can resize the map without a window resize.
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(container);
+    handleResize();
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', handleResize);
+      observer.disconnect();
+      cancelAnimationFrame(frame);
     };
   }, [map]);
 
@@ -231,6 +238,7 @@ export default function LeafletMap({ places, selectedPlace, onSelectPlace, activ
           <Marker
             key={place.id}
             position={[place.lat, place.lng]}
+            title={`${place.name} — Kebutuhan ${activeNeed}: ${meta.label}`}
             icon={icon}
             eventHandlers={{
               click: () => onSelectPlace(place),

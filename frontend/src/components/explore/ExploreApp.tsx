@@ -70,6 +70,7 @@ export default function ExploreApp() {
   const [showJourney, setShowJourney] = useState(false);
   const [reportTargetPlaceName, setReportTargetPlaceName] = useState<string | undefined>(undefined);
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const {
     settings,
@@ -183,6 +184,7 @@ export default function ExploreApp() {
 
   const hasActiveFilters =
     statusFilter !== 'all' || categoryFilter !== 'all' || searchQuery.trim().length > 0;
+  const additionalFilterCount = Number(statusFilter !== 'all') + Number(categoryFilter !== 'all');
 
   return (
     <main className={appClassName}>
@@ -241,13 +243,23 @@ export default function ExploreApp() {
               <h1 className="visually-hidden">Naviable — Peta Aksesibilitas Kota Surabaya</h1>
 
               <section
-                className={`map-panel ${mobileTab !== 'map' ? 'mobile-hidden' : 'mobile-active'}`}
+                className={`map-panel ${mobileTab !== 'map' ? 'mobile-hidden' : 'mobile-active'} ${mobileFiltersOpen ? 'mobile-filters-open' : ''}`}
                 aria-label="Peta interaktif aksesibilitas Surabaya"
               >
                 <div className="map-toolbar">
                   <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="map-toolbar-actions">
+                    <button
+                      type="button"
+                      className={`status-pill-btn mobile-filter-toggle ${additionalFilterCount > 0 ? 'active' : ''}`}
+                      aria-expanded={mobileFiltersOpen}
+                      aria-controls="category-filter-select map-status-filters"
+                      onClick={() => setMobileFiltersOpen(open => !open)}
+                    >
+                      <Icon name="filter" size={15} />
+                      <span>{mobileFiltersOpen ? 'Tutup filter' : 'Filter'}{additionalFilterCount > 0 ? ` (${additionalFilterCount})` : ''}</span>
+                    </button>
                     <button
                       id="btn-toggle-journey"
                       type="button"
@@ -266,7 +278,7 @@ export default function ExploreApp() {
 
                     <select
                       id="category-filter-select"
-                      className="filter-select"
+                      className="filter-select map-category-filter"
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
                       aria-label="Filter berdasarkan kategori lokasi"
@@ -282,7 +294,7 @@ export default function ExploreApp() {
                     {hasActiveFilters && (
                       <button
                         type="button"
-                        className="status-pill-btn"
+                        className="status-pill-btn map-filter-reset"
                         style={{ color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2' }}
                         onClick={() => {
                           setStatusFilter('all');
@@ -308,7 +320,7 @@ export default function ExploreApp() {
                 )}
 
                 {/* Status Filter Bar evaluated dynamically for active need profile */}
-                <div className="status-filter-bar" role="toolbar" aria-label={`Filter kondisi untuk kebutuhan ${need}`}>
+                <div id="map-status-filters" className="status-filter-bar" role="toolbar" aria-label={`Filter kondisi untuk kebutuhan ${need}`}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
                     Kondisi ({need}):
                   </span>
