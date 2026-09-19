@@ -5,12 +5,15 @@ import { Place, placeStatusMeta, getEvidenceFreshness, detectConditionChanges, S
 import { Icon } from '@/components/ui/Icon';
 import { AccessibilityChain } from './AccessibilityChain';
 import { CorrectionHistory } from './CorrectionHistory';
+import { PlaceReviews } from './PlaceReviews';
 import { fetchPlaceReports, type ApiReport } from '@/lib/api';
 
 type PlaceDetailDrawerProps = {
   place: Place | null;
   onClose: () => void;
   onCorrectPlace: (place: Place) => void;
+  onWriteReview: (place: Place) => void;
+  signedIn: boolean;
   activeNeed?: AccessibilityNeed;
 };
 
@@ -18,6 +21,8 @@ export function PlaceDetailDrawer({
   place,
   onClose,
   onCorrectPlace,
+  onWriteReview,
+  signedIn,
   activeNeed = 'Mobilitas',
 }: PlaceDetailDrawerProps) {
   const drawerRef = useRef<HTMLElement | null>(null);
@@ -40,6 +45,7 @@ export function PlaceDetailDrawer({
   }, [place]);
 
   useEffect(() => {
+    if (!place) return;
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         onClose();
@@ -47,7 +53,7 @@ export function PlaceDetailDrawer({
       }
       if (e.key === 'Tab' && drawerRef.current) {
         const focusableElements = drawerRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
         );
         if (!focusableElements.length) return;
         const firstElement = focusableElements[0];
@@ -64,7 +70,7 @@ export function PlaceDetailDrawer({
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, place]);
 
   const placeId = place ? String(place.id) : null;
   const reportCount = place?.reportCount ?? 0;
@@ -310,8 +316,10 @@ export function PlaceDetailDrawer({
         onClick={() => onCorrectPlace(place)}
         type="button"
       >
-        Perbarui kondisi tempat ini
+        Laporkan Perubahan
       </button>
+      <p className="flow-help">Informasi tidak sesuai kondisi lapangan? Koreksi elemen aksesibilitas dengan bukti foto.{!signedIn && ' Masuk diperlukan untuk mengirim laporan.'}</p>
+      <PlaceReviews key={String(place.id)} placeId={String(place.id)} onWrite={() => onWriteReview(place)} signedIn={signedIn} />
     </section>
   );
 }

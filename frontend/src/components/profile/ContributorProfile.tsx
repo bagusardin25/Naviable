@@ -18,10 +18,10 @@ export function ContributorProfile() {
   return (
     <div className="page-scroll profile-page">
       <section className="profile-hero">
-        <div className="avatar large" aria-hidden="true">AR</div>
+        <div className="avatar large" aria-hidden="true">N</div>
         <div>
           <span className="eyebrow">Relawan Surabaya</span>
-          <h1>{data?.mode === 'local' ? 'Riwayat di Peramban Ini' : 'Profil Kontributor'}</h1>
+          <h1>Kontribusi Saya</h1>
           <p>Daftar laporan kondisi akses yang pernah Anda kirimkan untuk membantu sesama warga.</p>
         </div>
       </section>
@@ -42,7 +42,7 @@ export function ContributorProfile() {
             <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 16px' }}>
               Laporan kondisi akses yang Anda bantu perbarui untuk fasilitas publik di Surabaya.
             </p>
-            {data.mode === 'supabase' && (
+            {(
               <button type="button" className="secondary-action" onClick={signOut} style={{ alignSelf: 'flex-start' }}>
                 Keluar Akun
               </button>
