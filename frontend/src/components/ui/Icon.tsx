@@ -46,6 +46,8 @@ import {
   Link2,
   BookOpen,
   Move,
+  Navigation,
+  ExternalLink,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -99,7 +101,9 @@ export type IconName =
   | 'palette'
   | 'link'
   | 'reading-guide'
-  | 'move';
+  | 'move'
+  | 'navigation'
+  | 'external-link';
 
 const iconMap: Record<string, LucideIcon> = {
   map: LucideMap,
@@ -152,6 +156,8 @@ const iconMap: Record<string, LucideIcon> = {
   link: Link2,
   'reading-guide': BookOpen,
   move: Move,
+  navigation: Navigation,
+  'external-link': ExternalLink,
 };
 
 export type IconProps = {
