@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Place, placeStatusMeta, getEvidenceFreshness, detectConditionChanges, STATUS_META, AccessibilityNeed } from '@/types';
+import { Place, placeStatusMeta, getEvidenceFreshness, detectConditionChanges, AccessibilityNeed } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AccessibilityChain } from './AccessibilityChain';
 import { CorrectionHistory } from './CorrectionHistory';
 import { PlaceReviews } from './PlaceReviews';
@@ -111,16 +112,6 @@ export function PlaceDetailDrawer({
       ? buildGoogleMapsPlaceUrl({ destination: place, travelMode: 'walking' })
       : null;
 
-  const statusIcon =
-    meta.status === 'UTUH'
-      ? 'check-circle'
-      : meta.status === 'TERHALANG'
-      ? 'warning'
-      : meta.status === 'TIDAK_STANDAR'
-      ? 'alert-circle'
-      : meta.status === 'TIDAK_ADA'
-      ? 'x-circle'
-      : 'help-circle';
 
   const freshnessIcon =
     freshness.level === 'fresh'
@@ -152,10 +143,7 @@ export function PlaceDetailDrawer({
       <div className="detail-title">
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
           <span className="eyebrow">Profil {activeNeed}</span>
-          <span className={`status-badge ${meta.badgeClass}`} data-status={meta.status} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <Icon name={statusIcon} size={11} />
-            <span>{meta.label}</span>
-          </span>
+          <StatusBadge status={meta.status} size="sm" label={meta.label} />
           <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Icon name={freshnessIcon} size={11} />
             <span>{freshness.label}</span>
@@ -182,15 +170,11 @@ export function PlaceDetailDrawer({
             <span>Riwayat pembaruan kondisi:</span>
           </div>
           {conditionChanges.map((change, idx) => (
-            <div key={idx} style={{ marginTop: '4px', lineHeight: 1.5 }}>
+            <div key={idx} style={{ marginTop: '4px', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               <strong>{change.elementLabel}</strong> diperbarui dari{' '}
-              <span className="badge-status-change" style={{ background: '#fee2e2', color: '#991b1b', padding: '1px 6px', borderRadius: '4px' }}>
-                {STATUS_META[change.previousStatus].label}
-              </span>{' '}
+              <StatusBadge status={change.previousStatus} size="sm" variant="compact" />{' '}
               →{' '}
-              <span className="badge-status-change" style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '4px' }}>
-                {STATUS_META[change.currentStatus].label}
-              </span>{' '}
+              <StatusBadge status={change.currentStatus} size="sm" variant="compact" />{' '}
               oleh <em>{change.currentReporter}</em> ({new Date(change.currentDate).toLocaleDateString('id-ID')}).
             </div>
           ))}
@@ -259,11 +243,11 @@ export function PlaceDetailDrawer({
           <strong>{place.sourceLicense || 'Terbuka'}</strong>
         </div>
         <div>
-          <span style={{ color: '#64748b' }}>Jenis bukti:</span>{' '}
+          <span style={{ color: 'var(--text-secondary, #64748b)' }}>Jenis bukti:</span>{' '}
           <span>{place.evidenceLevelLabel}</span>
         </div>
         <div>
-          <span style={{ color: '#64748b' }}>Diambil:</span>{' '}
+          <span style={{ color: 'var(--text-secondary, #64748b)' }}>Diambil:</span>{' '}
           <span>{place.retrievedAt || '2026-09-13'}</span>
         </div>
       </div>
@@ -274,14 +258,14 @@ export function PlaceDetailDrawer({
             href={place.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#6d45cc', textDecoration: 'underline', wordBreak: 'break-all' }}
+            style={{ color: 'var(--purple, #6d45cc)', textDecoration: 'underline', wordBreak: 'break-all' }}
           >
             Buka sumber asli ↗
           </a>
         </div>
       )}
 
-      <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '16px 0 8px', color: '#1e293b' }}>
+      <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '16px 0 8px', color: 'var(--ink, #1e293b)' }}>
         Kondisi akses
       </h3>
       <AccessibilityChain key={`chain-${place.id}`} elements={place.elements} />

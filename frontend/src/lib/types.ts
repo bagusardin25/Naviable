@@ -65,7 +65,7 @@ export const STATUS_STYLE: Record<
   UTUH: { color: "#16a34a", pattern: "solid", label: "Bisa digunakan" },
   TERHALANG: { color: "#ea580c", pattern: "dashed", label: "Terhalang" },
   TIDAK_STANDAR: { color: "#ca8a04", pattern: "dotted", label: "Perlu perhatian" },
-  TIDAK_ADA: { color: "#dc2626", pattern: "cross", label: "Tidak tersedia" },
+  TIDAK_ADA: { color: "#dc2626", pattern: "cross", label: "Tidak ada" },
   BELUM_DIKETAHUI: { color: "#6b7280", pattern: "empty", label: "Belum diketahui" },
 };
 

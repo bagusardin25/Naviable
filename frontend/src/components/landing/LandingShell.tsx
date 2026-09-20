@@ -4,13 +4,11 @@ import { useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
-import { useAccessibility } from '@/hooks/useAccessibility';
 import styles from '@/app/landing.module.css';
 
 export function LandingShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
-  const { openWidget } = useAccessibility();
 
   return (
     <div className={styles.page}>
@@ -44,28 +42,6 @@ export function LandingShell({ children }: { children: ReactNode }) {
             <p>Informasi akses yang lebih jelas.<br />Dimulai dari Surabaya.</p>
           </div>
           <nav aria-label="Navigasi footer"><Link href="/jelajah" prefetch={false}>Jelajahi peta</Link><a href="#cara-kerja">Cara kerja</a><a href="#tentang-data">Tentang data</a><a href="#pertanyaan">Pertanyaan umum</a><Link href="/login?mode=reviewer" style={{ opacity: 0.8 }}>Portal Reviewer</Link></nav>
-          <button
-            type="button"
-            onClick={openWidget}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              minHeight: '44px',
-              background: 'transparent',
-              color: 'var(--lp-purple, #6d45cc)',
-              border: '1px solid var(--lp-line, #e2e8f0)',
-              borderRadius: '10px',
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginTop: '4px',
-            }}
-          >
-            <Icon name="access" size={18} />
-            <span>Pengaturan Aksesibilitas</span>
-          </button>
         </div>
         <div className={styles.footerBottom}><span>© {new Date().getFullYear()} NaviAble</span><span>Dibangun untuk perjalanan yang lebih terinformasi.</span><a href="#konten-utama">Kembali ke atas ↑</a></div>
       </footer>

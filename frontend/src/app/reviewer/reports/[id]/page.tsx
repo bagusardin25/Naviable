@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { fetchReviewerReport, submitReportReview } from '@/lib/api';
 import type { ReviewerAuditItem, AccessibilityStatus, ReviewDecision } from '@/types';
-import { CHAIN_ELEMENT_MAP, STATUS_META } from '@/types';
+import { CHAIN_ELEMENT_MAP } from '@/types';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import styles from '../../reviewer.module.css';
 
 const CHECKLIST_POINTS = [
@@ -29,7 +30,7 @@ const ELEMENT_STATUS_OPTIONS: Array<{ value: AccessibilityStatus; label: string 
   { value: 'UTUH', label: 'Bisa digunakan (UTUH)' },
   { value: 'TERHALANG', label: 'Terhalang (TERHALANG)' },
   { value: 'TIDAK_STANDAR', label: 'Perlu perhatian (TIDAK_STANDAR)' },
-  { value: 'TIDAK_ADA', label: 'Tidak tersedia (TIDAK_ADA)' },
+  { value: 'TIDAK_ADA', label: 'Tidak ada (TIDAK_ADA)' },
   { value: 'BELUM_DIKETAHUI', label: 'Belum diketahui' },
 ];
 
@@ -343,9 +344,10 @@ export default function ReviewReportDetailPage() {
                   <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>
                     {el.element.replace('_', ' ')}
                   </strong>
-                  <span className={`${styles.badge} ${styles.badgeSubmitted}`}>
-                    Dilaporkan: {STATUS_META[el.status]?.label ?? el.status}
-                  </span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Dilaporkan:</span>
+                    <StatusBadge status={el.status} size="sm" />
+                  </div>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
                   Catatan Pelapor: “{el.note || 'Tidak ada catatan tambahan.'}”

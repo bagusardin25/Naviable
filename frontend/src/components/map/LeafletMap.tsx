@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import L from 'leaflet';
 import { Place, placeStatusMeta } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export interface SelectedMapLocation {
   lat: number;
@@ -305,7 +306,10 @@ export default function LeafletMap({
 
   useEffect(() => {
     if (externalPreview) {
-      setSelectedLocation(externalPreview);
+      const timer = setTimeout(() => {
+        setSelectedLocation(externalPreview);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [externalPreview]);
 
@@ -383,9 +387,7 @@ export default function LeafletMap({
                 </span>
 
                 <div className="popup-badge-row">
-                  <span className={`status-badge ${meta.badgeClass}`}>
-                    {meta.symbol} {meta.label}
-                  </span>
+                  <StatusBadge status={meta.status} size="sm" />
                   <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} laporan warga` : 'Data awal'}</span>
                 </div>
 

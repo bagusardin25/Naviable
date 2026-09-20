@@ -18,7 +18,7 @@ export function AccessChainPreview() {
           <path d="M308 191L406 201M308 191V179M406 201V189" stroke="#9678c1" strokeWidth="3" strokeLinecap="round" />
           <path d="M357 208L365 188L373 210Z" fill="#b35b16" /><path d="M359 203H371" stroke="#fff" strokeWidth="3" />
           <circle cx="80" cy="156" r="20" fill="#d1dcc8" /><path d="M80 170V203M80 182L91 172" stroke="#64745c" strokeWidth="3" strokeLinecap="round" />
-          <path d="M231 37V18" stroke="#6d45cc" strokeWidth="2" /><circle cx="231" cy="14" r="5" fill="#6d45cc" />
+          <path d="M231 37V18" stroke="var(--lp-purple, #6d45cc)" strokeWidth="2" /><circle cx="231" cy="14" r="5" fill="var(--lp-purple, #6d45cc)" />
         </svg>
         <span className={styles.buildingTag}><MapPin size={14} /> Gedung Contoh</span>
       </div>

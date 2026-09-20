@@ -22,19 +22,19 @@ export function DashboardStats({ places }: DashboardStatsProps) {
 
       <article>
         <span>Akses Masih Terputus</span>
-        <strong style={{ color: '#e78a16' }}>{brokenCount}</strong>
+        <strong style={{ color: 'var(--orange, #e78a16)' }}>{brokenCount}</strong>
         <small>Perlu perbaikan segera</small>
       </article>
 
       <article>
         <span>Data Belum Lengkap</span>
-        <strong style={{ color: '#7d8798' }}>{unknownCount}</strong>
+        <strong style={{ color: 'var(--muted, #7d8798)' }}>{unknownCount}</strong>
         <small>Butuh pengecekan warga</small>
       </article>
 
       <article>
         <span>Foto Kondisi Warga</span>
-        <strong style={{ color: '#6d45cc' }}>{totalPhotos}</strong>
+        <strong style={{ color: 'var(--purple, #6d45cc)' }}>{totalPhotos}</strong>
         <small>Kontribusi dari lapangan</small>
       </article>
     </div>

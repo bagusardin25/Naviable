@@ -1,14 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   calculatePlaceProfileStatus,
   getEvidenceFreshness,
   detectConditionChanges,
   STATUS_META,
+  ACCESSIBILITY_STATUS_CONFIG,
   DEFAULT_A11Y_SETTINGS,
   DEFAULT_A11Y_PREFERENCES,
   type Place,
 } from '../src/types/index';
+import { STATUS_STYLE } from '../src/lib/types';
 import { exportEvidenceCsvUrl } from '../src/lib/api';
 import { parsePreferences, PRIMARY_STORAGE_KEY } from '../src/providers/AccessibilityProvider';
 
@@ -188,7 +191,7 @@ test('6. Filtered CSV export URL generation preserves parameters', () => {
 test('7. Accessibility settings defaults and widget positions', () => {
   const validPositions = ['left', 'right'];
 
-  assert.equal(DEFAULT_A11Y_SETTINGS.widgetPosition, 'left');
+  assert.equal(DEFAULT_A11Y_SETTINGS.widgetPosition, 'right');
   assert.ok(validPositions.includes(DEFAULT_A11Y_SETTINGS.widgetPosition));
 
   // Verify all 8 primary accessibility modes are boolean flags in default settings
@@ -240,7 +243,7 @@ test('8. Accessibility preferences parsing and fallback resilience', () => {
     widgetPosition: 'invalid-floating-center',
   });
   const parsedInvalid = parsePreferences(invalidPosJson);
-  assert.equal(parsedInvalid.widgetPosition, 'left');
+  assert.equal(parsedInvalid.widgetPosition, 'right');
 });
 
 test('9. Canonical primary storage key matches standard', () => {
@@ -304,6 +307,46 @@ test('12. Color Blind Mode preference parsing and persistence structure', () => 
   assert.equal(inactiveColorBlind.colorBlind, false);
 });
 
+test('12b. Requested accessibility modes survive preference parsing together', () => {
+  const persisted = parsePreferences(JSON.stringify({
+    widgetPosition: 'left',
+    colorBlind: true,
+    dyslexia: true,
+    darkMode: true,
+    reduceMotion: true,
+  }));
+
+  assert.equal(persisted.widgetPosition, 'left');
+  assert.equal(persisted.colorBlind, true);
+  assert.equal(persisted.dyslexia, true);
+  assert.equal(persisted.darkMode, true);
+  assert.equal(persisted.reduceMotion, true);
+});
+
+test('12c. Accessibility panel order, unified cards, and global mode styles', () => {
+  const widget = readFileSync(
+    new URL('../src/components/accessibility/AccessibilityWidget.tsx', import.meta.url),
+    'utf8'
+  );
+  const styles = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../src/app/layout.tsx', import.meta.url), 'utf8');
+
+  const featuresIndex = widget.indexOf('<span>Fitur Aksesibilitas</span>');
+  const displayIndex = widget.indexOf('<span>Tampilan &amp; Gerakan</span>');
+  const positionIndex = widget.indexOf('<span>Posisi Widget</span>');
+  const resetIndex = widget.indexOf('className="a11y-panel-footer"');
+
+  assert.ok(featuresIndex < displayIndex);
+  assert.ok(displayIndex < positionIndex);
+  assert.ok(positionIndex < resetIndex);
+  assert.equal(widget.includes('a11y-compact-btn'), false);
+  assert.match(styles, /backdrop-filter:\s*grayscale\(100%\)/);
+  assert.match(styles, /--font-dyslexia:\s*"OpenDyslexic"/);
+  assert.match(styles, /max-height:\s*78dvh/);
+  assert.match(layout, /@fontsource\/opendyslexic\/400\.css/);
+  assert.match(layout, /@fontsource\/opendyslexic\/700\.css/);
+});
+
 test('13. Text Scale stepper step boundary rules (100% to 200% with 10% steps)', () => {
   const stepDown = (current: number) => Math.max(100, current - 10);
   const stepUp = (current: number) => Math.min(200, current + 10);
@@ -355,5 +398,138 @@ test('14. Dashboard / Jelajah route path detection and unified accessibility tri
 
   const landingTriggers = getVisibleTriggers('/');
   assert.equal(landingTriggers.hasFloatingTrigger, true);
+});
+
+test('15. Redundant accessibility entry point removed from LandingShell, single canonical floating launcher preserved', () => {
+  const landingShell = readFileSync(
+    new URL('../src/components/landing/LandingShell.tsx', import.meta.url),
+    'utf8'
+  );
+  const widget = readFileSync(
+    new URL('../src/components/accessibility/AccessibilityWidget.tsx', import.meta.url),
+    'utf8'
+  );
+
+  // Redundant entry point removed from page content
+  assert.equal(landingShell.includes('Pengaturan Aksesibilitas'), false);
+  assert.equal(landingShell.includes('openWidget'), false);
+  assert.equal(landingShell.includes('useAccessibility'), false);
+
+  // Kembali ke atas link preserved in footer
+  assert.ok(landingShell.includes('Kembali ke atas ↑'));
+
+  // Floating trigger button has accessible aria-label and compact state support
+  assert.match(widget, /aria-label="Buka pengaturan aksesibilitas"/);
+  assert.match(widget, /is-compact/);
+  assert.match(widget, /IntersectionObserver/);
+});
+
+test('16. Unified Dark High Contrast architecture, WCAG AAA tokens, yellow accent, and compact launcher touch targets', () => {
+  const styles = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
+
+  // Unified High Contrast Mode selectors
+  assert.match(styles, /html\.contrast-mode/);
+  assert.match(styles, /html\[data-a11y-contrast="true"\]/);
+  assert.match(styles, /html\[data-a11y-high-contrast="true"\]/);
+
+  // Dark High Contrast tokens (unconditional #000000 bg, #ffffff text, 2px white borders)
+  assert.match(styles, /--bg:\s*#000000;/);
+  assert.match(styles, /--ink:\s*#ffffff;/);
+  assert.match(styles, /--border:\s*#ffffff;/);
+
+  // Yellow #FFFF00 replaces brand purple for interactive accents
+  assert.match(styles, /--purple:\s*#ffff00;/);
+
+  // Primary action buttons have yellow background and black text
+  assert.match(styles, /background:\s*#ffff00\s*!important/);
+  assert.match(styles, /color:\s*#000000\s*!important/);
+
+  // Focus visible must have clear 3px solid yellow outline
+  assert.match(styles, /outline:\s*3px solid #ffff00\s*!important/);
+
+  // Forced colors mode progressive enhancement
+  assert.match(styles, /@media \(forced-colors:\s*active\)/);
+
+  // Compact launcher must preserve accessible touch target (48x48px, >=44px)
+  assert.match(styles, /\.a11y-widget-btn\.is-compact\s*\{[^}]*width:\s*48px;/);
+  assert.match(styles, /\.a11y-widget-btn\.is-compact\s*\{[^}]*min-height:\s*48px;/);
+
+  // Mathematical WCAG contrast verification:
+  // Relative luminance calculation
+  const getLuminance = (r: number, g: number, b: number) => {
+    const a = [r, g, b].map(v => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+  };
+  const getContrastRatio = (lum1: number, lum2: number) => {
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+    return (lighter + 0.05) / (darker + 0.05);
+  };
+
+  const blackLum = getLuminance(0, 0, 0); // 0
+  const whiteLum = getLuminance(255, 255, 255); // 1
+  const yellowLum = getLuminance(255, 255, 0); // ~0.9278
+  const mutedLum = getLuminance(229, 231, 235); // ~0.783 (#e5e7eb)
+
+  const whiteOnBlackRatio = getContrastRatio(whiteLum, blackLum);
+  const yellowOnBlackRatio = getContrastRatio(yellowLum, blackLum);
+  const mutedOnBlackRatio = getContrastRatio(mutedLum, blackLum);
+  const blackOnYellowRatio = getContrastRatio(yellowLum, blackLum);
+
+  // All must far exceed WCAG AAA minimum target 7:1
+  assert.ok(whiteOnBlackRatio >= 7.0, `White on black ratio ${whiteOnBlackRatio} < 7:1`);
+  assert.ok(yellowOnBlackRatio >= 7.0, `Yellow on black ratio ${yellowOnBlackRatio} < 7:1`);
+  assert.ok(mutedOnBlackRatio >= 7.0, `Muted text on black ratio ${mutedOnBlackRatio} < 7:1`);
+  assert.ok(blackOnYellowRatio >= 7.0, `Black on yellow button ratio ${blackOnYellowRatio} < 7:1`);
+  assert.equal(Math.round(whiteOnBlackRatio), 21); // Pure 21:1 contrast
+});
+
+test('8. Accessibility Status Standardization: Canonical mappings and visual truth', () => {
+  // 1. Canonical Status Config verification
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.UTUH.label, 'Bisa digunakan');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.UTUH.icon, 'check');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.UTUH.borderStyle, 'solid');
+
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TERHALANG.label, 'Terhalang');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TERHALANG.icon, 'warning');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TERHALANG.borderStyle, 'dashed');
+
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TIDAK_STANDAR.label, 'Perlu perhatian');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TIDAK_STANDAR.icon, 'alert-circle');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TIDAK_STANDAR.borderStyle, 'dotted');
+
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TIDAK_ADA.label, 'Tidak ada');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TIDAK_ADA.icon, 'x-circle');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.TIDAK_ADA.borderStyle, 'double');
+
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.BELUM_DIKETAHUI.label, 'Belum diketahui');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.BELUM_DIKETAHUI.icon, 'help-circle');
+  assert.equal(ACCESSIBILITY_STATUS_CONFIG.BELUM_DIKETAHUI.borderStyle, 'solid');
+
+  // 2. STATUS_META parity with ACCESSIBILITY_STATUS_CONFIG
+  assert.deepEqual(STATUS_META, ACCESSIBILITY_STATUS_CONFIG);
+
+  // 3. STATUS_STYLE in lib/types parity
+  assert.equal(STATUS_STYLE.UTUH.label, 'Bisa digunakan');
+  assert.equal(STATUS_STYLE.TERHALANG.label, 'Terhalang');
+  assert.equal(STATUS_STYLE.TIDAK_STANDAR.label, 'Perlu perhatian');
+  assert.equal(STATUS_STYLE.TIDAK_ADA.label, 'Tidak ada');
+  assert.equal(STATUS_STYLE.BELUM_DIKETAHUI.label, 'Belum diketahui');
+
+  // 4. globals.css CSS rules verification: 6px border-radius and non-color border differentiation
+  const css = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
+
+  // Must have 6px border-radius for status-badge
+  assert.match(css, /\.status-badge\s*\{[^}]*border-radius:\s*6px;/);
+
+  // Must have border styles matching landing page
+  assert.match(css, /\.status-utuh[^{]*\{[^}]*border:\s*1\.5px solid/);
+  assert.match(css, /\.status-terhalang[^{]*\{[^}]*border:\s*1\.5px dashed/);
+  assert.match(css, /\.status-tidak_standar[^{]*\{[^}]*border:\s*2px dotted/);
+  assert.match(css, /\.status-tidak_ada[^{]*\{[^}]*border:\s*2\.5px double/);
+  assert.match(css, /\.status-belum_diketahui[^{]*\{[^}]*border:\s*1\.5px solid/);
 });
 

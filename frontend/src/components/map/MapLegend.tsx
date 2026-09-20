@@ -1,24 +1,31 @@
 import React from 'react';
+import { ACCESSIBILITY_STATUS_CONFIG, AccessibilityStatus } from '@/types';
+import { Icon } from '@/components/ui/Icon';
+
+const LEGEND_STATUSES: AccessibilityStatus[] = [
+  'UTUH',
+  'TERHALANG',
+  'TIDAK_STANDAR',
+  'TIDAK_ADA',
+  'BELUM_DIKETAHUI',
+];
 
 export function MapLegend() {
   return (
     <div className="map-legend-inline" aria-label="Keterangan kondisi di peta">
-      <span title="Akses dilaporkan bisa digunakan">
-        <i className="dot utuh" aria-hidden="true" />
-        Bisa Diakses
-      </span>
-      <span title="Akses dilaporkan memiliki keterbatasan">
-        <i className="dot warning" aria-hidden="true" />
-        Akses Terbatas
-      </span>
-      <span title="Akses dilaporkan belum memadai">
-        <i className="dot tidak_ada" aria-hidden="true" />
-        Belum Aksesibel
-      </span>
-      <span title="Informasi akses belum dilaporkan">
-        <i className="dot unknown" aria-hidden="true" />
-        Belum Diketahui
-      </span>
+      {LEGEND_STATUSES.map((statusKey) => {
+        const item = ACCESSIBILITY_STATUS_CONFIG[statusKey];
+        return (
+          <span
+            key={statusKey}
+            className={`legend-item legend-${statusKey.toLowerCase()}`}
+            title={`${item.label}: ${item.short}`}
+          >
+            <Icon name={item.icon} size={13} aria-hidden="true" />
+            <span>{item.label}</span>
+          </span>
+        );
+      })}
     </div>
   );
 }

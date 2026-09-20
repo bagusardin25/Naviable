@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Place, AccessibilityNeed, JourneyResponse, STATUS_META, CHAIN_ELEMENT_MAP, ChainElementCode } from '@/types';
+import { Place, AccessibilityNeed, JourneyResponse, CHAIN_ELEMENT_MAP, ChainElementCode } from '@/types';
 import { fetchJourney } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { buildGoogleMapsRouteUrl, buildGoogleMapsPlaceUrl, TravelMode } from '@/lib/externalMaps';
 
 type JourneyPlannerProps = {
@@ -280,8 +281,6 @@ export function JourneyPlanner({
               const isOrigin = idx === 0;
               const isDestination = idx === journey.points.length - 1;
               const stepLabel = isOrigin ? '1. Titik Awal' : isDestination ? `${journey.points.length}. Titik Tujuan` : `${idx + 1}. Titik Transit`;
-              const statusMeta = STATUS_META[pt.overall] ?? STATUS_META.BELUM_DIKETAHUI;
-              const statusIcon = pt.overall === 'UTUH' ? 'check-circle' : pt.overall === 'TERHALANG' ? 'warning' : pt.overall === 'TIDAK_STANDAR' ? 'alert-circle' : pt.overall === 'TIDAK_ADA' ? 'x-circle' : 'help-circle';
               const pointNavUrl =
                 pt.lat !== null && pt.lng !== null
                   ? buildGoogleMapsPlaceUrl({ destination: pt, travelMode })
@@ -310,13 +309,7 @@ export function JourneyPlanner({
                         {pt.category} · {pt.kecamatan ?? 'Surabaya'}
                       </span>
                     </div>
-                    <span
-                      className={`status-badge status-${pt.overall.toLowerCase()}`}
-                      style={{ fontSize: '10px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <Icon name={statusIcon} size={12} />
-                      <span>{statusMeta.label}</span>
-                    </span>
+                    <StatusBadge status={pt.overall} size="sm" />
                   </div>
 
                   {pt.bottlenecks && pt.bottlenecks.length > 0 && (

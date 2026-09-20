@@ -883,3 +883,159 @@
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   Reviewer Portal Unified Dark High Contrast Mode
+   ========================================================================== */
+:global(html.contrast-mode) .shell,
+:global(html[data-a11y-contrast='true']) .shell,
+:global(html[data-a11y-high-contrast='true']) .shell {
+  --bg: #000000;
+  --surface: #000000;
+  --surface-secondary: #0a0a0a;
+  --surface-hover: #141414;
+  --ink: #ffffff;
+  --text-secondary: #ffffff;
+  --muted: #e5e7eb;
+  --line: #ffffff;
+  --border: #ffffff;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+:global(html.contrast-mode) .sidebar,
+:global(html[data-a11y-contrast='true']) .sidebar,
+:global(html[data-a11y-high-contrast='true']) .sidebar {
+  background-color: #000000 !important;
+  border-right: 2px solid #ffffff !important;
+}
+
+:global(html.contrast-mode) .sidebarHeader,
+:global(html[data-a11y-contrast='true']) .sidebarHeader,
+:global(html[data-a11y-high-contrast='true']) .sidebarHeader {
+  border-bottom: 2px solid #ffffff !important;
+}
+
+:global(html.contrast-mode) .navItem,
+:global(html[data-a11y-contrast='true']) .navItem,
+:global(html[data-a11y-high-contrast='true']) .navItem {
+  color: #ffffff !important;
+  border: 1px solid transparent;
+}
+
+:global(html.contrast-mode) .navItem:hover,
+:global(html[data-a11y-contrast='true']) .navItem:hover,
+:global(html[data-a11y-high-contrast='true']) .navItem:hover {
+  background-color: #141414 !important;
+  border: 1px solid #ffff00 !important;
+  color: #ffff00 !important;
+}
+
+:global(html.contrast-mode) .navItemActive,
+:global(html[data-a11y-contrast='true']) .navItemActive,
+:global(html[data-a11y-high-contrast='true']) .navItemActive {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #ffff00 !important;
+  font-weight: 700 !important;
+}
+
+:global(html.contrast-mode) .statCard,
+:global(html.contrast-mode) .tableContainer,
+:global(html.contrast-mode) .card,
+:global(html.contrast-mode) .filterBar,
+:global(html[data-a11y-contrast='true']) .statCard,
+:global(html[data-a11y-contrast='true']) .tableContainer,
+:global(html[data-a11y-contrast='true']) .card,
+:global(html[data-a11y-contrast='true']) .filterBar,
+:global(html[data-a11y-high-contrast='true']) .statCard,
+:global(html[data-a11y-high-contrast='true']) .tableContainer,
+:global(html[data-a11y-high-contrast='true']) .card,
+:global(html[data-a11y-high-contrast='true']) .filterBar {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+:global(html.contrast-mode) .table th,
+:global(html.contrast-mode) .table td,
+:global(html[data-a11y-contrast='true']) .table th,
+:global(html[data-a11y-contrast='true']) .table td,
+:global(html[data-a11y-high-contrast='true']) .table th,
+:global(html[data-a11y-high-contrast='true']) .table td {
+  border-bottom: 1px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+:global(html.contrast-mode) .table th,
+:global(html[data-a11y-contrast='true']) .table th,
+:global(html[data-a11y-high-contrast='true']) .table th {
+  background-color: #0a0a0a !important;
+  font-weight: 700 !important;
+}
+
+/* Action buttons with distinct text + icon + border */
+:global(html.contrast-mode) .btnApprove,
+:global(html[data-a11y-contrast='true']) .btnApprove,
+:global(html[data-a11y-high-contrast='true']) .btnApprove {
+  background-color: #000000 !important;
+  color: #00ff00 !important;
+  border: 2px solid #00ff00 !important;
+  font-weight: 700 !important;
+}
+
+:global(html.contrast-mode) .btnApprove:hover:not(:disabled),
+:global(html[data-a11y-contrast='true']) .btnApprove:hover:not(:disabled),
+:global(html[data-a11y-high-contrast='true']) .btnApprove:hover:not(:disabled) {
+  background-color: #00ff00 !important;
+  color: #000000 !important;
+}
+
+:global(html.contrast-mode) .btnRevision,
+:global(html[data-a11y-contrast='true']) .btnRevision,
+:global(html[data-a11y-high-contrast='true']) .btnRevision {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+  font-weight: 700 !important;
+}
+
+:global(html.contrast-mode) .btnRevision:hover:not(:disabled),
+:global(html[data-a11y-contrast='true']) .btnRevision:hover:not(:disabled),
+:global(html[data-a11y-high-contrast='true']) .btnRevision:hover:not(:disabled) {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+:global(html.contrast-mode) .btnReject,
+:global(html[data-a11y-contrast='true']) .btnReject,
+:global(html[data-a11y-high-contrast='true']) .btnReject {
+  background-color: #000000 !important;
+  color: #ff4d4d !important;
+  border: 2px solid #ff4d4d !important;
+  font-weight: 700 !important;
+}
+
+:global(html.contrast-mode) .btnReject:hover:not(:disabled),
+:global(html[data-a11y-contrast='true']) .btnReject:hover:not(:disabled),
+:global(html[data-a11y-high-contrast='true']) .btnReject:hover:not(:disabled) {
+  background-color: #ff4d4d !important;
+  color: #000000 !important;
+}
+
+:global(html.contrast-mode) .btnApprove:disabled,
+:global(html.contrast-mode) .btnRevision:disabled,
+:global(html.contrast-mode) .btnReject:disabled,
+:global(html[data-a11y-contrast='true']) .btnApprove:disabled,
+:global(html[data-a11y-contrast='true']) .btnRevision:disabled,
+:global(html[data-a11y-contrast='true']) .btnReject:disabled,
+:global(html[data-a11y-high-contrast='true']) .btnApprove:disabled,
+:global(html[data-a11y-high-contrast='true']) .btnRevision:disabled,
+:global(html[data-a11y-high-contrast='true']) .btnReject:disabled {
+  opacity: 1 !important;
+  background-color: #000000 !important;
+  color: #999999 !important;
+  border: 2px dashed #666666 !important;
+  cursor: not-allowed !important;
+}

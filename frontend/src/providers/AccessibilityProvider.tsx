@@ -84,7 +84,14 @@ function getStoredSnapshot(): string {
   if (typeof window === 'undefined') return fallbackSnapshot;
   try {
     const current = localStorage.getItem(PRIMARY_STORAGE_KEY);
-    if (current) return current;
+    if (current) {
+      const normalized = JSON.stringify(parsePreferences(current));
+      if (normalized !== current) {
+        localStorage.setItem(PRIMARY_STORAGE_KEY, normalized);
+      }
+      fallbackSnapshot = normalized;
+      return normalized;
+    }
 
     // Check legacy storage keys for seamless migration
     for (const legacyKey of LEGACY_STORAGE_KEYS) {
@@ -168,6 +175,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
     root.classList.toggle('dark', preferences.darkMode);
     root.classList.toggle('contrast-mode', preferences.contrast);
+    root.classList.toggle('high-contrast', preferences.contrast);
     root.classList.toggle('large-text', preferences.largeText);
     root.classList.toggle('reduce-motion', preferences.reduceMotion);
     root.classList.toggle('dyslexia-mode', preferences.dyslexia);
@@ -178,6 +186,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
     root.setAttribute('data-a11y-dark', String(preferences.darkMode));
     root.setAttribute('data-a11y-contrast', String(preferences.contrast));
+    root.setAttribute('data-a11y-high-contrast', String(preferences.contrast));
     root.setAttribute('data-a11y-large-text', String(preferences.largeText));
     root.setAttribute('data-a11y-reduce-motion', String(preferences.reduceMotion));
     root.setAttribute('data-a11y-dyslexia', String(preferences.dyslexia));

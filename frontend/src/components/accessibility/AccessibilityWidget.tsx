@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { Icon } from '@/components/ui/Icon';
@@ -37,6 +37,51 @@ export function AccessibilityWidget() {
 
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [isCompact, setIsCompact] = useState(false);
+
+  // Auto-collapse launcher to icon-only when scrolling near bottom
+  useEffect(() => {
+    if (isJelajahPage) {
+      const timer = setTimeout(() => setIsCompact(false), 0);
+      return () => clearTimeout(timer);
+    }
+
+    const footer = document.querySelector('footer');
+    if (footer && typeof IntersectionObserver !== 'undefined') {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          const isScrollable = document.documentElement.scrollHeight > window.innerHeight + 80;
+          setIsCompact(entry.isIntersecting && isScrollable);
+        },
+        {
+          rootMargin: '0px 0px 40px 0px',
+          threshold: 0,
+        }
+      );
+      observer.observe(footer);
+      return () => observer.disconnect();
+    }
+
+    let ticking = false;
+    const checkScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY || document.documentElement.scrollTop;
+          const windowHeight = window.innerHeight;
+          const docHeight = document.documentElement.scrollHeight;
+          const isScrollable = docHeight > windowHeight + 80;
+          const nearBottom = isScrollable && scrollY + windowHeight >= docHeight - 160;
+          setIsCompact(nearBottom);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', checkScroll, { passive: true });
+    return () => window.removeEventListener('scroll', checkScroll);
+  }, [isJelajahPage, pathname]);
 
   const handleClose = useCallback(() => {
     closeWidget();
@@ -49,19 +94,23 @@ export function AccessibilityWidget() {
 
   // Focus trap & Escape key
   useEffect(() => {
+    if (!isWidgetOpen) return;
+
     function handleKeyDown(e: KeyboardEvent) {
-      if (!isWidgetOpen) return;
       if (e.key === 'Escape') {
         handleClose();
         return;
       }
+
+      // Simple focus trap within panel
       if (e.key === 'Tab' && panelRef.current) {
-        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        const focusables = panelRef.current.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        if (!focusable.length) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
 
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
@@ -73,14 +122,15 @@ export function AccessibilityWidget() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isWidgetOpen, handleClose]);
 
-  // Click outside to close
+  // Close when clicking outside panel
   useEffect(() => {
+    if (!isWidgetOpen) return;
+
     function handleClickOutside(e: MouseEvent) {
-      if (!isWidgetOpen) return;
       const target = e.target as Node;
       const navbarBtn = document.getElementById('btn-accessibility');
       if (navbarBtn && navbarBtn.contains(target)) {
@@ -115,9 +165,10 @@ export function AccessibilityWidget() {
     settings.readingGuide,
     settings.voiceMode,
     settings.darkMode,
+    settings.reduceMotion,
   ].filter(Boolean).length;
 
-  const currentPos: AccessibilityWidgetPosition = settings.widgetPosition === 'right' ? 'right' : 'left';
+  const currentPos: AccessibilityWidgetPosition = settings.widgetPosition === 'left' ? 'left' : 'right';
   const wrapperClass = isJelajahPage
     ? 'a11y-widget-wrapper widget-pos-navbar-anchored'
     : `a11y-widget-wrapper widget-pos-${currentPos}${isLoginPage ? ' widget-page-login' : ''}`;
@@ -135,12 +186,13 @@ export function AccessibilityWidget() {
           id="a11y-widget-trigger"
           type="button"
           className={`a11y-widget-btn ${isWidgetOpen ? 'active' : ''} ${
-            activeFeaturesCount > 0 ? 'has-active-features' : ''
-          }`}
+            isCompact ? 'is-compact' : ''
+          } ${activeFeaturesCount > 0 ? 'has-active-features' : ''}`}
           onClick={toggleWidget}
           aria-expanded={isWidgetOpen}
           aria-haspopup="dialog"
           aria-controls="a11y-widget-panel"
+          aria-label="Buka pengaturan aksesibilitas"
           title="Pengaturan Aksesibilitas"
         >
           <span className="a11y-widget-icon-wrapper" aria-hidden="true">
@@ -188,37 +240,6 @@ export function AccessibilityWidget() {
           </div>
 
           <div className="a11y-panel-body">
-            {/* Widget Position Controls (only shown on pages with floating widget) */}
-            {!isJelajahPage && (
-              <div className="a11y-section">
-                <span className="a11y-section-title">
-                  <Icon name="move" size={14} />
-                  <span>Posisi Widget</span>
-                </span>
-                <div
-                  className="a11y-position-grid"
-                  role="radiogroup"
-                  aria-label="Pilih posisi widget aksesibilitas"
-                >
-                  {POSITION_OPTIONS.map((option) => {
-                    const isSelected = currentPos === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={isSelected}
-                        className={`a11y-pos-btn ${isSelected ? 'active' : ''}`}
-                        onClick={() => setWidgetPosition(option.id)}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Accessibility Features Grid */}
             <div className="a11y-section">
               <span className="a11y-section-title">
@@ -262,7 +283,7 @@ export function AccessibilityWidget() {
                   </div>
                   <strong className="feature-card-name">Huruf Ramah Disleksia</strong>
                   <span className="feature-card-desc">
-                    Gunakan jenis huruf dan spasi alternatif yang lebih ramah dibaca.
+                    Gunakan OpenDyslexic dan spasi alternatif yang lebih ramah dibaca.
                   </span>
                 </button>
 
@@ -428,7 +449,7 @@ export function AccessibilityWidget() {
                   </div>
                   <strong className="feature-card-name">Buta Warna</strong>
                   <span className="feature-card-desc">
-                    Penyesuaian warna dan pola status ramah penglihatan warna.
+                    Ubah seluruh tampilan situs menjadi hitam putih.
                   </span>
                 </button>
 
@@ -494,31 +515,82 @@ export function AccessibilityWidget() {
               </div>
             </div>
 
-            {/* Quick Dark Mode & Motion Options */}
-            <div className="a11y-section a11y-section-compact">
-              <div className="a11y-compact-toggles">
+            {/* Display and motion options use the same feature-card pattern */}
+            <div className="a11y-section a11y-section-separated">
+              <span className="a11y-section-title">
+                <Icon name="eye" size={14} />
+                <span>Tampilan &amp; Gerakan</span>
+              </span>
+              <div className="a11y-feature-grid">
                 <button
                   type="button"
                   role="switch"
                   aria-checked={settings.darkMode}
-                  className={`a11y-compact-btn ${settings.darkMode ? 'active' : ''}`}
+                  className={`a11y-feature-card ${settings.darkMode ? 'active' : ''}`}
                   onClick={() => setDarkMode(!settings.darkMode)}
                 >
-                  <span>Mode Gelap</span>
-                  <span className={`feature-status-dot ${settings.darkMode ? 'on' : ''}`} />
+                  <div className="feature-card-top">
+                    <span className="feature-card-icon" aria-hidden="true">
+                      <Icon name="dark-mode" size={18} />
+                    </span>
+                    <span className={`feature-status-dot ${settings.darkMode ? 'on' : ''}`} />
+                  </div>
+                  <strong className="feature-card-name">Mode Gelap</strong>
+                  <span className="feature-card-desc">
+                    Gunakan palet gelap untuk mengurangi silau pada layar.
+                  </span>
                 </button>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={settings.reduceMotion}
-                  className={`a11y-compact-btn ${settings.reduceMotion ? 'active' : ''}`}
+                  className={`a11y-feature-card ${settings.reduceMotion ? 'active' : ''}`}
                   onClick={() => setReduceMotion(!settings.reduceMotion)}
                 >
-                  <span>Kurangi Gerakan</span>
-                  <span className={`feature-status-dot ${settings.reduceMotion ? 'on' : ''}`} />
+                  <div className="feature-card-top">
+                    <span className="feature-card-icon" aria-hidden="true">
+                      <Icon name="reduce-motion" size={18} />
+                    </span>
+                    <span className={`feature-status-dot ${settings.reduceMotion ? 'on' : ''}`} />
+                  </div>
+                  <strong className="feature-card-name">Kurangi Gerakan</strong>
+                  <span className="feature-card-desc">
+                    Minimalkan animasi dan transisi yang tidak diperlukan.
+                  </span>
                 </button>
               </div>
             </div>
+
+            {/* Widget position stays immediately above the reset footer */}
+            {!isJelajahPage && (
+              <div className="a11y-section a11y-section-separated a11y-position-section">
+                <span className="a11y-section-title">
+                  <Icon name="move" size={14} />
+                  <span>Posisi Widget</span>
+                </span>
+                <div
+                  className="a11y-position-grid"
+                  role="radiogroup"
+                  aria-label="Pilih posisi widget aksesibilitas"
+                >
+                  {POSITION_OPTIONS.map((option) => {
+                    const isSelected = currentPos === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        className={`a11y-pos-btn ${isSelected ? 'active' : ''}`}
+                        onClick={() => setWidgetPosition(option.id)}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer Reset Button */}
