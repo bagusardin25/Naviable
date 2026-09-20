@@ -21,5 +21,5 @@ export async function GET() {
       username: payload.username,
       role: payload.role,
     },
-  });
+  }, { headers: { 'Cache-Control': 'no-store' } });
 }

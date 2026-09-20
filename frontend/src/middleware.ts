@@ -12,6 +12,7 @@ export async function middleware(request: NextRequest) {
     if (!sessionToken) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('next', pathname);
+      loginUrl.searchParams.set('mode', 'reviewer');
       return NextResponse.redirect(loginUrl);
     }
 
@@ -21,6 +22,7 @@ export async function middleware(request: NextRequest) {
       // Invalid or expired session
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('next', pathname);
+      loginUrl.searchParams.set('mode', 'reviewer');
       const response = NextResponse.redirect(loginUrl);
       response.cookies.delete(SESSION_COOKIE_NAME);
       return response;

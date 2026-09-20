@@ -1,40 +1,25 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createReviewerToken, verifyReviewerToken, isReviewerUser } from '../src/lib/auth/session';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import { verifySessionToken, isReviewerUser } from '../src/lib/auth/session';
 
-test('reviewer session: token creation, verification, and role validation', async () => {
-  const token = await createReviewerToken('reviewer.naviable', 3600);
-  assert.ok(typeof token === 'string');
-  assert.ok(token.includes('.'));
-
-  const payload = await verifyReviewerToken(token);
-  assert.ok(payload !== null);
-  assert.equal(payload.username, 'reviewer.naviable');
-  assert.equal(payload.role, 'REVIEWER');
-  assert.ok(payload.exp > Math.floor(Date.now() / 1000));
-
-  // Validates role check
-  assert.equal(isReviewerUser(payload), true);
-  assert.equal(isReviewerUser({ username: 'contributor', role: 'USER' }), false);
+test('reviewer privileges require server-managed metadata, never user-controlled claims', () => {
+  assert.equal(isReviewerUser({ app_metadata: { role: 'REVIEWER' } }), true);
+  assert.equal(isReviewerUser({ app_metadata: { role: 'reviewer' } }), true);
+  assert.equal(isReviewerUser({ app_metadata: {} }), false);
   assert.equal(isReviewerUser(null), false);
+  const forged = { app_metadata: {}, user_metadata: { role: 'REVIEWER' } };
+  assert.equal(isReviewerUser(forged), false);
 });
 
-test('reviewer session: rejects tampered and invalid tokens', async () => {
-  const token = await createReviewerToken('reviewer.naviable', 3600);
-  const [data, sig] = token.split('.');
-
-  // Tampered payload
-  const tamperedData = Buffer.from(JSON.stringify({ username: 'hacker', role: 'REVIEWER', exp: Date.now() + 10000 })).toString('base64url');
-  assert.equal(await verifyReviewerToken(`${tamperedData}.${sig}`), null);
-
-  // Tampered signature
-  assert.equal(await verifyReviewerToken(`${data}.badsignature`), null);
-
-  // Empty / garbage
-  assert.equal(await verifyReviewerToken(''), null);
-  assert.equal(await verifyReviewerToken('random-garbage-string'), null);
-
-  // Expired token
-  const expiredToken = await createReviewerToken('reviewer.naviable', -10);
-  assert.equal(await verifyReviewerToken(expiredToken), null);
+test('reviewer cookies require a live Supabase-validated token and approved role', async () => {
+  const auth = { getUser: async (token: string) => ({
+    data: { user: token === 'expired' ? null : { id: 'actor', email: 'reviewer@example.com', app_metadata: { role: token === 'reviewer' ? 'REVIEWER' : 'USER' } } as unknown as User },
+    error: token === 'expired' ? new Error('expired') : null,
+  }) } as unknown as Pick<SupabaseClient['auth'], 'getUser'>;
+  assert.deepEqual(await verifySessionToken('reviewer', auth), { username: 'reviewer@example.com', role: 'REVIEWER' });
+  assert.equal(await verifySessionToken('contributor', auth), null);
+  assert.equal(await verifySessionToken('expired', auth), null);
+  assert.equal(await verifySessionToken('', auth), null);
+  assert.equal(await verifySessionToken('old-locally-signed-cookie', auth), null);
 });
