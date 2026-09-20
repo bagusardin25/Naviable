@@ -2,6 +2,7 @@
  * Utilitas pemrosesan teks, fuzzy matching, dan error untuk fitur pencarian suara (Voice Search)
  */
 import type { Place } from '@/types';
+import { normalizeStreetText } from './streetSearch';
 
 /**
  * Membersihkan hasil transkrip suara pengguna:
@@ -188,9 +189,15 @@ export function findBestMatchingPlace(
 
       score = Math.max(overallSim, avgTokenSim);
 
-      // Cek apakah ada kecocokan di alamat jika nama belum pas
-      if (addressLower && addressLower.includes(query)) {
-        score = Math.max(score, 0.75);
+      // Cek apakah ada kecocokan di alamat dan nama jalan jika nama belum pas
+      if (addressLower) {
+        const normQuery = normalizeStreetText(query);
+        const normAddress = normalizeStreetText(addressLower);
+        if (normAddress.includes(normQuery)) {
+          score = Math.max(score, 0.85);
+        } else if (addressLower.includes(query)) {
+          score = Math.max(score, 0.75);
+        }
       }
     }
 

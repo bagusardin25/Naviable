@@ -1,6 +1,7 @@
 import React from 'react';
 import { Place, STATUS_META, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import { extractStreetName } from '@/lib/streetSearch';
 
 type PlaceCardProps = {
   place: Place;
@@ -12,6 +13,7 @@ type PlaceCardProps = {
 export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas' }: PlaceCardProps) {
   const meta = placeStatusMeta(place, activeNeed);
   const freshness = getEvidenceFreshness(place.updatedAt);
+  const streetName = extractStreetName(place.address);
   const statusDescription = `${meta.label}, kondisi: ${freshness.label}`;
 
   const statusIcon =
@@ -46,6 +48,11 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
         <strong className="place-card-title">{place.name}</strong>
         <span className="place-card-meta">
           {place.category} · {place.district} · {place.distance}
+          {streetName && (
+            <span style={{ display: 'block', fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>
+              📍 {streetName}
+            </span>
+          )}
         </span>
       </div>
 
