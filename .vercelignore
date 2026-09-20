@@ -1,0 +1,19 @@
+# Deploy only the frontend source required by the Vercel project.
+/backend/
+/data/
+
+# Local credentials and environment files must never enter deployment uploads.
+**/.env
+**/.env.local
+**/.env.*.local
+**/client_secret*.json
+**/*credentials*.json
+**/*service-account*.json
+
+# Local runtime/build artifacts.
+**/.local/
+**/dist/
+**/.next/
+**/node_modules/
+**/.vercel/
+**/*.tsbuildinfo
