@@ -3,6 +3,11 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 export const SESSION_COOKIE_NAME = 'naviable_reviewer_session';
 export type ReviewerSessionPayload = { username: string; role: 'REVIEWER' };
 
+export function bearerToken(authorization: string | null): string | null {
+  const match = authorization?.match(/^Bearer\s+([^\s]+)$/i);
+  return match?.[1] ?? null;
+}
+
 export function reviewerAuthClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

@@ -12,6 +12,16 @@ export function googleSignInOptions(origin: string, destination: string): SignIn
   };
 }
 
+export function reviewerGoogleSignInOptions(origin: string): SignInWithOAuthCredentials {
+  return {
+    provider: 'google',
+    options: {
+      redirectTo: `${new URL(origin).origin}/login?mode=reviewer`,
+      queryParams: { prompt: 'select_account' },
+    },
+  };
+}
+
 export function authCallbackError(search: string, hash: string): string {
   const query = new URLSearchParams(search);
   const fragment = new URLSearchParams(hash.replace(/^#/, ''));

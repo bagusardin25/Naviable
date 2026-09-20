@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { contributionLabel, loginHref, parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
-import { googleSignInOptions } from "@/lib/auth/google";
+import { googleSignInOptions, reviewerGoogleSignInOptions } from "@/lib/auth/google";
 import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from "./login-icons";
 import styles from "./login.module.css";
 
@@ -28,6 +28,7 @@ export function LoginForm() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const reviewerPasswordRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const reviewerSessionAttemptRef = useRef<string | null>(null);
 
   const initialMode: AuthMode =
     searchParams.get("mode") === "reviewer" || searchParams.get("role") === "reviewer" || destination.startsWith("/reviewer")
@@ -52,6 +53,44 @@ export function LoginForm() {
 
   const busy = pending !== null || reviewerPending;
 
+  useEffect(() => {
+    if (authMode !== "reviewer" || !auth.ready || !auth.user) return;
+    if (reviewerSessionAttemptRef.current === auth.user.id) return;
+    reviewerSessionAttemptRef.current = auth.user.id;
+
+    let active = true;
+    async function openReviewerSession() {
+      setReviewerError("");
+      setReviewerPending(true);
+      try {
+        const { data, error } = await supabaseBrowser().auth.getSession();
+        const token = data.session?.access_token;
+        if (error || !token) throw new Error("Sesi Google tidak tersedia. Silakan masuk kembali.");
+
+        const response = await fetch("/api/auth/reviewer-session", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Akun Google ini belum memiliki hak admin/reviewer.");
+        }
+        if (active) router.replace("/reviewer");
+      } catch (error: unknown) {
+        if (active) {
+          setReviewerError(error instanceof Error ? error.message : "Login admin dengan Google gagal.");
+        }
+      } finally {
+        if (active) setReviewerPending(false);
+      }
+    }
+
+    void openReviewerSession();
+    return () => {
+      active = false;
+    };
+  }, [auth.ready, auth.user, authMode, router]);
+
 
   async function signInWithGoogle() {
     if (busy) return;
@@ -70,6 +109,25 @@ export function LoginForm() {
       const errMessage = err instanceof Error ? err.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.";
       setMessage(errMessage);
       setPending(null);
+    }
+  }
+
+  async function signInReviewerWithGoogle() {
+    if (busy) return;
+    setReviewerError("");
+    if (!authConfigured) {
+      setReviewerError("Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.");
+      return;
+    }
+    setReviewerPending(true);
+    try {
+      const { error } = await supabaseBrowser().auth.signInWithOAuth(
+        reviewerGoogleSignInOptions(window.location.origin),
+      );
+      if (error) throw error;
+    } catch (error: unknown) {
+      setReviewerError(error instanceof Error ? error.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.");
+      setReviewerPending(false);
     }
   }
 
@@ -205,12 +263,28 @@ export function LoginForm() {
 
         <header style={{ marginBottom: "16px" }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--ink)", margin: "0 0 4px" }}>
-            Masuk sebagai Reviewer
+            Masuk ke Dashboard Admin
           </h2>
           <p style={{ fontSize: "0.875rem", color: "var(--muted)", margin: 0 }}>
-            Gunakan akun reviewer Naviable.
+            Gunakan akun Google yang telah diberi hak admin/reviewer Naviable.
           </p>
         </header>
+
+        <div className={styles.socialButtons}>
+          <button
+            className={`${styles.button} ${styles.google}`}
+            type="button"
+            onClick={signInReviewerWithGoogle}
+            disabled={busy}
+          >
+            <GoogleIcon />
+            <span>{reviewerPending ? "Memeriksa akun…" : "Masuk admin dengan Google"}</span>
+          </button>
+        </div>
+
+        <div className={styles.divider}>
+          <span>atau masuk dengan email</span>
+        </div>
 
         <form onSubmit={submitReviewerLogin} noValidate aria-busy={busy}>
           {/* Username Field */}
@@ -284,7 +358,7 @@ export function LoginForm() {
             style={{ marginTop: "20px" }}
           >
             <LoginIcon />
-            <span>{reviewerPending ? "Memeriksa…" : "Masuk"}</span>
+            <span>{reviewerPending ? "Memeriksa…" : "Masuk dengan email"}</span>
           </button>
         </form>
       </div>

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { AuthChangeEvent, Session, SupabaseClient, User, UserResponse } from '@supabase/supabase-js';
-import { googleSignInOptions, authCallbackError } from '../src/lib/auth/google';
+import { googleSignInOptions, reviewerGoogleSignInOptions, authCallbackError } from '../src/lib/auth/google';
 import { observeUser } from '../src/lib/auth/observe-user';
 
 test('Google always requests account selection and preserves only safe contribution destinations', () => {
@@ -11,6 +11,12 @@ test('Google always requests account selection and preserves only safe contribut
   for (const unsafe of ['https://evil.example', '//evil.example', '/\\evil.example', '/jelajah?next=https://evil.example']) {
     assert.equal(googleSignInOptions('https://naviable.vercel.app', unsafe).options?.redirectTo, 'https://naviable.vercel.app/jelajah');
   }
+});
+
+test('reviewer Google login returns only to the reviewer session exchange page', () => {
+  const result = reviewerGoogleSignInOptions('https://naviable.vercel.app/ignored');
+  assert.equal(result.options?.queryParams?.prompt, 'select_account');
+  assert.equal(result.options?.redirectTo, 'https://naviable.vercel.app/login?mode=reviewer');
 });
 
 test('cancelled OAuth and expired email links produce safe errors without reflecting provider text', () => {
