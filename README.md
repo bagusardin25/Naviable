@@ -3,8 +3,8 @@
 # Naviable — Developer & Architecture Documentation ♿🗺️
 ### *Community-Driven Urban Accessibility Evidence System for Surabaya*
 
-**Engineering Notes & System Architecture**  
-Built by **Tim coba-coba (Telkom University Surabaya)** for **GAYATAMA 5 (2026)**  
+**Engineering Notes & System Architecture**
+Built by **Tim coba-coba (Telkom University Surabaya)** for **GAYATAMA 5 (2026)**
 *Theme: "Innovating for a Sustainable Future: Empowering Communities through Web Technology"*
 
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black?style=flat&logo=next.js)](https://nextjs.org/)
@@ -13,9 +13,9 @@ Built by **Tim coba-coba (Telkom University Surabaya)** for **GAYATAMA 5 (2026)*
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript%205-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![Leaflet](https://img.shields.io/badge/Map-Leaflet%201.9-green?style=flat&logo=leaflet)](https://leafletjs.com/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20Supabase-336791?style=flat&logo=postgresql)](https://supabase.com/)
-[![Gemini](https://img.shields.io/badge/Vision%20AI-Gemini%202.5-orange?style=flat&logo=google)](https://aistudio.google.com/)
+[![Vision AI](https://img.shields.io/badge/Vision%20AI-Google%20%7C%20OpenAI%20%7C%20OpenRouter-orange?style=flat)](./backend/README.md)
 
-[Why We Built This](#1-problem-statement--why-we-built-naviable-why) • [Core Invariants](#2-system-invariants--product-boundaries-warning) • [Architectural Trade-Offs](#3-architectural-decisions--trade-offs-trade-off) • [Transaction Loop](#4-transaction-lifecycle-the-flagship-loop) • [Data Model](#5-data-model--schema) • [Dev & Testing](#6-local-development--verification-guide) • [Known Limitations](#7-known-limitations--workarounds-workaround--todo) • [The Team](#8-development-team)
+[Why We Built This](#1-problem-statement--why-we-built-naviable-why) • [Core Invariants](#2-system-invariants--product-boundaries-warning) • [Architectural Trade-Offs](#3-architectural-decisions--trade-offs-trade-off) • [Contribution & Review Loop](#4-contribution--review-lifecycle) • [Data Model](#5-data-model--schema) • [Dev & Testing](#6-local-development--verification-guide) • [Known Limitations](#7-known-limitations--workarounds-workaround--todo) • [The Team](#8-development-team)
 
 ---
 
@@ -44,15 +44,17 @@ We designed **Naviable** as a civic evidence platform:
 1. **AI Never Publishes Directly (`lockedBy: 'kontributor'`)**:
    `/api/analyze` only proposes drafts. The database column `locked_by` strictly accepts `'kontributor'`. If the AI provider fails, times out, or has no API key configured, the system **remains 100% operational in manual checklist mode**.
 2. **Low-Confidence Detections Degrade to `BELUM_DIKETAHUI`**:
-   When Gemini's visual detection confidence is `"rendah"` (low), the status must automatically revert to `"BELUM_DIKETAHUI"`. The system must never hallucinate conditions when visual evidence is uncertain.
+   When a provider's visual detection confidence is `"rendah"` (low), the status must automatically revert to `"BELUM_DIKETAHUI"`. The system must never hallucinate conditions when visual evidence is uncertain.
 3. **`BELUM_DIKETAHUI` Is Excluded from the Score Denominator**:
    `BELUM_DIKETAHUI` means insufficient evidence has been collected. It **must not count as 0% (failure)** nor artificially depress a venue's score. Scores are always accompanied by an explanatory sentence (e.g. *"Chain needs attention at accessible toilet; 2 elements unknown"*), never an isolated percentage.
-4. **Citizen Reports Never Auto-Flip `verifiedByTeam`**:
-   Citizen submissions are labeled as field evidence with photo attribution, but **must never** toggle the internal audit flag (`verifiedByTeam: false`), which requires an official in-person team audit.
+4. **Contributor Reports Never Auto-Flip `verifiedByTeam`**:
+   When a contributor publishes to `POST /api/reports`, we lock their element evidence (`lockedBy: 'kontributor'`) but keep `verifiedByTeam: false`. That flag only turns `true` when a signed-in **reviewer** approves the report via `POST /api/reviewer/reports/:id/review`. We never let an unreviewed field submission mark its own venue as team-verified.
 5. **Districts Are Never Inferred from Free-Form Addresses**:
    Districts missing from the baseline seed data remain `null` and render as *"Belum diketahui"*. Heuristic guessing from unstructured street addresses is prohibited to prevent geographic misclassification.
 6. **Strict Idempotency on All Mutation Endpoints**:
    Every submission to `POST /api/reports` requires a UUID `Idempotency-Key` header and a SHA-256 payload hash. Replaying with identical payloads returns a `200 OK` replay; reusing a key with different payload content returns a `409 Conflict`.
+7. **Every Mutation Requires a Signed-In Actor; Reviewing Requires an OAuth Role**:
+   We put all writes (`POST /api/reports`, `/api/places`, `/api/reviews`, `/api/analyze`) behind a Bearer-token guard — anonymous browsing stays open, but publishing does not. The `/api/reviewer/*` routes add a second gate on top of that guard: we re-verify the token and require `app_metadata.role === 'REVIEWER'`. A logged-in contributor without that claim gets `403`, so approving reports is never reachable from the public UI.
 
 ---
 
@@ -74,34 +76,50 @@ We designed **Naviable** as a civic evidence platform:
 
 ---
 
-## 4. Transaction Lifecycle (The Flagship Loop)
+## 4. Contribution & Review Lifecycle
 
-The submission flow is engineered for resilience against flaky mobile networks and duplicate clicks:
+Contributing is a signed-in action. Browsing the map, list, and observatory stays fully public, but every write (`POST /api/reports`, `/api/places`, `/api/reviews`, `/api/analyze`) sits behind a Bearer-token guard. We authenticate people through Supabase (Google OAuth) and attach the session token to each mutation.
+
+We engineered the submit flow to survive flaky mobile networks and duplicate taps, then hand the report to a human reviewer before a venue is marked team-verified:
 
 ```text
+0. Contributor signs in with Google (Supabase). The frontend attaches the session
+   Bearer token to every write; an unauthenticated write is rejected with 401.
+   │
 1. Contributor selects an image (JPG, PNG, or WebP; <= 5 MB).
    │
 2. [Optional] "Help draft with AI" calls POST /api/analyze:
-   ├── Gemini 2.5 Flash detects physical objects (ramps, doors, tactile paths).
-   └── If offline / unconfigured: degrades gracefully to manual checklist.
+   ├── We run vision analysis and photo-integrity checks in parallel.
+   ├── Google, OpenAI, then OpenRouter are tried in configured failover order.
+   ├── Content Provenance and visual-artifact signals are reported separately from
+   │   accessibility status; a photo with trusted AI provenance is rejected outright.
+   └── If offline / unconfigured: degrades gracefully to manual checklist (503 + fallback).
    │
-3. Contributor inspects image, selects element statuses (E1–E8), inputs notes,
+3. Contributor inspects the image, selects element statuses (E1–E8), inputs notes,
    and must check the human confirmation checkbox (humanConfirmed: true).
    │
-4. Frontend generates a UUID Idempotency-Key and sends POST /api/reports:
-   ├── Express middleware checks CORS and IP rate limits before parsing 8 MB body.
-   ├── Zod validates binary MIME signatures (magic bytes).
-   ├── Backend generates SHA-256 hash of payload + base64 image.
-   ├── Database executes atomic write:
-   │     • Saves isolated photo.
+4. Frontend generates a UUID Idempotency-Key and sends the evidence:
+   ├── New venue not in the dataset? We POST /api/places instead — the same idempotent
+   │   transaction creates the place and its first report atomically.
+   ├── Express middleware checks CORS and IP rate limits before parsing the 8 MB body.
+   ├── Zod validates the payload and the image's binary MIME signature (magic bytes).
+   ├── Backend generates a SHA-256 hash of payload + base64 image.
+   ├── Database executes an atomic write:
+   │     • Saves the isolated photo.
    │     • Locks place element state (lockedBy: "kontributor").
-   │     • Appends full report audit payload into reports table.
+   │     • Appends the full report audit payload into the reports table.
    │     • Increments photoCount, reportCount, and updatedAt.
-   └── Returns 201 Created with updated place snapshot.
+   └── Returns 201 Created (or 200 on an idempotent replay) with the place snapshot.
    │
-5. Frontend map and detail drawer update state reactively:
-   └── Correction history drawer immediately displays new photo and field notes.
+5. The report enters the review lifecycle (reviewStatus):
+   SUBMITTED → UNDER_REVIEW → { NEEDS_REVISION | REJECTED | APPROVED }.
+   ├── A reviewer opens it via /api/reviewer/reports/:id and records a decision;
+   │   NEEDS_REVISION and REJECTED require a written note.
+   └── On APPROVED, we record the audit trail and flip the place's verifiedByTeam to
+       true — the element states were already locked at publish in step 4.
 ```
+
+Contributors can also leave a plain-language **experience review** on any venue (`POST /api/reviews`) — short qualitative notes that sit beside the chain, but never feed the element scores.
 
 ---
 
@@ -159,8 +177,8 @@ npm install --prefix backend
 npm install --prefix frontend
 ```
 
-### Running Locally (Zero Credentials Required)
-The app runs out of the box without cloud setup or third-party accounts:
+### Running Locally
+The app boots out of the box against the local JSON store — no cloud setup, Docker, or third-party accounts required:
 
 ```bash
 # Terminal 1 — Start Express Backend (Port 4000)
@@ -172,6 +190,8 @@ npm run dev:frontend
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+Browsing the map, list, and observatory needs zero credentials. Because we now gate every write behind sign-in (see Invariant #7), exercising the contribution and reviewer flows in the UI requires Supabase Google OAuth configured in `frontend/.env.local`. The backend test suites don't need it — they drive the API directly with a local dev token.
+
 ### Quality Assurance & Automated Tests
 Our verification suite tests all layers from TypeScript compilation to SQL transactions and live HTTP loops:
 
@@ -182,14 +202,14 @@ npm run typecheck
 # 2. Run frontend ESLint rules
 npm --prefix frontend run lint
 
-# 3. Run backend unit & domain tests (7 test suites via node:test)
+# 3. Run backend + frontend unit & domain tests (node:test)
 npm test
 
 # 4. Test SQL migrations & RLS policies on isolated temporary Postgres 16 cluster
 npm run test:sql
 
 # 5. Run end-to-end HTTP smoke test loop against active backend
-npm run test:smoke
+npm --prefix backend run test:smoke
 
 # 6. Build full production bundles (backend tsc + frontend next build)
 npm run build:all
@@ -212,7 +232,7 @@ npm run build:all
 
 Designed and developed by:
 
-**Tim coba-coba**  
+**Tim coba-coba**
 *Undergraduate Students — Telkom University Surabaya*
 
 - **Bagus Ardin**
@@ -229,4 +249,4 @@ Designed and developed by:
 - Source code is licensed under the [MIT License](./LICENSE).
 - Surabaya public facility baseline data is derived from OpenStreetMap contributors under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
 - Academic methodology is grounded in Pebriyanti (2020), *Peta Aksesibilitas (Denpasar Accessible Map) Bagi Penyandang Disabilitas di Ruang Publik Kota: Menuju Kota Denpasar Ramah Disabilitas*, Undagi: Jurnal Ilmiah Arsitektur Universitas Warmadewa.
-
+
