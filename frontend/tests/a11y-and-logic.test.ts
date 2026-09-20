@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   calculatePlaceProfileStatus,
   getEvidenceFreshness,
@@ -188,7 +189,7 @@ test('6. Filtered CSV export URL generation preserves parameters', () => {
 test('7. Accessibility settings defaults and widget positions', () => {
   const validPositions = ['left', 'right'];
 
-  assert.equal(DEFAULT_A11Y_SETTINGS.widgetPosition, 'left');
+  assert.equal(DEFAULT_A11Y_SETTINGS.widgetPosition, 'right');
   assert.ok(validPositions.includes(DEFAULT_A11Y_SETTINGS.widgetPosition));
 
   // Verify all 8 primary accessibility modes are boolean flags in default settings
@@ -240,7 +241,7 @@ test('8. Accessibility preferences parsing and fallback resilience', () => {
     widgetPosition: 'invalid-floating-center',
   });
   const parsedInvalid = parsePreferences(invalidPosJson);
-  assert.equal(parsedInvalid.widgetPosition, 'left');
+  assert.equal(parsedInvalid.widgetPosition, 'right');
 });
 
 test('9. Canonical primary storage key matches standard', () => {
@@ -302,6 +303,46 @@ test('12. Color Blind Mode preference parsing and persistence structure', () => 
   // Parsing false
   const inactiveColorBlind = parsePreferences(JSON.stringify({ colorBlind: false }));
   assert.equal(inactiveColorBlind.colorBlind, false);
+});
+
+test('12b. Requested accessibility modes survive preference parsing together', () => {
+  const persisted = parsePreferences(JSON.stringify({
+    widgetPosition: 'left',
+    colorBlind: true,
+    dyslexia: true,
+    darkMode: true,
+    reduceMotion: true,
+  }));
+
+  assert.equal(persisted.widgetPosition, 'left');
+  assert.equal(persisted.colorBlind, true);
+  assert.equal(persisted.dyslexia, true);
+  assert.equal(persisted.darkMode, true);
+  assert.equal(persisted.reduceMotion, true);
+});
+
+test('12c. Accessibility panel order, unified cards, and global mode styles', () => {
+  const widget = readFileSync(
+    new URL('../src/components/accessibility/AccessibilityWidget.tsx', import.meta.url),
+    'utf8'
+  );
+  const styles = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../src/app/layout.tsx', import.meta.url), 'utf8');
+
+  const featuresIndex = widget.indexOf('<span>Fitur Aksesibilitas</span>');
+  const displayIndex = widget.indexOf('<span>Tampilan &amp; Gerakan</span>');
+  const positionIndex = widget.indexOf('<span>Posisi Widget</span>');
+  const resetIndex = widget.indexOf('className="a11y-panel-footer"');
+
+  assert.ok(featuresIndex < displayIndex);
+  assert.ok(displayIndex < positionIndex);
+  assert.ok(positionIndex < resetIndex);
+  assert.equal(widget.includes('a11y-compact-btn'), false);
+  assert.match(styles, /backdrop-filter:\s*grayscale\(100%\)/);
+  assert.match(styles, /--font-dyslexia:\s*"OpenDyslexic"/);
+  assert.match(styles, /max-height:\s*78dvh/);
+  assert.match(layout, /@fontsource\/opendyslexic\/400\.css/);
+  assert.match(layout, /@fontsource\/opendyslexic\/700\.css/);
 });
 
 test('13. Text Scale stepper step boundary rules (100% to 200% with 10% steps)', () => {

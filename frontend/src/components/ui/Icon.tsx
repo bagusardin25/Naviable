@@ -48,6 +48,8 @@ import {
   Move,
   Navigation,
   ExternalLink,
+  Moon,
+  Waves,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -103,7 +105,9 @@ export type IconName =
   | 'reading-guide'
   | 'move'
   | 'navigation'
-  | 'external-link';
+  | 'external-link'
+  | 'dark-mode'
+  | 'reduce-motion';
 
 const iconMap: Record<string, LucideIcon> = {
   map: LucideMap,
@@ -158,6 +162,8 @@ const iconMap: Record<string, LucideIcon> = {
   move: Move,
   navigation: Navigation,
   'external-link': ExternalLink,
+  'dark-mode': Moon,
+  'reduce-motion': Waves,
 };
 
 export type IconProps = {

@@ -622,7 +622,7 @@ export const DEFAULT_A11Y_PREFERENCES: AccessibilityPreferences = {
   highlightInteractive: false,
   readingGuide: false,
   voiceMode: false,
-  widgetPosition: 'left',
+  widgetPosition: 'right',
   largeText: false,
   highlightLinks: false,
 };

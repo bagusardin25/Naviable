@@ -121,7 +121,7 @@ test('getPopularStreetCorridors groups corridors and sorts by frequency', () => 
   assert.equal(corridors[0].count, 2);
 });
 
-import { analyzeSearchQuery, matchesCategoryIntent } from '../src/lib/searchNormalizer';
+import { analyzeSearchQuery } from '../src/lib/searchNormalizer';
 
 test('analyzeSearchQuery correctly handles conversational phrases and typos like coffe', () => {
   // Typo "coffe" -> normalized to "coffee" with cafe intent

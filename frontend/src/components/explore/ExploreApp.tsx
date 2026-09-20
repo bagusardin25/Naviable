@@ -139,14 +139,14 @@ export default function ExploreApp() {
   // Debounced search for external POIs in Surabaya when query >= 2 chars
   useEffect(() => {
     const clean = searchQuery.trim();
-    if (clean.length < 2) {
-      setExternalPlaces([]);
-      setExternalLoading(false);
-      return;
-    }
-
     const controller = new AbortController();
     const timer = setTimeout(() => {
+      if (clean.length < 2) {
+        setExternalPlaces([]);
+        setExternalLoading(false);
+        return;
+      }
+
       setExternalLoading(true);
       fetchExternalPlaces(clean, places, controller.signal)
         .then((results) => {
@@ -158,7 +158,7 @@ export default function ExploreApp() {
         .finally(() => {
           setExternalLoading(false);
         });
-    }, 380);
+    }, clean.length < 2 ? 0 : 380);
 
     return () => {
       clearTimeout(timer);

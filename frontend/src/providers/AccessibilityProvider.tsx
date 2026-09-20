@@ -84,7 +84,14 @@ function getStoredSnapshot(): string {
   if (typeof window === 'undefined') return fallbackSnapshot;
   try {
     const current = localStorage.getItem(PRIMARY_STORAGE_KEY);
-    if (current) return current;
+    if (current) {
+      const normalized = JSON.stringify(parsePreferences(current));
+      if (normalized !== current) {
+        localStorage.setItem(PRIMARY_STORAGE_KEY, normalized);
+      }
+      fallbackSnapshot = normalized;
+      return normalized;
+    }
 
     // Check legacy storage keys for seamless migration
     for (const legacyKey of LEGACY_STORAGE_KEYS) {
