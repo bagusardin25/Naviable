@@ -52,6 +52,14 @@ export default function ExploreApp() {
   }, [latParam, lngParam]);
 
   useEffect(() => {
+    if (screen === 'review' && auth.ready && !auth.user && authModalShownFor !== 'review') {
+      const timer = setTimeout(() => {
+        setAuthModalShownFor('review');
+        setShowAuthModal(true);
+        router.push(screenHref('map', searchParams.toString()));
+      }, 0);
+      return () => clearTimeout(timer);
+    }
     if (screen === 'add' && auth.ready && !auth.user && authModalShownFor !== 'add') {
       const timer = setTimeout(() => {
         setAuthModalShownFor('add');
@@ -59,7 +67,7 @@ export default function ExploreApp() {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [screen, auth.ready, auth.user, authModalShownFor]);
+  }, [screen, auth.ready, auth.user, authModalShownFor, router, searchParams]);
 
   function handleAddPlaceAtLocation(location: { lat: number; lng: number }) {
     const latStr = location.lat.toFixed(6);
@@ -76,6 +84,10 @@ export default function ExploreApp() {
 
   const setScreen = useCallback((next: Screen) => {
     if (next === 'profile' && !auth.user) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (next === 'review' && !auth.user) {
       setShowAuthModal(true);
       return;
     }
@@ -455,6 +467,7 @@ export default function ExploreApp() {
                 onWriteReview={() => {
                   if (!auth.user) {
                     setShowAuthModal(true);
+                    return;
                   }
                   setScreen('review');
                 }}
@@ -484,6 +497,9 @@ export default function ExploreApp() {
           <ReviewForm
             key={String(selectedPlace.id)}
             place={selectedPlace}
+            signedIn={Boolean(auth.user)}
+            defaultAuthorName={auth.profile?.displayName || auth.user?.user_metadata?.full_name || ''}
+            onRequireAuth={() => setShowAuthModal(true)}
             onCancel={() => setScreen('map')}
             onSubmitted={() => setScreen('map')}
           />
