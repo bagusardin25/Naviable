@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import type { AuthUserProfile } from '@/lib/auth/user-profile';
+import type { Place } from '@/types';
+import type { ExternalPlaceResult } from '@/lib/externalGeocoding';
+import { matchesPlaceQuery } from '@/lib/streetSearch';
 
 type TopNavbarProps = {
   searchQuery: string;
@@ -17,6 +20,11 @@ type TopNavbarProps = {
   authReady: boolean;
   userProfile: AuthUserProfile | null;
   onOpenAuth?: () => void;
+  localPlaces?: Place[];
+  externalPlaces?: ExternalPlaceResult[];
+  externalLoading?: boolean;
+  onSelectLocalPlace?: (place: Place) => void;
+  onSelectExternalPlace?: (ext: ExternalPlaceResult, action: 'view' | 'add') => void;
 };
 
 export function TopNavbar({
@@ -28,6 +36,11 @@ export function TopNavbar({
   authReady,
   userProfile,
   onOpenAuth,
+  localPlaces = [],
+  externalPlaces = [],
+  externalLoading = false,
+  onSelectLocalPlace,
+  onSelectExternalPlace,
 }: TopNavbarProps) {
   const [voiceNotification, setVoiceNotification] = useState<{
     message: string;
@@ -90,16 +103,43 @@ export function TopNavbar({
     startListening();
   };
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const localMatches = useMemo(() => {
+    if (!localPlaces || !searchQuery.trim() || searchQuery.trim().length < 2) return [];
+    return localPlaces.filter((p) => matchesPlaceQuery(p, searchQuery).matched).slice(0, 3);
+  }, [localPlaces, searchQuery]);
+
+  const unrecordedExternal = useMemo(() => {
+    if (!externalPlaces || !searchQuery.trim() || searchQuery.trim().length < 2) return [];
+    return externalPlaces.filter((ext) => !ext.isExistingInNaviable).slice(0, 4);
+  }, [externalPlaces, searchQuery]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && isListening) {
-      cancelListening();
-      setVoiceAnnouncement('Pencarian suara dibatalkan.');
+    if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
+      if (isListening) {
+        cancelListening();
+        setVoiceAnnouncement('Pencarian suara dibatalkan.');
+      }
     }
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      setIsDropdownOpen(false);
       onSearchSubmit?.(searchQuery, 'text');
     }
   };
@@ -129,17 +169,24 @@ export function TopNavbar({
         />
       </Link>
 
-      <div className="search-container" onKeyDown={handleKeyDown}>
+      <div ref={searchContainerRef} className="search-container" onKeyDown={handleKeyDown}>
         <label className="search-box" htmlFor="search-input">
           <Icon name="search" />
           <input
             id="search-input"
             type="search"
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(e) => {
+              onSearchChange(e.target.value);
+              setIsDropdownOpen(true);
+            }}
+            onFocus={() => {
+              if (searchQuery.trim().length >= 2) setIsDropdownOpen(true);
+            }}
             onKeyDown={handleInputKeyDown}
-            placeholder="Cari puskesmas, halte, taman, stasiun..."
-            aria-label="Cari tempat aksesibel di Surabaya"
+            placeholder="Cari tempat atau nama jalan (misal: Telkom University, Tunjungan)..."
+            aria-label="Cari tempat atau jalan aksesibel di Surabaya"
+            autoComplete="off"
           />
           <button
             id="btn-search-voice"
@@ -158,6 +205,98 @@ export function TopNavbar({
             {isListening && <span className="voice-pulse-ring" aria-hidden="true" />}
           </button>
         </label>
+
+        {/* Search Autocomplete Dropdown */}
+        {isDropdownOpen && searchQuery.trim().length >= 2 && (localMatches.length > 0 || unrecordedExternal.length > 0 || externalLoading) && (
+          <div className="search-autocomplete-dropdown" role="listbox" aria-label="Saran pencarian tempat">
+            {localMatches.length > 0 && (
+              <div className="autocomplete-section">
+                <div className="autocomplete-section-title">
+                  <Icon name="check-circle" size={13} />
+                  <span>Tempat Terdaftar di Naviable</span>
+                </div>
+                {localMatches.map((place) => (
+                  <button
+                    key={place.id}
+                    type="button"
+                    className="autocomplete-item local-item"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      onSelectLocalPlace?.(place);
+                    }}
+                  >
+                    <div className="autocomplete-item-main">
+                      <span className="autocomplete-place-name">{place.name}</span>
+                      <span className="autocomplete-place-sub">
+                        {place.category} · {place.district}
+                      </span>
+                    </div>
+                    <span className="autocomplete-pill-audited">Terdata</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {externalLoading && (
+              <div className="autocomplete-loading">
+                <div className="map-spinner small" />
+                <span>Mencari di OpenStreetMap Surabaya...</span>
+              </div>
+            )}
+
+            {unrecordedExternal.length > 0 && (
+              <div className="autocomplete-section external-section">
+                <div className="autocomplete-section-title external-title">
+                  <Icon name="map-pin" size={13} />
+                  <span>Tempat Publik (Belum Terdata di Naviable)</span>
+                </div>
+                {unrecordedExternal.map((ext) => (
+                  <div key={ext.id} className="autocomplete-item external-item">
+                    <div className="autocomplete-item-main">
+                      <div className="autocomplete-name-row">
+                        <span className="autocomplete-place-name">{ext.name}</span>
+                        <span className="autocomplete-badge-unrecorded">Belum Terdata</span>
+                      </div>
+                      <span className="autocomplete-place-sub">{ext.address}</span>
+                    </div>
+                    <div className="autocomplete-item-actions">
+                      <button
+                        type="button"
+                        className="autocomplete-btn-view"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDropdownOpen(false);
+                          onSelectExternalPlace?.(ext, 'view');
+                        }}
+                        title="Lihat titik di peta"
+                      >
+                        <Icon name="map-pin" size={13} />
+                        <span>Titik</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="autocomplete-btn-add"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDropdownOpen(false);
+                          onSelectExternalPlace?.(ext, 'add');
+                        }}
+                        title="Tambah tempat ini ke Naviable"
+                      >
+                        <Icon name="plus" size={13} />
+                        <span>➕ Tambah</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="autocomplete-footer">
+              <span>Tekan <kbd>Enter</kbd> untuk hasil lengkap pada peta & daftar</span>
+            </div>
+          </div>
+        )}
 
         {/* Live region announcement for screen readers */}
         <div role="status" aria-live="polite" aria-atomic="true" className="visually-hidden">

@@ -20,7 +20,9 @@ type MapViewProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
-  onAddPlaceAtLocation?: (location: { lat: number; lng: number }) => void;
+  onAddPlaceAtLocation?: (location: { lat: number; lng: number; name?: string; address?: string }) => void;
+  externalPreview?: { lat: number; lng: number; name?: string; address?: string } | null;
+  onClearExternalPreview?: () => void;
   activeNeed?: AccessibilityNeed;
 };
 
@@ -29,6 +31,8 @@ export function MapView({
   selectedPlace,
   onSelectPlace,
   onAddPlaceAtLocation,
+  externalPreview,
+  onClearExternalPreview,
   activeNeed = 'Mobilitas',
 }: MapViewProps) {
   const [mapMode, setMapMode] = useState<'osm' | 'canvas'>('osm');
@@ -81,6 +85,8 @@ export function MapView({
             selectedPlace={selectedPlace}
             onSelectPlace={onSelectPlace}
             onAddPlaceAtLocation={onAddPlaceAtLocation}
+            externalPreview={externalPreview}
+            onClearExternalPreview={onClearExternalPreview}
             activeNeed={activeNeed}
           />
         </div>

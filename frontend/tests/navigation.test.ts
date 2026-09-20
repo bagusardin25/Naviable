@@ -18,6 +18,14 @@ test('contribution login preserves the exact action and stable place ID, never a
     safeReturnTo('/jelajah?screen=add&lat=-7.265321&lng=112.752214'),
     '/jelajah?lat=-7.265321&lng=112.752214&screen=add'
   );
+  assert.equal(
+    safeReturnTo('/jelajah?screen=add&lat=-7.311059&lng=112.728853&name=Telkom+University+Surabaya&address=Jl.+Ketintang+No.+156'),
+    '/jelajah?lat=-7.311059&lng=112.728853&name=Telkom+University+Surabaya&address=Jl.+Ketintang+No.+156&screen=add'
+  );
+  assert.equal(
+    safeReturnTo('/jelajah?screen=add&name=%3Cscript%3Ealert(1)%3C%2Fscript%3E&address=Jl.+Darmo'),
+    '/jelajah?name=scriptalert%281%29%2Fscript&address=Jl.+Darmo&screen=add'
+  );
   assert.equal(safeReturnTo('/jelajah?screen=add&lat=invalid&lng=999'), '/jelajah?screen=add');
   for (const unsafe of ['https://evil.test', '//evil.test', '/jelajah/../evil', '/jelajah\\evil', 'javascript:alert(1)']) assert.equal(safeReturnTo(unsafe), '/jelajah');
   assert.equal(safeReturnTo('/jelajah?screen=report&place=bad%2Fid&next=https://evil.test'), '/jelajah?screen=report');

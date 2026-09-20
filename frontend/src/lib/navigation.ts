@@ -22,6 +22,16 @@ export function safeReturnTo(value: string | null): string {
   const lng = url.searchParams.get('lng');
   if (lat && !isNaN(Number(lat)) && Number(lat) >= -90 && Number(lat) <= 90) query.set('lat', lat);
   if (lng && !isNaN(Number(lng)) && Number(lng) >= -180 && Number(lng) <= 180) query.set('lng', lng);
+  const name = url.searchParams.get('name');
+  if (name) {
+    const cleanName = name.replace(/[<>"'`;\\]/g, '').trim().slice(0, 150);
+    if (cleanName) query.set('name', cleanName);
+  }
+  const address = url.searchParams.get('address');
+  if (address) {
+    const cleanAddress = address.replace(/[<>"'`;\\]/g, '').trim().slice(0, 250);
+    if (cleanAddress) query.set('address', cleanAddress);
+  }
   return screenHref(parseScreen(url.searchParams.get('screen')), query.toString());
 }
 export function loginHref(destination: string): string {

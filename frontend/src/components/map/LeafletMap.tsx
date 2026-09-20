@@ -9,6 +9,8 @@ import { Icon } from '@/components/ui/Icon';
 export interface SelectedMapLocation {
   lat: number;
   lng: number;
+  name?: string;
+  address?: string;
 }
 
 type LeafletMapProps = {
@@ -16,15 +18,23 @@ type LeafletMapProps = {
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
   onAddPlaceAtLocation?: (location: SelectedMapLocation) => void;
+  externalPreview?: SelectedMapLocation | null;
+  onClearExternalPreview?: () => void;
   activeNeed?: import('@/types').AccessibilityNeed;
 };
 
 const SURABAYA_CENTER: [number, number] = [-7.2758, 112.7483];
 
 /**
- * Controller to handle flyTo when a place is selected
+ * Controller to handle flyTo when a place or external POI is selected
  */
-function MapPanController({ selectedPlace }: { selectedPlace: Place | null }) {
+function MapPanController({
+  selectedPlace,
+  externalPreview,
+}: {
+  selectedPlace: Place | null;
+  externalPreview?: SelectedMapLocation | null;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -40,6 +50,19 @@ function MapPanController({ selectedPlace }: { selectedPlace: Place | null }) {
       });
     }
   }, [selectedPlace, map]);
+
+  useEffect(() => {
+    if (
+      externalPreview &&
+      typeof externalPreview.lat === 'number' &&
+      typeof externalPreview.lng === 'number'
+    ) {
+      map.flyTo([externalPreview.lat, externalPreview.lng], 16, {
+        animate: true,
+        duration: 0.8,
+      });
+    }
+  }, [externalPreview, map]);
 
   return null;
 }
@@ -274,9 +297,17 @@ export default function LeafletMap({
   selectedPlace,
   onSelectPlace,
   onAddPlaceAtLocation,
+  externalPreview,
+  onClearExternalPreview,
   activeNeed = 'Mobilitas',
 }: LeafletMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<SelectedMapLocation | null>(null);
+
+  useEffect(() => {
+    if (externalPreview) {
+      setSelectedLocation(externalPreview);
+    }
+  }, [externalPreview]);
 
   // CRITICAL: Filter only places with valid lat/lng and not marked as needsGeocoding
   const validPlaces = places.filter(
@@ -320,7 +351,7 @@ export default function LeafletMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapBoundsController places={validPlaces} />
-      <MapPanController selectedPlace={selectedPlace} />
+      <MapPanController selectedPlace={selectedPlace} externalPreview={externalPreview} />
       <MapResizeController />
       <UserLocationButton />
       <MapClickHandler onMapClick={handleMapClick} />
@@ -425,13 +456,16 @@ export default function LeafletMap({
                 <div className="add-place-icon" aria-hidden="true">
                   <Icon name="map-pin-plus" size={16} />
                 </div>
-                <h4 className="add-place-title">Tambahkan tempat</h4>
+                <h4 className="add-place-title">
+                  {selectedLocation.name || 'Tambahkan tempat'}
+                </h4>
                 <button
                   type="button"
                   className="add-place-close-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedLocation(null);
+                    onClearExternalPreview?.();
                   }}
                   title="Tutup popup"
                   aria-label="Tutup popup"
@@ -439,8 +473,15 @@ export default function LeafletMap({
                   <Icon name="close" size={14} />
                 </button>
               </div>
+              {selectedLocation.address && (
+                <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 6px', lineHeight: 1.3 }}>
+                  {selectedLocation.address}
+                </p>
+              )}
               <p className="add-place-desc">
-                Tambahkan informasi kondisi akses di lokasi ini.
+                {selectedLocation.name
+                  ? 'Tempat ini belum terdata di Naviable. Jadilah orang pertama yang mendata aksesibilitasnya!'
+                  : 'Tambahkan informasi kondisi akses di lokasi ini.'}
               </p>
               <div className="add-place-coords">
                 <Icon name="map-pin" size={13} className="text-muted flex-shrink-0" />
@@ -469,6 +510,7 @@ export default function LeafletMap({
                         e.stopPropagation();
                         const target = nearbyPlaces[0].place;
                         setSelectedLocation(null);
+                        onClearExternalPreview?.();
                         onSelectPlace(target);
                       }}
                     >
@@ -494,6 +536,7 @@ export default function LeafletMap({
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedLocation(null);
+                      onClearExternalPreview?.();
                     }}
                   >
                     Batal
@@ -506,7 +549,7 @@ export default function LeafletMap({
                       onAddPlaceAtLocation?.(selectedLocation);
                     }}
                   >
-                    Tambahkan Tempat
+                    {selectedLocation.name ? '➕ Tambah ke Naviable' : 'Tambahkan Tempat'}
                   </button>
                 </div>
               )}

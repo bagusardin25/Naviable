@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { findBestMatchingPlace } from '@/lib/voice-search';
+import { matchesPlaceQuery, getPopularStreetCorridors } from '@/lib/streetSearch';
+import { fetchExternalPlaces, type ExternalPlaceResult } from '@/lib/externalGeocoding';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loginHref, parseScreen, screenHref } from '@/lib/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,15 +43,22 @@ export default function ExploreApp() {
   const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
+  const nameParam = searchParams.get('name');
+  const addressParam = searchParams.get('address');
   const initialMapLocation = useMemo(() => {
     if (!latParam || !lngParam) return undefined;
     const lat = parseFloat(latParam);
     const lng = parseFloat(lngParam);
     if (Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-      return { lat, lng };
+      return {
+        lat,
+        lng,
+        name: nameParam || undefined,
+        address: addressParam || undefined,
+      };
     }
     return undefined;
-  }, [latParam, lngParam]);
+  }, [latParam, lngParam, nameParam, addressParam]);
 
   useEffect(() => {
     if (screen === 'review' && auth.ready && !auth.user && authModalShownFor !== 'review') {
@@ -69,10 +78,22 @@ export default function ExploreApp() {
     }
   }, [screen, auth.ready, auth.user, authModalShownFor, router, searchParams]);
 
-  function handleAddPlaceAtLocation(location: { lat: number; lng: number }) {
+  function handleAddPlaceAtLocation(location: {
+    lat: number;
+    lng: number;
+    name?: string;
+    address?: string;
+  }) {
     const latStr = location.lat.toFixed(6);
     const lngStr = location.lng.toFixed(6);
-    const targetUrl = `/jelajah?screen=add&lat=${latStr}&lng=${lngStr}`;
+    const params = new URLSearchParams({
+      screen: 'add',
+      lat: latStr,
+      lng: lngStr,
+    });
+    if (location.name) params.set('name', location.name);
+    if (location.address) params.set('address', location.address);
+    const targetUrl = `/jelajah?${params.toString()}`;
 
     if (!auth.user) {
       router.push(targetUrl);
@@ -110,6 +131,66 @@ export default function ExploreApp() {
   const [showJourney, setShowJourney] = useState(false);
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const [externalPlaces, setExternalPlaces] = useState<ExternalPlaceResult[]>([]);
+  const [externalLoading, setExternalLoading] = useState<boolean>(false);
+  const [externalPreview, setExternalPreview] = useState<ExternalPlaceResult | null>(null);
+
+  // Debounced search for external POIs in Surabaya when query >= 2 chars
+  useEffect(() => {
+    const clean = searchQuery.trim();
+    if (clean.length < 2) {
+      setExternalPlaces([]);
+      setExternalLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setExternalLoading(true);
+      fetchExternalPlaces(clean, places, controller.signal)
+        .then((results) => {
+          setExternalPlaces(results);
+        })
+        .catch(() => {
+          setExternalPlaces([]);
+        })
+        .finally(() => {
+          setExternalLoading(false);
+        });
+    }, 380);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery, places]);
+
+  function handleViewExternalPlace(ext: ExternalPlaceResult) {
+    setExternalPreview(ext);
+    setSelectedPlace(null);
+    setScreen('map');
+    setMobileTab('map');
+    const announceMsg = `Menampilkan titik lokasi "${ext.name}" pada peta.`;
+    setCustomAnnouncement(announceMsg);
+    setTimeout(() => setCustomAnnouncement(null), 5000);
+  }
+
+  function handleAddExternalPlace(ext: ExternalPlaceResult) {
+    handleAddPlaceAtLocation({
+      lat: ext.lat,
+      lng: ext.lng,
+      name: ext.name,
+      address: ext.address,
+    });
+  }
+
+  function handleSelectLocalPlace(place: Place) {
+    setSelectedPlace(place);
+    setExternalPreview(null);
+    setScreen('map');
+    setMobileTab('map');
+  }
 
   const { toggleWidget } = useAccessibility();
 
@@ -150,9 +231,11 @@ export default function ExploreApp() {
   }, [places, need]);
 
   // Multi-criteria filter: search query + profile-evaluated status + category
+  const popularCorridors = useMemo(() => getPopularStreetCorridors(places, 2).slice(0, 6), [places]);
+
   const filteredPlaces = useMemo(() => {
     return places.filter((p) => {
-      // 1. Status Filter by active profile
+      // 1. Status Filter by active accessibility profile
       if (statusFilter !== 'all') {
         const profileStatus = calculatePlaceProfileStatus(p, need).status;
         if (profileStatus !== statusFilter) return false;
@@ -163,14 +246,10 @@ export default function ExploreApp() {
         return false;
       }
 
-      // 3. Search text query
-      const query = searchQuery.trim().toLowerCase();
-      if (query) {
-        const matchName = p.name.toLowerCase().includes(query);
-        const matchCategory = p.category.toLowerCase().includes(query);
-        const matchDistrict = p.district.toLowerCase().includes(query);
-        const matchAddress = p.address ? p.address.toLowerCase().includes(query) : false;
-        if (!matchName && !matchCategory && !matchDistrict && !matchAddress) {
+      // 3. Search text query with intelligent street & name matching
+      if (searchQuery.trim()) {
+        const matchResult = matchesPlaceQuery(p, searchQuery);
+        if (!matchResult.matched) {
           return false;
         }
       }
@@ -207,10 +286,13 @@ export default function ExploreApp() {
         setCustomAnnouncement(announceMsg);
         setTimeout(() => setCustomAnnouncement(null), 5000);
       } else {
-        // Pencarian umum / kategori
+        // Pencarian umum, jalan, atau kategori
         setScreen('map');
         setSearchQuery(clean);
-        const announceMsg = `Pencarian "${clean}" diterapkan. Menampilkan hasil pada peta.`;
+        const streetMatches = places.filter((p) => matchesPlaceQuery(p, clean).matched);
+        const announceMsg = streetMatches.length > 0
+          ? `Pencarian "${clean}" diterapkan. Ditemukan ${streetMatches.length} tempat pada peta.`
+          : `Pencarian "${clean}" diterapkan. Menampilkan hasil pada peta.`;
         setCustomAnnouncement(announceMsg);
         setTimeout(() => setCustomAnnouncement(null), 5000);
       }
@@ -266,6 +348,17 @@ export default function ExploreApp() {
           authReady={auth.ready}
           userProfile={auth.profile}
           onOpenAuth={() => setShowAuthModal(true)}
+          localPlaces={places}
+          externalPlaces={externalPlaces}
+          externalLoading={externalLoading}
+          onSelectLocalPlace={handleSelectLocalPlace}
+          onSelectExternalPlace={(ext, action) => {
+            if (action === 'add') {
+              handleAddExternalPlace(ext);
+            } else {
+              handleViewExternalPlace(ext);
+            }
+          }}
         />
 
         {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat data tempat dari server…</p>}
@@ -366,6 +459,39 @@ export default function ExploreApp() {
                   </div>
                 </div>
 
+                {popularCorridors.length > 0 && (
+                  <div className="street-corridors-bar" role="group" aria-label="Pilih koridor jalan populer">
+                    <span className="street-corridors-label">
+                      <Icon name="location" size={12} />
+                      <span>Jalan:</span>
+                    </span>
+                    <div className="street-corridors-chips">
+                      {popularCorridors.map((c) => {
+                        const queryLower = searchQuery.trim().toLowerCase();
+                        const isActive = queryLower === c.name.toLowerCase() || (queryLower.length >= 4 && c.normalized.includes(queryLower));
+                        return (
+                          <button
+                            key={c.normalized}
+                            type="button"
+                            className={`street-chip ${isActive ? 'active' : ''}`}
+                            onClick={() => {
+                              if (isActive) {
+                                setSearchQuery('');
+                              } else {
+                                setSearchQuery(c.name);
+                              }
+                            }}
+                            aria-pressed={isActive}
+                            title={`Tampilkan tempat di ${c.name} (${c.count} lokasi)`}
+                          >
+                            {c.name} ({c.count})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {showJourney && (
                   <JourneyPlanner
                     places={places}
@@ -440,6 +566,8 @@ export default function ExploreApp() {
                   selectedPlace={selectedPlace}
                   onSelectPlace={handleSelectPlace}
                   onAddPlaceAtLocation={handleAddPlaceAtLocation}
+                  externalPreview={externalPreview}
+                  onClearExternalPreview={() => setExternalPreview(null)}
                   activeNeed={need}
                 />
               </section>
@@ -450,6 +578,11 @@ export default function ExploreApp() {
                 onSelectPlace={handleSelectPlace}
                 activeNeed={need}
                 className={mobileTab !== 'list' ? 'mobile-hidden' : ''}
+                searchQuery={searchQuery}
+                externalPlaces={externalPlaces}
+                externalLoading={externalLoading}
+                onAddExternalPlace={handleAddExternalPlace}
+                onViewExternalPlace={handleViewExternalPlace}
               />
 
               {selectedPlace && (
@@ -481,7 +614,7 @@ export default function ExploreApp() {
         {(screen === 'add' || screen === 'report') && (
           <ReportForm
             places={places}
-            key={`${screen}:${selectedPlace?.id ?? 'new'}:${auth.user?.id ?? 'guest'}:${latParam ?? 'none'}:${lngParam ?? 'none'}`}
+            key={`${screen}:${selectedPlace?.id ?? 'new'}:${auth.user?.id ?? 'guest'}:${latParam ?? 'none'}:${lngParam ?? 'none'}:${nameParam ?? 'none'}`}
             mode={screen === 'add' ? 'add' : 'correction'}
             targetPlace={screen === 'report' ? selectedPlace ?? undefined : undefined}
             initialLocation={initialMapLocation}
