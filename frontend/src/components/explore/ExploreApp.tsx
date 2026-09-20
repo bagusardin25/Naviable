@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { findBestMatchingPlace } from '@/lib/voice-search';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loginHref, parseScreen, screenHref } from '@/lib/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +12,7 @@ import {
   ProfileStatusFilter,
   calculatePlaceProfileStatus,
 } from '@/types';
-import { fetchPlaces, fetchHealth } from '@/lib/api';
+import { fetchPlaces } from '@/lib/api';
 import { useAccessibility } from '@/hooks/useAccessibility';
 
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -25,7 +26,6 @@ import { ReviewForm } from '@/components/places/ReviewForm';
 import { DashboardStats } from '@/components/observatory/DashboardStats';
 import { StatusDistribution } from '@/components/observatory/StatusDistribution';
 import { DistrictSnapshot } from '@/components/observatory/DistrictSnapshot';
-import { EvidenceExportButton } from '@/components/observatory/EvidenceExportButton';
 import { DataQualityCard } from '@/components/observatory/DataQualityCard';
 import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
@@ -90,7 +90,6 @@ export default function ExploreApp() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState('');
-  const [storage, setStorage] = useState('');
   const [reload, setReload] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
@@ -104,11 +103,10 @@ export default function ExploreApp() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([fetchPlaces(need.toLowerCase()), fetchHealth()]).then(([next, health]) => {
+    fetchPlaces(need.toLowerCase()).then(next => {
       if (!active) return;
       setPlaces(next);
       setSelectedPlace(current => current ? next.find(p => p.id === current.id) ?? null : null);
-      setStorage(health.storage);
       setApiError('');
     }).catch(error => {
       if (active) setApiError(error instanceof Error ? error.message : 'Gagal memuat data API');
@@ -169,13 +167,44 @@ export default function ExploreApp() {
     });
   }, [places, statusFilter, categoryFilter, searchQuery, need]);
 
+  const [customAnnouncement, setCustomAnnouncement] = useState<string | null>(null);
+
   // Screen reader polite live announcement for search & profile updates
-  const liveAnnouncement = !loading
+  const liveAnnouncement = customAnnouncement
+    ? customAnnouncement
+    : !loading
     ? `Menampilkan ${filteredPlaces.length} tempat untuk kebutuhan ${need}${
         statusFilter !== 'all' ? `, kondisi ${statusFilter}` : ''
       }.`
     : 'Memuat data tempat dari server…';
 
+  const handleSearchSubmit = useCallback(
+    (query: string, source: 'voice' | 'text') => {
+      const clean = query.trim();
+      if (!clean) return;
+
+      const match = findBestMatchingPlace(clean, places);
+      if (match && match.isSpecificMatch) {
+        // Otomatis arahkan dan pilih tempat yang cocok (shallow copy agar map pan controller selalu trigger)
+        setSelectedPlace({ ...match.place });
+        setScreen('map');
+        setMobileTab('map');
+        setSearchQuery(match.place.name);
+
+        const announceMsg = `Ditemukan: ${match.place.name}. Mengarahkan ke titik lokasi pada peta.`;
+        setCustomAnnouncement(announceMsg);
+        setTimeout(() => setCustomAnnouncement(null), 5000);
+      } else {
+        // Pencarian umum / kategori
+        setScreen('map');
+        setSearchQuery(clean);
+        const announceMsg = `Pencarian "${clean}" diterapkan. Menampilkan hasil pada peta.`;
+        setCustomAnnouncement(announceMsg);
+        setTimeout(() => setCustomAnnouncement(null), 5000);
+      }
+    },
+    [places]
+  );
 
   function handleSelectPlace(place: Place) {
     setSelectedPlace(place);
@@ -211,27 +240,24 @@ export default function ExploreApp() {
       <AppSidebar
         currentScreen={screen}
         onSelectScreen={setScreen}
-        signedIn={Boolean(auth.user)}
+        authReady={auth.ready}
+        userProfile={auth.profile}
       />
 
       <section id="main-content" className="workspace">
         <TopNavbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearchSubmit={handleSearchSubmit}
           onOpenAccessibility={toggleWidget}
           accountHref={auth.user ? screenHref('profile') : loginHref(screenHref(screen))}
-          signedIn={Boolean(auth.user)}
+          authReady={auth.ready}
+          userProfile={auth.profile}
           onOpenAuth={() => setShowAuthModal(true)}
         />
 
         {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat data tempat dari server…</p>}
         {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>Coba lagi</button></div>}
-        {storage === 'local' && (
-          <div role="note" className="notice-banner">
-            <Icon name="info" size={14} />
-            <span>Mode lokal / pratinjau · Periksa label sumber data. Pengiriman laporan memerlukan layanan yang terhubung.</span>
-          </div>
-        )}
         {screen === 'map' && (
           <>
             <div className="mobile-view-tabs" role="tablist" aria-label="Pilih tampilan peta atau daftar">
@@ -473,7 +499,6 @@ export default function ExploreApp() {
                   Ringkasan kondisi ruang publik dari pengamatan warga Surabaya untuk komunitas disabilitas, pegiat advokasi, dan perencana kota.
                 </p>
               </div>
-              <EvidenceExportButton places={places} />
             </div>
 
             <DashboardStats places={places} />
@@ -486,7 +511,9 @@ export default function ExploreApp() {
           </div>
         )}
 
-        {screen === 'profile' && <ContributorProfile />}
+        {screen === 'profile' && auth.profile && (
+          <ContributorProfile userProfile={auth.profile} onSignedOut={() => setScreen('map')} />
+        )}
       </section>
 
       <AuthModal

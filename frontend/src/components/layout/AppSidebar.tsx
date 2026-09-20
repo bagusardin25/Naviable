@@ -5,15 +5,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Screen } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import type { AuthUserProfile } from '@/lib/auth/user-profile';
 
 type AppSidebarProps = {
   currentScreen: Screen;
   onSelectScreen: (screen: Screen) => void;
-  signedIn: boolean;
+  authReady: boolean;
+  userProfile: AuthUserProfile | null;
 };
 
-export function AppSidebar({ currentScreen, onSelectScreen, signedIn }: AppSidebarProps) {
+export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfile }: AppSidebarProps) {
   const [imgError, setImgError] = useState(false);
+  const signedIn = Boolean(userProfile);
 
   return (
     <aside className="sidebar">
@@ -81,20 +84,27 @@ export function AppSidebar({ currentScreen, onSelectScreen, signedIn }: AppSideb
           type="button"
           className={currentScreen === 'profile' ? 'active' : ''}
           onClick={() => onSelectScreen('profile')}
-          aria-label={signedIn ? 'Kontribusi Saya' : 'Masuk'}
+          aria-label={userProfile ? `Kontribusi Saya — ${userProfile.displayName}` : 'Masuk'}
+          title={userProfile?.displayName}
           aria-current={currentScreen === 'profile' ? 'page' : undefined}
         >
           <Icon name="user" />
           <span className="nav-label-full">{signedIn ? 'Kontribusi Saya' : 'Masuk'}</span>
-          <span className="nav-label-mobile">{signedIn ? 'Akun' : 'Masuk'}</span>
+          <span className="nav-label-mobile">{userProfile?.shortName ?? 'Masuk'}</span>
         </button>
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="avatar"><Icon name="user" /></div>
-        <div>
-          <strong>{signedIn ? 'Akun kontributor' : 'Mode tamu'}</strong>
-          <span>{signedIn ? 'Terima kasih telah berbagi' : 'Jelajahi tanpa akun'}</span>
+        <div className="avatar" aria-hidden="true">
+          {userProfile ? userProfile.initials : <Icon name="user" />}
+        </div>
+        <div className="sidebar-account-copy">
+          <strong title={userProfile?.displayName}>
+            {!authReady ? 'Memeriksa sesi…' : userProfile?.displayName ?? 'Mode tamu'}
+          </strong>
+          <span title={userProfile?.email}>
+            {!authReady ? 'Mohon tunggu' : userProfile?.email ?? 'Jelajahi tanpa akun'}
+          </span>
         </div>
       </div>
     </aside>

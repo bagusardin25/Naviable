@@ -6,6 +6,7 @@ import {
   User,
   Search,
   Mic,
+  MicOff,
   Accessibility,
   X,
   Camera,
@@ -58,6 +59,7 @@ export type IconName =
   | 'map-pin-plus'
   | 'search'
   | 'mic'
+  | 'mic-off'
   | 'access'
   | 'wheelchair'
   | 'close'
@@ -106,6 +108,7 @@ const iconMap: Record<string, LucideIcon> = {
   user: User,
   search: Search,
   mic: Mic,
+  'mic-off': MicOff,
   access: Accessibility,
   wheelchair: Accessibility,
   close: X,

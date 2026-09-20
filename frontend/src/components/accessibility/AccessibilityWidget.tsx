@@ -14,6 +14,7 @@ const POSITION_OPTIONS: { id: AccessibilityWidgetPosition; label: string }[] = [
 export function AccessibilityWidget() {
   const pathname = usePathname() || '';
   const isJelajahPage = pathname === '/jelajah' || pathname.startsWith('/jelajah');
+  const isLoginPage = pathname === '/login';
 
   const {
     settings,
@@ -119,7 +120,7 @@ export function AccessibilityWidget() {
   const currentPos: AccessibilityWidgetPosition = settings.widgetPosition === 'right' ? 'right' : 'left';
   const wrapperClass = isJelajahPage
     ? 'a11y-widget-wrapper widget-pos-navbar-anchored'
-    : `a11y-widget-wrapper widget-pos-${currentPos}`;
+    : `a11y-widget-wrapper widget-pos-${currentPos}${isLoginPage ? ' widget-page-login' : ''}`;
 
   return (
     <div

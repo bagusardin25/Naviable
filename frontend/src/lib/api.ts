@@ -49,10 +49,6 @@ async function headers() {
     const { data } = await supabaseBrowser().auth.getSession();
     if (data.session) result.Authorization = `Bearer ${data.session.access_token}`;
   }
-  if (!result.Authorization && typeof window !== 'undefined') {
-    const demoToken = localStorage.getItem('naviable_demo_token');
-    if (demoToken) result.Authorization = `Bearer ${demoToken}`;
-  }
   if (!result.Authorization) throw new Error('Masuk terlebih dahulu untuk berkontribusi.');
   return result;
 }
@@ -131,11 +127,7 @@ export async function fetchHealth() {
   }
 }
 export async function fetchContributions() {
-  try {
-    return await request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
-  } catch {
-    return { mode: 'preview', total: 0, reports: [] };
-  }
+  return request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
 }
 
 export async function fetchJourney(from: string, to: string, profile = 'mobilitas'): Promise<JourneyResponse> {
@@ -174,212 +166,43 @@ export function exportEvidenceCsvUrl(filters?: {
   return `${API_URL}/api/evidence.csv${queryString ? `?${queryString}` : ''}`;
 }
 
-// ==========================================
-// REVIEWER PORTAL API METHODS
-// ==========================================
-
+// Reviewer calls use an HttpOnly Supabase session through the same-origin server proxy.
 import type { ReviewerAuditItem, ReviewerStats, ReviewDecision } from '@/types';
 
-export async function fetchReviewerStats(): Promise<ReviewerStats> {
-  try {
-    return await request<ReviewerStats>('/api/reviewer/stats');
-  } catch {
-    // Fallback stats for local evaluation
-    return {
-      submitted: 12,
-      approvedToday: 5,
-      needsRevision: 3,
-      rejected: 1,
-      total: 21,
-    };
-  }
+async function reviewerRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`/api/reviewer/${path}`, { cache: 'no-store', signal: AbortSignal.timeout(35_000), ...init });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? `Permintaan reviewer gagal (${res.status})`);
+  return body as T;
 }
-
-export async function fetchReviewerReports(options: {
-  status?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<{ reports: ReviewerAuditItem[]; total: number }> {
+const reviewerPhoto = (r: ReviewerAuditItem): ReviewerAuditItem => ({
+  ...r, photoUrl: r.photoUrl ? (r.photoUrl.startsWith('http') ? r.photoUrl : mediaUrl(r.photoUrl)) : '',
+});
+export function fetchReviewerStats() {
+  return reviewerRequest<ReviewerStats>('stats');
+}
+export async function fetchReviewerReports(options: { status?: string; search?: string; limit?: number; offset?: number } = {}) {
   const query = new URLSearchParams();
   if (options.status && options.status !== 'all') query.set('status', options.status);
-  if (options.search && options.search.trim()) query.set('search', options.search.trim());
+  if (options.search?.trim()) query.set('search', options.search.trim());
   if (options.limit) query.set('limit', String(options.limit));
   if (options.offset) query.set('offset', String(options.offset));
-
-  try {
-    const res = await request<{ reports: ReviewerAuditItem[]; total: number }>(
-      `/api/reviewer/reports?${query.toString()}`
-    );
-    return {
-      reports: res.reports.map(r => ({
-        ...r,
-        photoUrl: r.photoUrl ? (r.photoUrl.startsWith('http') ? r.photoUrl : mediaUrl(r.photoUrl)) : '',
-      })),
-      total: res.total,
-    };
-  } catch (error) {
-    console.warn('Gagal memuat laporan reviewer dari backend, menggunakan data pratinjau:', error);
-    // Offline preview data for standalone UI testing
-    const fallbackReports: ReviewerAuditItem[] = [
-      {
-        id: '10000000-0000-4000-8000-000000000001',
-        placeId: 'osm-node-4794254291',
-        placeName: 'Stasiun Wonokromo (Surabaya)',
-        placeAddress: 'Jalan Stasiun Wonokromo 1, Surabaya',
-        reporterName: 'Ahmad Rizki',
-        createdAt: '2026-09-18T10:15:00.000Z',
-        photoUrl: '/images/login-community.svg',
-        elements: [{ element: 'E2_ramp', status: 'TERHALANG', note: 'Ramp akses kursi roda tertutup parkir motor dan barang pedagang.' }],
-        reviewStatus: 'SUBMITTED',
-      },
-      {
-        id: '10000000-0000-4000-8000-000000000003',
-        placeId: 'osm-node-4191188521',
-        placeName: 'Calibre Coffee Roasters',
-        placeAddress: 'Jalan Walikota Mustajab 67-69, Genteng, Surabaya',
-        reporterName: 'Budi Wicaksono',
-        createdAt: '2026-09-19T11:20:00.000Z',
-        photoUrl: '/images/login-community.svg',
-        elements: [{ element: 'E1_door', status: 'UTUH', note: 'Pintu masuk lebar tanpa undakan, ramah pengguna kursi roda.' }],
-        reviewStatus: 'SUBMITTED',
-      },
-      {
-        id: '10000000-0000-4000-8000-000000000002',
-        placeId: 'osm-node-659961942',
-        placeName: 'Carrefour Rungkut Surabaya',
-        placeAddress: 'Jalan Raya Kali Rungkut No. 23-25, Surabaya',
-        reporterName: 'Siti Nurhaliza',
-        createdAt: '2026-09-19T07:20:00.000Z',
-        photoUrl: '/images/login-community.svg',
-        elements: [{ element: 'E5_guiding_block', status: 'UTUH', note: 'Jalur pemandu kuning terhubung rapi dari trotoar pintu masuk utama.' }],
-        reviewStatus: 'APPROVED',
-        reviewedBy: 'reviewer.naviable',
-        reviewedAt: '2026-09-19T08:30:00.000Z',
-        reviewNote: 'Foto jelas dan menunjukkan jalur pemandu terpasang utuh sesuai standar.',
-      },
-      {
-        id: '10000000-0000-4000-8000-000000000004',
-        placeId: 'osm-node-4191209387',
-        placeName: 'Carl\'s Jr. Kertajaya Indah',
-        placeAddress: 'Jalan Raya Kertajaya Indah Blok F No. 312, Mulyorejo, Surabaya',
-        reporterName: 'Dewi Lestari',
-        createdAt: '2026-09-18T14:40:00.000Z',
-        photoUrl: '/images/login-community.svg',
-        elements: [{ element: 'E4_lift', status: 'TIDAK_STANDAR', note: 'Tombol lift tidak ada huruf braille dan posisinya terlalu tinggi.' }],
-        reviewStatus: 'NEEDS_REVISION',
-        reviewedBy: 'reviewer.naviable',
-        reviewedAt: '2026-09-19T09:10:00.000Z',
-        reviewNote: 'Foto belum memperlihatkan tombol lift secara keseluruhan. Mohon kirimkan foto yang lebih fokus.',
-      },
-      {
-        id: '10000000-0000-4000-8000-000000000005',
-        placeId: 'osm-node-5873197056',
-        placeName: 'Starbucks Surabaya Timur',
-        placeAddress: 'Jalan Manyar Kertoarjo No. 88, Surabaya',
-        reporterName: 'Anonim',
-        createdAt: '2026-09-18T16:00:00.000Z',
-        photoUrl: '/images/login-community.svg',
-        elements: [{ element: 'E8_crossing', status: 'TIDAK_ADA', note: 'Tidak ada penyeberangan aman' }],
-        reviewStatus: 'REJECTED',
-        reviewedBy: 'reviewer.naviable',
-        reviewedAt: '2026-09-18T17:20:00.000Z',
-        reviewNote: 'Foto buram dan tidak menunjukkan titik lokasi penyeberangan yang dilaporkan.',
-      }
-    ];
-
-    let filtered = fallbackReports;
-    if (options.status && options.status !== 'all') {
-      filtered = filtered.filter(r => r.reviewStatus === options.status);
-    }
-    if (options.search) {
-      const q = options.search.toLowerCase();
-      filtered = filtered.filter(r => r.placeName.toLowerCase().includes(q) || r.reporterName.toLowerCase().includes(q));
-    }
-    return { reports: filtered, total: filtered.length };
-  }
+  const res = await reviewerRequest<{ reports: ReviewerAuditItem[]; total: number }>(`reports?${query}`);
+  return { reports: res.reports.map(reviewerPhoto), total: res.total };
 }
-
 export async function fetchReviewerReport(id: string): Promise<{ report: ReviewerAuditItem; place: Place | null }> {
-  try {
-    const res = await request<{ report: ReviewerAuditItem; place: ApiPlace | null }>(
-      `/api/reviewer/reports/${encodeURIComponent(id)}`
-    );
-    return {
-      report: {
-        ...res.report,
-        photoUrl: res.report.photoUrl ? (res.report.photoUrl.startsWith('http') ? res.report.photoUrl : mediaUrl(res.report.photoUrl)) : '',
-      },
-      place: res.place ? toUiPlace(res.place) : null,
-    };
-  } catch {
-    const reportsList = (await fetchReviewerReports({ limit: 100 })).reports;
-    const report = reportsList.find(r => r.id === id) ?? reportsList[0];
-    const seedPlaces = loadSeedPlaces();
-    const place = seedPlaces.find(p => String(p.id) === report?.placeId) ?? seedPlaces[0] ?? null;
-    return { report, place };
-  }
+  const res = await reviewerRequest<{ report: ReviewerAuditItem; place: ApiPlace | null }>(`reports/${encodeURIComponent(id)}`);
+  return { report: reviewerPhoto(res.report), place: res.place ? toUiPlace(res.place) : null };
 }
-
-export async function submitReportReview(
-  id: string,
-  payload: {
-    decision: ReviewDecision;
-    reviewer: string;
-    note: string;
-    checklist?: Record<string, boolean>;
-  }
-): Promise<{ ok: boolean; report: ReviewerAuditItem }> {
-  try {
-    return await request<{ ok: boolean; report: ReviewerAuditItem }>(
-      `/api/reviewer/reports/${encodeURIComponent(id)}/review`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }
-    );
-  } catch (error) {
-    // When offline / preview mode, simulate state update
-    console.warn('Menggunakan update review lokal:', error);
-    const item = (await fetchReviewerReport(id)).report;
-    const updated: ReviewerAuditItem = {
-      ...item,
-      reviewStatus: payload.decision,
-      reviewedBy: payload.reviewer,
-      reviewedAt: new Date().toISOString(),
-      reviewNote: payload.note,
-      reviewChecklist: payload.checklist,
-    };
-    return { ok: true, report: updated };
-  }
+export function submitReportReview(id: string, payload: { decision: ReviewDecision; reviewer: string; note: string; checklist?: Record<string, boolean> }) {
+  return reviewerRequest<{ ok: boolean; report: ReviewerAuditItem }>(`reports/${encodeURIComponent(id)}/review`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  });
 }
-
-export async function fetchReviewerHistory(options: {
-  limit?: number;
-  offset?: number;
-} = {}): Promise<{ history: ReviewerAuditItem[]; total: number }> {
+export async function fetchReviewerHistory(options: { limit?: number; offset?: number } = {}) {
   const query = new URLSearchParams();
   if (options.limit) query.set('limit', String(options.limit));
   if (options.offset) query.set('offset', String(options.offset));
-
-  try {
-    const res = await request<{ history: ReviewerAuditItem[]; total: number }>(
-      `/api/reviewer/history?${query.toString()}`
-    );
-    return {
-      history: res.history.map(r => ({
-        ...r,
-        photoUrl: r.photoUrl ? (r.photoUrl.startsWith('http') ? r.photoUrl : mediaUrl(r.photoUrl)) : '',
-      })),
-      total: res.total,
-    };
-  } catch {
-    const all = (await fetchReviewerReports({ limit: 100 })).reports;
-    const reviewed = all.filter(
-      r => r.reviewStatus === 'APPROVED' || r.reviewStatus === 'NEEDS_REVISION' || r.reviewStatus === 'REJECTED' || r.reviewStatus === 'PUBLISHED'
-    );
-    return { history: reviewed, total: reviewed.length };
-  }
+  const res = await reviewerRequest<{ history: ReviewerAuditItem[]; total: number }>(`history?${query}`);
+  return { history: res.history.map(reviewerPhoto), total: res.total };
 }
-
