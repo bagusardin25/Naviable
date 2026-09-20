@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Place } from "./lib/types.js";
 import type { ReportInput, decodePhoto } from "./lib/validation.js";
+import type { PhotoIntegrityResult } from "./lib/ai/index.js";
 import { ApiError } from "./lib/errors.js";
 import { loadSeed } from "./lib/seed-data.js";
 
@@ -11,6 +12,7 @@ export type Photo = ReturnType<typeof decodePhoto>;
 export type Report = {
   id: string; placeId: string; actorId: string; reporterName: string; requestKey: string; inputHash: string;
   elements: ReportInput["elements"]; photoPath: string; mimeType: string; createdAt: string;
+  photoIntegrity?: PhotoIntegrityResult;
   reviewStatus: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "NEEDS_REVISION" | "APPROVED" | "REJECTED" | "PUBLISHED";
   reviewedBy?: string | null;
   reviewedAt?: string | null;
@@ -27,7 +29,7 @@ export interface Store {
   getReport(id: string): Promise<Report | undefined>;
   listAllReports(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<{ reports: (Report & { placeName?: string; placeAddress?: string | null })[]; total: number }>;
   getReviewerStats(): Promise<{ submitted: number; approvedToday: number; needsRevision: number; rejected: number; total: number }>;
-  reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean> }): Promise<Report>;
+  reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean>; elements?: ReportInput["elements"] }): Promise<Report>;
   contributions(actorId: string): Promise<{ total: number; reports: Report[] }>;
   publish(input: PublishInput, photo: Photo, newPlace?: Place): Promise<{ report: Report; replayed: boolean }>;
   listReviews(placeId: string, limit: number, offset: number): Promise<{ reviews: Review[]; total: number }>;
@@ -194,7 +196,7 @@ export class LocalStore implements Store {
     }
     return { submitted, approvedToday, needsRevision, rejected, total: this.state.reports.length };
   }
-  async reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean> }) {
+  async reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean>; elements?: ReportInput["elements"] }) {
     const operation = this.queue.then(async () => {
       const report = this.state.reports.find(r => r.id === id);
       if (!report) throw new ApiError(404, "Laporan tidak ditemukan");
@@ -213,7 +215,10 @@ export class LocalStore implements Store {
         const place = next.places.find(p => p.id === targetReport.placeId);
         if (place) {
           place.verifiedByTeam = true;
-          for (const el of targetReport.elements) {
+          // Reviewer-corrected statuses win over the reported ones; unknowns leave the element untouched.
+          const elementsToApply = input.elements?.length ? input.elements : targetReport.elements;
+          for (const el of elementsToApply) {
+            if (el.status === "BELUM_DIKETAHUI") continue;
             place.elements[el.element] = {
               status: el.status,
               note: el.note ?? null,
@@ -419,7 +424,7 @@ export class SupabaseStore implements Store {
     }
     return { submitted, approvedToday, needsRevision, rejected, total: data?.length ?? 0 };
   }
-  async reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean> }) {
+  async reviewReport(id: string, input: { decision: "APPROVED" | "NEEDS_REVISION" | "REJECTED" | "UNDER_REVIEW"; reviewer: string; note: string; checklist?: Record<string, boolean>; elements?: ReportInput["elements"] }) {
     if ((input.decision === "NEEDS_REVISION" || input.decision === "REJECTED") && (!input.note || !input.note.trim())) {
       throw new ApiError(400, "Catatan reviewer wajib diisi untuk minta revisi atau tolak laporan");
     }
@@ -429,6 +434,7 @@ export class SupabaseStore implements Store {
       p_decision: input.decision,
       p_note: input.note,
       p_checklist: input.checklist ?? {},
+      p_elements: input.elements ?? null,
     });
     dbError(error);
     return data as Report;

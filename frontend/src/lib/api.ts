@@ -1,4 +1,4 @@
-import type { AccessibilityStatus, Place, JourneyResponse } from '@/types';
+import type { AccessibilityStatus, Place, JourneyResponse, PhotoIntegrityResult } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
 import { adaptSeedRecords, loadSeedPlaces } from './places/seedAdapter';
 import { supabaseBrowser } from './supabase';
@@ -15,9 +15,15 @@ export type ApiPlace = {
 };
 export type ApiAnalysis = {
   drafts: { element: string; status: AccessibilityStatus; confidence: string; reason: string }[];
-  needsMorePhotos: string[]; disclaimer: string; fallback?: 'manual_checklist'; error?: string;
+  needsMorePhotos: string[];
+  visualIntegrity: { outcome: 'no_obvious_signs' | 'suspicious' | 'inconclusive'; confidence: 'tinggi' | 'sedang' | 'rendah'; reasons: string[] };
+  provider: 'google' | 'openai' | 'openrouter';
+  attemptedProviders: Array<'google' | 'openai' | 'openrouter'>;
+  photoIntegrity?: PhotoIntegrityResult;
+  disclaimer: string; fallback?: 'manual_checklist'; error?: string;
 };
-export type ApiReport = { id: string; placeId: string; reporterName: string; createdAt: string; photoUrl: string; elements: { element: string; status: AccessibilityStatus; note?: string }[] };
+export type { PhotoIntegrityResult } from '@/types';
+export type ApiReport = { id: string; placeId: string; reporterName: string; createdAt: string; photoUrl: string; elements: { element: string; status: AccessibilityStatus; note?: string }[]; photoIntegrity?: PhotoIntegrityResult };
 
 // WORKAROUND: Construct absolute media URL dynamically using backend API_URL
 // so Next.js Image component works across both local dev (http://127.0.0.1:4000)
@@ -121,9 +127,9 @@ export async function submitReview(payload: { placeId: string; reviewerName: str
 }
 export async function fetchHealth() {
   try {
-    return await request<{ storage: 'local' | 'supabase'; authRequired: boolean; aiConfigured: boolean }>('/api/health');
+    return await request<{ storage: 'local' | 'supabase'; authRequired: boolean; aiConfigured: boolean; aiProviders: string[]; photoIntegrityConfigured: boolean }>('/api/health');
   } catch {
-    return { storage: 'local' as const, authRequired: false, aiConfigured: false };
+    return { storage: 'local' as const, authRequired: false, aiConfigured: false, aiProviders: [], photoIntegrityConfigured: false };
   }
 }
 export async function fetchContributions() {
@@ -194,7 +200,7 @@ export async function fetchReviewerReport(id: string): Promise<{ report: Reviewe
   const res = await reviewerRequest<{ report: ReviewerAuditItem; place: ApiPlace | null }>(`reports/${encodeURIComponent(id)}`);
   return { report: reviewerPhoto(res.report), place: res.place ? toUiPlace(res.place) : null };
 }
-export function submitReportReview(id: string, payload: { decision: ReviewDecision; reviewer: string; note: string; checklist?: Record<string, boolean> }) {
+export function submitReportReview(id: string, payload: { decision: ReviewDecision; reviewer: string; note: string; checklist?: Record<string, boolean>; elements?: { element: string; status: AccessibilityStatus; note?: string }[] }) {
   return reviewerRequest<{ ok: boolean; report: ReviewerAuditItem }>(`reports/${encodeURIComponent(id)}/review`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   });

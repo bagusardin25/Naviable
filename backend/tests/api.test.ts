@@ -10,16 +10,23 @@ import { LocalStore } from "../src/store.js";
 import { chainScore, chainSummary, summarizePlace } from "../src/lib/types.js";
 import { csvCell } from "../src/lib/evidence.js";
 import { readConfig, type Config } from "../src/config.js";
+import type { PhotoIntegrityResult } from "../src/lib/ai/index.js";
 
 const image = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1ioAAAAASUVORK5CYII=';
-async function fixture(mode: 'local' | 'supabase' = 'local', reviewer = false) {
+const inconclusiveIntegrity: PhotoIntegrityResult = {
+  outcome: 'inconclusive', confidence: 'rendah', recommendedAction: 'allow',
+  signals: [{ source: 'openai_provenance', kind: 'not_detected', outcome: 'not_detected', detail: 'Tidak ada penanda uji.' }],
+  disclaimer: 'Hasil uji tidak membuktikan keaslian.',
+};
+async function fixture(mode: 'local' | 'supabase' = 'local', reviewer = false, photoIntegrity = inconclusiveIntegrity) {
   const directory = await mkdtemp(join(tmpdir(), 'naviable-test-'));
   const store = await new LocalStore(directory).init();
   const config: Config = { mode, production: false, host: '127.0.0.1', port: 4000, localDir: directory, origins: ['http://localhost:3000'], publicUrl: 'http://localhost:4000', trustProxy: 0 };
   const app = createApp({ store, config,
     authenticate: async token => token === 'reviewer-test-token' ? 'reviewer-id' : token === 'valid-test-token' ? 'test-user' : token === 'other-test-token' ? 'other-user' : undefined,
-    authenticateReviewer: async token => token === 'reviewer-test-token' ? 'reviewer-id' : undefined,
-    analyze: async () => { throw new Error('provider unavailable'); } });
+    authenticateReviewer: async token => token === 'reviewer-test-token' ? { id: 'reviewer-id', email: 'reviewer@naviable.test' } : undefined,
+    analyze: async () => { throw new Error('provider unavailable'); },
+    checkIntegrity: async () => photoIntegrity });
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address() as { port: number };
@@ -231,6 +238,22 @@ test('reviewer APIs reject guests, invalid tokens and ordinary contributors befo
   } finally { await f.close(); }
 });
 
+test('trusted AI provenance blocks field evidence while inconclusive checks remain reviewable', async () => {
+  const blockedIntegrity: PhotoIntegrityResult = {
+    outcome: 'trusted_ai_provenance', confidence: 'tinggi', recommendedAction: 'request_new_capture',
+    signals: [{ source: 'openai_provenance', kind: 'c2pa', outcome: 'detected', detail: 'C2PA AI terdeteksi.' }],
+    disclaimer: 'Gunakan foto lapangan baru.',
+  };
+  const f = await fixture('local', false, blockedIntegrity);
+  try {
+    const id = (await f.store.listPlaces())[0].id;
+    const response = await f.post('/api/reports', report(id));
+    assert.equal(response.status, 422);
+    assert.match((await response.json()).error, /penanda asal AI/i);
+    assert.equal((await f.store.getPlace(id))!.reportCount, 0);
+  } finally { await f.close(); }
+});
+
 test('contributions are selected by validated actor ID, not a client-provided user ID', async () => {
   const f = await fixture();
   try {
@@ -271,22 +294,25 @@ test('reviewer workflow: list, detail, approve, revise with notes, reject, and a
     });
     assert.equal(badRev.status, 400);
 
-    // Approve report
+    // Approve report with a reviewer-corrected element status
+    const correctedElement = target.elements[0].element;
     const approveRes = await f.post(`/api/reviewer/reports/${target.id}/review`, {
       decision: 'APPROVED',
       reviewer: 'reviewer.naviable',
       note: 'Bukti foto jelas dan konsisten.',
       checklist: { photo_clear: true, elements_match: true },
+      elements: [{ element: correctedElement, status: 'TIDAK_ADA' }],
     });
     assert.equal(approveRes.status, 200);
     const approved = await approveRes.json();
     assert.equal(approved.report.reviewStatus, 'APPROVED');
-    assert.equal(approved.report.reviewedBy, 'reviewer-id');
+    assert.equal(approved.report.reviewedBy, 'reviewer@naviable.test');
 
-    // Check place was updated with verifiedByTeam = true
+    // Place is verified and reflects the reviewer's corrected element status, not the reported one
     const place = await f.store.getPlace(target.placeId);
     assert.ok(place);
     assert.equal(place.verifiedByTeam, true);
+    assert.equal(place.elements[correctedElement].status, 'TIDAK_ADA');
 
     // Check history
     const historyRes = await f.get('/api/reviewer/history');

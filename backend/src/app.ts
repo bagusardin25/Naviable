@@ -5,13 +5,20 @@ import { z, ZodError } from "zod";
 import type { Config } from "./config.js";
 import type { Store, Report } from "./store.js";
 import { ApiError } from "./lib/errors.js";
-import { AddPlaceBody, AnalyzeBody, decodePhoto, PlaceId, PlaceQuery, ReportBody, ReviewBody } from "./lib/validation.js";
+import { AddPlaceBody, AnalyzeBody, decodePhoto, ElementInput, PlaceId, PlaceQuery, ReportBody, ReviewBody } from "./lib/validation.js";
 import { CHAIN_ELEMENTS, ELEMENT_STATUSES, summarizePlace, USER_PROFILES, type Place } from "./lib/types.js";
 import { evidenceCsv, journeyHint, observatory } from "./lib/evidence.js";
-import { analyzeAccessPhoto } from "./lib/gemini.js";
+import { analyzeAccessPhoto, checkPhotoProvenance, configuredAIProviders, mergePhotoIntegrity } from "./lib/ai/index.js";
 
-type Options = { store: Store; config: Config; authenticate?: (token: string) => Promise<string | undefined>; authenticateReviewer?: (token: string) => Promise<string | undefined>; analyze?: typeof analyzeAccessPhoto };
-export function createApp({ store, config, authenticate, authenticateReviewer, analyze = analyzeAccessPhoto }: Options) {
+type Options = {
+  store: Store;
+  config: Config;
+  authenticate?: (token: string) => Promise<string | undefined>;
+  authenticateReviewer?: (token: string) => Promise<{ id: string; email?: string } | undefined>;
+  analyze?: typeof analyzeAccessPhoto;
+  checkIntegrity?: typeof checkPhotoProvenance;
+};
+export function createApp({ store, config, authenticate, authenticateReviewer, analyze = analyzeAccessPhoto, checkIntegrity = checkPhotoProvenance }: Options) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
@@ -46,7 +53,18 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
   app.use(["/api/reports", "/api/analyze", "/api/places", "/api/reviews"], (req, res, next) => req.method === "POST" ? limiter("writes-ip", 60)(req, res, next) : next());
   app.use(["/api/reports", "/api/analyze", "/api/places", "/api/reviews"], (req, res, next) => req.method === "POST" ? auth(req, res, next) : next());
   app.use(express.json({ limit: "8mb" }));
-  app.get(["/health", "/api/health"], (_req, res) => res.json({ status: "ok", service: "naviable-backend", storage: config.mode, authRequired: true, aiConfigured: Boolean(process.env.GEMINI_API_KEY) }));
+  app.get(["/health", "/api/health"], (_req, res) => {
+    const aiProviders = configuredAIProviders();
+    res.json({
+      status: "ok",
+      service: "naviable-backend",
+      storage: config.mode,
+      authRequired: true,
+      aiConfigured: aiProviders.length > 0,
+      aiProviders,
+      photoIntegrityConfigured: Boolean(process.env.OPENAI_API_KEY),
+    });
+  });
   app.get("/api/ready", async (_req, res) => { await store.health(); res.json({ status: "ready", storage: config.mode }); });
 
   async function filtered(query: unknown) {
@@ -68,7 +86,14 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     return place;
   }
   function publicReport(r: Report) {
-    return { id: r.id, placeId: r.placeId, reporterName: r.reporterName, elements: r.elements, createdAt: r.createdAt, photoUrl: `/api/photos/${r.id}`, lockedBy: "kontributor" };
+    return { id: r.id, placeId: r.placeId, reporterName: r.reporterName, elements: r.elements, createdAt: r.createdAt, photoUrl: `/api/photos/${r.id}`, lockedBy: "kontributor", photoIntegrity: r.photoIntegrity };
+  }
+  async function verifiedPhotoIntegrity(photo: ReturnType<typeof decodePhoto>) {
+    const integrity = await checkIntegrity(photo.bytes, photo.mimeType);
+    if (integrity.outcome === "trusted_ai_provenance") {
+      throw new ApiError(422, "Foto memiliki penanda asal AI yang terverifikasi. Ambil foto baru langsung dari lokasi.");
+    }
+    return integrity;
   }
   app.get("/api/me", auth, async (_req, res) => {
     const result = await store.contributions(res.locals.actorId);
@@ -92,11 +117,12 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const body = AddPlaceBody.parse(req.body);
     const requestKey = z.uuid().parse(req.headers["idempotency-key"] ?? randomUUID());
     const photo = decodePhoto(body.image, body.mimeType);
+    const photoIntegrity = await verifiedPhotoIntegrity(photo);
     const place: Place = { ...body.location, id: `place-${randomUUID()}`, city: "Surabaya", kecamatan: null, kelurahan: null,
       preSurvey: {}, sources: [], evidenceLevel: "contributor", verifiedByTeam: false, needsGeocoding: false,
       elements: {}, updatedAt: null, photoCount: 0, reportCount: 0 };
     const inputHash = createHash("sha256").update(JSON.stringify({ kind: "new-place", ...body, image: photo.base64 })).digest("hex");
-    const { report, replayed } = await store.publish({ placeId: place.id, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements }, photo, place);
+    const { report, replayed } = await store.publish({ placeId: place.id, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity }, photo, place);
     res.status(replayed ? 200 : 201).json({ reportId: report.id, replayed, place: summarizePlace(await placeById(report.placeId)) });
   });
   function publicReview(r: import("./store.js").Review) {
@@ -121,15 +147,33 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const requestKey = z.uuid().parse(req.headers["idempotency-key"] ?? randomUUID());
     const photo = decodePhoto(body.image, body.mimeType);
     await placeById(body.placeId);
+    const photoIntegrity = await verifiedPhotoIntegrity(photo);
     const inputHash = createHash("sha256").update(JSON.stringify({ ...body, image: photo.base64 })).digest("hex");
-    const { report, replayed } = await store.publish({ placeId: body.placeId, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements }, photo);
+    const { report, replayed } = await store.publish({ placeId: body.placeId, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity }, photo);
     res.status(replayed ? 200 : 201).json({ ok: true, reportId: report.id, replayed, photoUrl: `/api/photos/${report.id}`, report: publicReport(report), place: summarizePlace(await placeById(body.placeId)) });
   });
   app.post("/api/analyze", limiter("analyze", 10), async (req, res) => {
     const body = AnalyzeBody.parse(req.body);
     const photo = decodePhoto(body.image, body.mimeType);
-    try { res.json(await analyze(photo.base64, photo.mimeType)); }
-    catch { res.status(503).json({ error: "Analisis AI tidak tersedia. Isi checklist manual berdasarkan foto.", fallback: "manual_checklist", drafts: [] }); }
+    const [analysis, provenance] = await Promise.allSettled([
+      analyze(photo.base64, photo.mimeType),
+      checkIntegrity(photo.bytes, photo.mimeType),
+    ]);
+    if (analysis.status === "rejected") {
+      res.status(503).json({
+        error: "Analisis AI tidak tersedia. Isi checklist manual berdasarkan foto.",
+        fallback: "manual_checklist",
+        drafts: [],
+        photoIntegrity: provenance.status === "fulfilled" ? provenance.value : undefined,
+      });
+      return;
+    }
+    res.json({
+      ...analysis.value,
+      photoIntegrity: provenance.status === "fulfilled"
+        ? mergePhotoIntegrity(provenance.value, analysis.value.visualIntegrity)
+        : undefined,
+    });
   });
   app.get("/api/photos/:id", async (req, res) => {
     const report = await store.getReport(z.uuid().parse(req.params.id));
@@ -158,8 +202,9 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
   // Reviewer Endpoints
   app.use('/api/reviewer', limiter('reviewer-ip', 120), auth, async (req, res, next) => {
     const token = /^Bearer (\S+)$/i.exec(req.headers.authorization ?? '')?.[1];
-    const reviewerId = token ? await authenticateReviewer?.(token) : undefined;
-    if (!reviewerId || reviewerId !== res.locals.actorId) throw new ApiError(403, 'Hak reviewer diperlukan');
+    const reviewer = token ? await authenticateReviewer?.(token) : undefined;
+    if (!reviewer || reviewer.id !== res.locals.actorId) throw new ApiError(403, 'Hak reviewer diperlukan');
+    res.locals.reviewerLabel = reviewer.email || reviewer.id;
     next();
   });
   app.get("/api/reviewer/stats", async (_req, res) => {
@@ -186,6 +231,7 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
         reviewedAt: r.reviewedAt,
         reviewNote: r.reviewNote,
         reviewChecklist: r.reviewChecklist,
+        photoIntegrity: r.photoIntegrity,
       })),
       total: result.total,
       limit,
@@ -211,10 +257,14 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
       decision: z.enum(["APPROVED", "NEEDS_REVISION", "REJECTED", "UNDER_REVIEW"]),
       note: z.string().default(""),
       checklist: z.record(z.string(), z.boolean()).optional(),
+      // Optional reviewer-corrected element statuses, applied on APPROVED in place of the reported ones.
+      elements: z.array(ElementInput).min(1).max(8)
+        .refine(items => new Set(items.map(i => i.element)).size === items.length, "Duplicate elements")
+        .optional(),
     });
     const body = ReviewDecisionBody.parse(req.body);
     const reportId = z.uuid().parse(req.params.id);
-    const updated = await store.reviewReport(reportId, { ...body, reviewer: res.locals.actorId });
+    const updated = await store.reviewReport(reportId, { ...body, reviewer: res.locals.reviewerLabel ?? res.locals.actorId });
     res.json({ ok: true, report: updated });
   });
   app.get("/api/reviewer/history", async (req, res) => {

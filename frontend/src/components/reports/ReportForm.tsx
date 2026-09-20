@@ -117,6 +117,7 @@ export function ReportForm({
   const [submittedSuccessPlace, setSubmittedSuccessPlace] = useState<Place | null>(null);
   const attempt = useRef<{ signature: string; key: string } | null>(null);
   const busy = submitting || reading;
+  const integrityBlocked = analysis?.photoIntegrity?.recommendedAction === 'request_new_capture';
   const currentElement = targetPlace?.elements.find(element => element.code === elementCode);
   const similarPlaces = adding && location.name.trim().length >= 3 ? places.filter(p => p.name.toLowerCase().includes(location.name.trim().toLowerCase())).slice(0, 5) : [];
 
@@ -179,7 +180,7 @@ export function ReportForm({
 
   async function analyze() {
     if (!photo || analyzing) return;
-    setAnalyzing(true); setAiError('');
+    setAnalyzing(true); setAiError(''); setConfirmed(false);
     try { setAnalysis(await analyzePhoto(photo.image, photo.mimeType)); }
     catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : 'Bantuan foto sedang tidak tersedia. Anda tetap bisa mengisi checklist secara manual.'); }
     finally { setAnalyzing(false); }
@@ -195,6 +196,7 @@ export function ReportForm({
       }
     }
     if (!photo || !confirmed) { setError('Unggah foto dan centang konfirmasi kondisi terlebih dahulu.'); return; }
+    if (integrityBlocked) { setError('Foto memiliki penanda asal AI terverifikasi. Ambil dan unggah foto baru dari lokasi.'); return; }
     if (adding && !coordinatesConfirmed) { setError('Periksa dan konfirmasi titik koordinat lokasi baru.'); return; }
     const evidence = { reporterName, ...photo, humanConfirmed: true as const, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
     const payload: ReportPayload = { placeId, ...evidence };
@@ -412,16 +414,16 @@ export function ReportForm({
         </fieldset>
         <section className="card ai-card" aria-label="Pemeriksaan dan konfirmasi">
           <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} uploadedPhotoUrl={photo?.image ?? null} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
-          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Memeriksa foto…' : 'Bantu kenali kondisi dengan AI (opsional)'}</button>
+          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Memeriksa foto…' : 'Periksa foto & bantu kenali kondisi (opsional)'}</button>
           <fieldset disabled={busy || analyzing} style={{ border: 0, padding: 0, minWidth: 0 }}>
             <h2>{adding ? 'Kondisi awal yang Anda temui' : 'Kondisi terbaru yang Anda temui'}</h2>
             <HumanLockSelector currentStatus={status} onSelectStatus={s => { setStatus(s); setConfirmed(false); }} />
             <label style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'flex-start', fontSize: '12px' }}>
-              <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required style={{ marginTop: '2px' }} />
+              <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required disabled={integrityBlocked} style={{ marginTop: '2px' }} />
               <span>Saya sudah memeriksa foto dan memastikan kondisi ini sesuai dengan yang ada di lokasi.</span>
             </label>
           </fieldset>
-          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? 'Mengirim…' : adding ? 'Tambahkan Lokasi' : 'Kirim Laporan Perubahan'}</button>
+          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? 'Mengirim…' : adding ? 'Tambahkan Lokasi' : 'Kirim Laporan Perubahan'}</button>
           {error && <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '12px', border: '1px solid #fecaca' }}>{error}</p>}
         </section>
       </form>

@@ -703,6 +703,19 @@ export type ReviewerVerificationChecklist = {
 
 export type ReviewDecision = 'APPROVED' | 'NEEDS_REVISION' | 'REJECTED';
 
+export type PhotoIntegrityResult = {
+  outcome: 'trusted_ai_provenance' | 'suspicious' | 'inconclusive';
+  confidence: 'tinggi' | 'sedang' | 'rendah';
+  signals: Array<{
+    source: 'openai_provenance' | 'visual_model';
+    kind: 'c2pa' | 'synthid' | 'visual_artifact' | 'not_detected' | 'check_unavailable';
+    outcome: 'detected' | 'not_detected' | 'suspicious' | 'unavailable';
+    detail: string;
+  }>;
+  recommendedAction: 'allow' | 'request_second_photo' | 'request_new_capture';
+  disclaimer: string;
+};
+
 export type ReviewerAuditItem = {
   id: string;
   placeId: string;
@@ -721,6 +734,7 @@ export type ReviewerAuditItem = {
     drafts: Array<{ element: string; status: AccessibilityStatus; confidence: string; reason: string }>;
     disclaimer: string;
   } | null;
+  photoIntegrity?: PhotoIntegrityResult;
 };
 
 export type ReviewerStats = {

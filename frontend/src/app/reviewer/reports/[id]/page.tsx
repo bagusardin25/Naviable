@@ -107,6 +107,7 @@ export default function ReviewReportDetailPage() {
   }
 
   async function handleDecision(decision: ReviewDecision) {
+    if (!report) return;
     setNoteError('');
     setErrorMessage('');
 
@@ -116,6 +117,15 @@ export default function ReviewReportDetailPage() {
       return;
     }
 
+    // Reviewer-corrected element statuses; unknowns are omitted so they never overwrite existing evidence.
+    const reviewedElements = (Object.keys(CHAIN_ELEMENT_MAP) as Array<keyof typeof CHAIN_ELEMENT_MAP>)
+      .map(code => {
+        const codeName = CHAIN_ELEMENT_MAP[code].codeName;
+        const original = report.elements.find(e => e.element === codeName);
+        return { element: codeName, status: elementAssessments[codeName] ?? 'BELUM_DIKETAHUI', note: original?.note ?? '' };
+      })
+      .filter(e => e.status !== 'BELUM_DIKETAHUI');
+
     setSubmitting(true);
     try {
       const result = await submitReportReview(reportId, {
@@ -123,6 +133,7 @@ export default function ReviewReportDetailPage() {
         reviewer: 'reviewer.naviable',
         note: reviewerNote.trim(),
         checklist: checks,
+        elements: reviewedElements.length ? reviewedElements : undefined,
       });
 
       if (result.ok) {
@@ -347,18 +358,25 @@ export default function ReviewReportDetailPage() {
           <div className={styles.aiBox}>
             <div className={styles.aiHeader}>
               <Sparkles size={16} />
-              <span>AI Photo Check (Asistensi)</span>
+              <span>Pemeriksaan Integritas Foto</span>
             </div>
             <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
               <p style={{ margin: '0 0 6px' }}>
-                Terlihat di foto: <strong>{report.elements[0]?.element.replace('_', ' ')}</strong>
+                Hasil:{' '}
+                <strong>
+                  {report.photoIntegrity?.outcome === 'trusted_ai_provenance'
+                    ? 'Penanda asal AI terverifikasi'
+                    : report.photoIntegrity?.outcome === 'suspicious'
+                      ? 'Memerlukan foto pembanding'
+                      : 'Tidak dapat dipastikan'}
+                </strong>
               </p>
               <p style={{ margin: 0, color: 'var(--muted)', fontSize: '12px' }}>
-                Tingkat Keyakinan Deteksi: <strong>Tinggi (High)</strong>
+                {report.photoIntegrity?.signals.map(signal => signal.detail).join(' ') || 'Belum ada hasil pemeriksaan integritas tersimpan untuk laporan ini.'}
               </p>
             </div>
             <div className={styles.aiDisclaimer}>
-              Catatan: Analisis AI hanya membantu memandu reviewer. Keputusan akhir tetap berada di tangan manusia (reviewer).
+              {report.photoIntegrity?.disclaimer || 'Tidak adanya penanda bukan bukti bahwa foto asli. Keputusan akhir tetap berada di tangan reviewer.'}
             </div>
           </div>
         </section>
