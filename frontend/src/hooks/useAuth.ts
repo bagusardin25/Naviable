@@ -1,76 +1,52 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabaseBrowser } from '@/lib/supabase';
+import { toAuthUserProfile, type AuthUserProfile } from '@/lib/auth/user-profile';
+import { authCallbackError } from '@/lib/auth/google';
+import { observeUser } from '@/lib/auth/observe-user';
 
 export const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-function getLocalDemoUser(): User | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem('naviable_demo_user');
-    return raw ? (JSON.parse(raw) as User) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function useAuth() {
-  const [state, setState] = useState<{ ready: boolean; user: User | null }>({
+  const callbackErrorRef = useRef<string | null>(null);
+  const [state, setState] = useState<{ ready: boolean; user: User | null; profile: AuthUserProfile | null; error: string }>({
     ready: false,
     user: null,
+    profile: null,
+    error: '',
   });
 
   useEffect(() => {
     let active = true;
+    callbackErrorRef.current ??= authCallbackError(window.location.search, window.location.hash);
+    const callbackError = callbackErrorRef.current;
+    if (callbackError) {
+      const cleanUrl = new URL(window.location.href);
+      for (const name of ['error', 'error_code', 'error_description']) cleanUrl.searchParams.delete(name);
+      cleanUrl.hash = '';
+      window.history.replaceState(window.history.state, '', cleanUrl.pathname + cleanUrl.search);
+    }
 
-    function syncState(user: User | null) {
+    function syncState(user: User | null, error = '') {
       if (active) {
-        setState({ ready: true, user: user ?? getLocalDemoUser() });
+        setState({ ready: true, user, profile: toAuthUserProfile(user), error: callbackError || error });
       }
     }
 
     if (authConfigured) {
-      const { data } = supabaseBrowser().auth.onAuthStateChange((_event, session) => {
-        syncState(session?.user ?? null);
-      });
-
-      supabaseBrowser()
-        .auth.getSession()
-        .then(({ data, error }) => {
-          syncState(error ? null : data.session?.user ?? null);
-        })
-        .catch(() => {
-          syncState(null);
-        });
-
-      const handleCustom = () => {
-        supabaseBrowser()
-          .auth.getSession()
-          .then(({ data }) => syncState(data.session?.user ?? null))
-          .catch(() => syncState(null));
-      };
-      window.addEventListener('naviable_auth_change', handleCustom);
-      window.addEventListener('storage', handleCustom);
+      const unsubscribe = observeUser(supabaseBrowser().auth, syncState);
 
       return () => {
         active = false;
-        data.subscription.unsubscribe();
-        window.removeEventListener('naviable_auth_change', handleCustom);
-        window.removeEventListener('storage', handleCustom);
+        unsubscribe();
       };
     } else {
       syncState(null);
-      const handleCustom = () => syncState(null);
-      window.addEventListener('naviable_auth_change', handleCustom);
-      window.addEventListener('storage', handleCustom);
-
       return () => {
         active = false;
-        window.removeEventListener('naviable_auth_change', handleCustom);
-        window.removeEventListener('storage', handleCustom);
       };
     }
   }, []);

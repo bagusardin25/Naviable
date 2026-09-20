@@ -2,7 +2,7 @@
   --unit: clamp(0.85px, 0.0694444vw, 1.34px);
   --purple: #6c44c3;
   --ink: #1e293b;
-  --muted: #73849e;
+  --muted: #64748b;
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100svh;
@@ -176,7 +176,7 @@
   align-items: center;
   gap: calc(16 * var(--unit));
   margin: calc(28 * var(--unit)) 0 calc(24 * var(--unit));
-  color: #94a3bc;
+  color: #64748b;
   font-size: calc(15 * var(--unit));
   line-height: 1.5;
   white-space: nowrap;
@@ -240,7 +240,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: #64748b;
   pointer-events: none;
 }
 
@@ -264,7 +264,7 @@
   text-align: left;
 }
 
-.field input::placeholder { color: #969da9; opacity: 1; }
+.field input::placeholder { color: #64748b; opacity: 1; }
 .field input[aria-invalid="true"] { border-color: #b42318; }
 .field input[readonly] { background: #f7f9fb; }
 .field input:focus { border-color: var(--purple); }
@@ -274,7 +274,7 @@
   right: calc(14 * var(--unit));
   border: 0;
   background: transparent;
-  color: #94a3b8;
+  color: #64748b;
   padding: 4px;
   cursor: pointer;
   display: flex;
@@ -310,37 +310,12 @@
 .loginButton:hover:not(:disabled) { background: #5c36af; }
 .loginButton svg { width: calc(22 * var(--unit)); height: calc(22 * var(--unit)); }
 
-.demoButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(8 * var(--unit));
-  width: 100%;
-  min-height: calc(48 * var(--unit));
-  margin-top: calc(10 * var(--unit));
-  padding: calc(10 * var(--unit)) calc(14 * var(--unit));
-  border: 1.5px dashed #cbd5e1;
-  border-radius: calc(12 * var(--unit));
-  font: inherit;
-  font-size: calc(15 * var(--unit));
-  font-weight: 600;
-  color: #475569;
-  background: #f8fafc;
-  cursor: pointer;
-  transition: all 140ms ease;
-}
-
-.demoButton:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #1e293b;
-}
 .page button:disabled { cursor: wait; opacity: 0.65; }
 .page :is(button, input):focus-visible { outline: 3px solid #4c2795; outline-offset: 4px; }
 
 .legal {
   margin: calc(20 * var(--unit)) 0 0;
-  color: #94a3bc;
+  color: #64748b;
   font-size: calc(14 * var(--unit));
   line-height: 1.7;
   text-align: center;

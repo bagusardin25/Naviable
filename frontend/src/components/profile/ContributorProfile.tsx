@@ -2,41 +2,56 @@
 import { useEffect, useState } from 'react';
 import { fetchContributions, type ApiReport } from '@/lib/api';
 import { supabaseBrowser } from '@/lib/supabase';
+import type { AuthUserProfile } from '@/lib/auth/user-profile';
 
-export function ContributorProfile() {
+export function ContributorProfile({ userProfile, onSignedOut }: { userProfile: AuthUserProfile; onSignedOut: () => void }) {
   const [data, setData] = useState<{ mode: string; total: number; reports: ApiReport[] } | null>(null);
   const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [signingOut, setSigningOut] = useState(false);
   useEffect(() => {
     let active = true;
-    fetchContributions().then(value => { if (active) setData(value); }).catch(e => { if (active) setError(e.message); });
+    fetchContributions()
+      .then(value => { if (active) setData(value); })
+      .catch(e => { if (active) setError(e instanceof Error ? e.message : 'Riwayat kontribusi gagal dimuat.'); });
     return () => { active = false; };
-  }, []);
+  }, [reload]);
   async function signOut() {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      await supabaseBrowser().auth.signOut();
+    setSigningOut(true);
+    setError('');
+    try {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        const { error: signOutError } = await supabaseBrowser().auth.signOut({ scope: 'local' });
+        if (signOutError) throw signOutError;
+      }
+      onSignedOut();
+    } catch {
+      setError('Akun belum berhasil keluar. Periksa koneksi lalu coba lagi.');
+      setSigningOut(false);
     }
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('naviable_demo_token');
-      localStorage.removeItem('naviable_demo_user');
-      window.dispatchEvent(new Event('naviable_auth_change'));
-    }
-    setData(null);
-    setError('Anda telah keluar.');
   }
   return (
     <div className="page-scroll profile-page">
       <section className="profile-hero">
-        <div className="avatar large" aria-hidden="true">N</div>
-        <div>
-          <span className="eyebrow">Relawan Surabaya</span>
-          <h1>Kontribusi Saya</h1>
-          <p>Daftar laporan kondisi akses yang pernah Anda kirimkan untuk membantu sesama warga.</p>
+        <div className="avatar large" aria-hidden="true">{userProfile.initials}</div>
+        <div className="profile-identity">
+          <span className="eyebrow">{userProfile.providerLabel}</span>
+          <h1>{userProfile.displayName}</h1>
+          <p className="profile-email">{userProfile.email}</p>
+          <p>Kontribusi Saya · Riwayat laporan kondisi akses yang Anda kirimkan.</p>
         </div>
       </section>
 
+      <button type="button" className="secondary-action" onClick={signOut} disabled={signingOut}>
+        {signingOut ? 'Mengeluarkan akun…' : 'Keluar Akun'}
+      </button>
+
       {error && (
         <p role="alert" style={{ color: 'var(--notice-error-ink)', background: 'var(--notice-error-bg)', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginTop: '16px', border: '1px solid var(--notice-error-border)' }}>
-          {error} <a href="/login" style={{ color: 'var(--purple)', fontWeight: 700, marginLeft: '6px', textDecoration: 'underline' }}>Masuk ke Akun</a>
+          {error}{' '}
+          <button type="button" className="text-action" onClick={() => { setData(null); setError(''); setReload(value => value + 1); }}>
+            Coba lagi
+          </button>
         </p>
       )}
 
@@ -50,11 +65,6 @@ export function ContributorProfile() {
             <p style={{ color: 'var(--muted)', fontSize: '12px', margin: '4px 0 16px' }}>
               Laporan kondisi akses yang Anda bantu perbarui untuk fasilitas publik di Surabaya.
             </p>
-            {(
-              <button type="button" className="secondary-action" onClick={signOut} style={{ alignSelf: 'flex-start' }}>
-                Keluar Akun
-              </button>
-            )}
           </article>
 
           <article className="card">

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { contributionLabel, loginHref, parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { googleSignInOptions } from "@/lib/auth/google";
 import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from "./login-icons";
 import styles from "./login.module.css";
 
@@ -11,9 +13,10 @@ const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
 
-type AuthMode = "signin" | "signup" | "magiclink" | "reviewer";
+type AuthMode = "signin" | "signup" | "reviewer";
 
 export function LoginForm() {
+  const auth = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const destination = safeReturnTo(searchParams.get("next"));
@@ -38,11 +41,11 @@ export function LoginForm() {
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
-  const [pending, setPending] = useState<"google" | "email" | "magiclink" | null>(null);
+  const [pending, setPending] = useState<"google" | "email" | null>(null);
   const [policy, setPolicy] = useState("Ketentuan Layanan");
 
   // Reviewer specific states
-  const [reviewerUsername, setReviewerUsername] = useState("reviewer.naviable");
+  const [reviewerUsername, setReviewerUsername] = useState("");
   const [reviewerPassword, setReviewerPassword] = useState("");
   const [reviewerError, setReviewerError] = useState("");
   const [reviewerPending, setReviewerPending] = useState(false);
@@ -50,51 +53,23 @@ export function LoginForm() {
   const busy = pending !== null || reviewerPending;
 
 
-  useEffect(() => {
-    if (!authConfigured) return;
-    const { data } = supabaseBrowser().auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        router.replace(destination);
-      }
-    });
-    return () => data.subscription.unsubscribe();
-  }, [router, destination]);
-
   async function signInWithGoogle() {
     if (busy) return;
     setMessage("");
     if (!authConfigured) {
-      setMessage("Kunci Supabase belum disetel di lingkungan ini. Anda dapat menggunakan 'Masuk Cepat Mode Uji Coba (Demo)' di bawah.");
+      setMessage("Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.");
       return;
     }
     setPending("google");
     try {
-      const { error } = await supabaseBrowser().auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}${destination}` },
-      });
+      const { error } = await supabaseBrowser().auth.signInWithOAuth(
+        googleSignInOptions(window.location.origin, destination),
+      );
       if (error) throw error;
     } catch (err: unknown) {
       const errMessage = err instanceof Error ? err.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.";
       setMessage(errMessage);
       setPending(null);
-    }
-  }
-
-  function signInAsDemo() {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("naviable_demo_token", "demo-relawan-surabaya");
-      localStorage.setItem(
-        "naviable_demo_user",
-        JSON.stringify({
-          id: "00000000-0000-4000-8000-000000000001",
-          email: "relawan@naviable.org",
-          role: "authenticated",
-          user_metadata: { name: "Relawan Naviable" },
-        })
-      );
-      window.dispatchEvent(new Event("naviable_auth_change"));
-      router.replace(destination);
     }
   }
 
@@ -106,82 +81,20 @@ export function LoginForm() {
     setPasswordError("");
 
     const trimmedEmail = email.trim();
-    const isReviewerHandle =
-      trimmedEmail.toLowerCase() === "reviewer.naviable" ||
-      trimmedEmail.toLowerCase() === "reviewer@naviable.org";
-
-    if (isReviewerHandle) {
-      if (!password) {
-        setPasswordError("Masukkan kata sandi reviewer.");
-        passwordRef.current?.focus();
-        return;
-      }
-      setPending("email");
-      try {
-        const res = await fetch("/api/auth/reviewer-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: trimmedEmail,
-            password,
-          }),
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          router.replace("/reviewer");
-          return;
-        } else {
-          setPasswordError(data.error || "Username atau password tidak sesuai.");
-          passwordRef.current?.focus();
-          return;
-        }
-      } catch {
-        setPasswordError("Username atau password tidak sesuai.");
-        passwordRef.current?.focus();
-        return;
-      } finally {
-        setPending(null);
-      }
-    }
-
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError("Masukkan alamat email yang valid (contoh: relawan@naviable.org) atau 'reviewer.naviable'.");
+      setEmailError("Masukkan alamat email yang valid (contoh: relawan@naviable.org).");
       emailRef.current?.focus();
       return;
     }
 
-    if (authMode !== "magiclink") {
-      if (!password || password.length < 6) {
-        setPasswordError("Kata sandi minimal terdiri dari 6 karakter.");
-        passwordRef.current?.focus();
-        return;
-      }
-    }
-
-    if (!authConfigured) {
-      setMessage(
-        "Kunci Supabase belum disetel. Anda dapat menggunakan tombol '⚡ Masuk Cepat Mode Uji Coba (Demo)' di bawah untuk langsung mencoba."
-      );
+    if (!password || password.length < 6) {
+      setPasswordError("Kata sandi minimal terdiri dari 6 karakter.");
+      passwordRef.current?.focus();
       return;
     }
 
-    if (authMode === "magiclink") {
-      setPending("magiclink");
-      try {
-        const { error } = await supabaseBrowser().auth.signInWithOtp({
-          email: trimmedEmail,
-          options: {
-            emailRedirectTo: `${window.location.origin}${loginHref(destination)}`,
-          },
-        });
-        if (error) throw error;
-        setMessage(`Tautan masuk telah dikirim ke ${trimmedEmail}. Silakan periksa kotak masuk atau spam email Anda.`);
-      } catch (err: unknown) {
-        const errMessage = err instanceof Error ? err.message : "Gagal mengirim tautan masuk.";
-        setMessage(errMessage);
-      } finally {
-        setPending(null);
-      }
+    if (!authConfigured) {
+      setMessage("Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.");
       return;
     }
 
@@ -191,12 +104,15 @@ export function LoginForm() {
         const { data, error } = await supabaseBrowser().auth.signUp({
           email: trimmedEmail,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}${loginHref(destination)}`,
+          },
         });
         if (error) throw error;
         if (data.session) {
           router.replace(destination);
         } else {
-          setMessage(`Pendaftaran berhasil! Silakan periksa email ${trimmedEmail} untuk mengonfirmasi akun Anda.`);
+          setMessage(`Jika alamat ini dapat didaftarkan, tautan konfirmasi dikirim ke ${trimmedEmail}. Periksa kotak masuk dan spam; jika sudah memiliki akun, pilih Masuk.`);
         }
       } catch (err: unknown) {
         const errMessage = err instanceof Error ? err.message : "Gagal mendaftarkan akun.";
@@ -219,7 +135,7 @@ export function LoginForm() {
         router.replace(destination);
       }
     } catch {
-      setPasswordError("Email atau kata sandi tidak cocok. Silakan periksa kembali atau pilih tab 'Magic Link'.");
+      setPasswordError("Email atau kata sandi tidak cocok. Silakan periksa kembali.");
       passwordRef.current?.focus();
     } finally {
       setPending(null);
@@ -309,7 +225,7 @@ export function LoginForm() {
                 name="reviewer-username"
                 type="text"
                 autoComplete="username"
-                placeholder="reviewer.naviable"
+                placeholder="reviewer@organisasi.org"
                 value={reviewerUsername}
                 required
                 disabled={busy}
@@ -379,6 +295,17 @@ export function LoginForm() {
     <>
       <form className={styles.form} onSubmit={submit} noValidate aria-busy={busy}>
 
+        {auth.error && <p className={styles.status} role="alert">{auth.error}</p>}
+        {auth.profile && !auth.error && (
+          <div className={styles.status}>
+            <p>Sesi aktif: {auth.profile.displayName} ({auth.profile.email}).</p>
+            <button type="button" className={`${styles.button} ${styles.google}`} disabled={busy} onClick={() => router.replace(destination)}>
+              Lanjut sebagai {auth.profile.shortName}
+            </button>
+            <p>Untuk memilih akun lain, gunakan tombol Google atau masuk dengan email.</p>
+          </div>
+        )}
+
         {searchParams.has("next") && (
           <p role="note" className={styles.status}>
             Masuk untuk {action}. Setelah masuk, Anda akan langsung kembali ke aksi ini. Peta dan informasi lokasi tetap bisa dijelajahi tanpa akun.
@@ -408,7 +335,7 @@ export function LoginForm() {
           <span>atau masuk dengan email</span>
         </div>
 
-        {/* Auth Mode Switcher Tabs */}
+        {/* Email/password mode switcher */}
         <div className={styles.modeTabs} role="tablist" aria-label="Pilihan Masuk atau Daftar">
           <button
             type="button"
@@ -438,37 +365,11 @@ export function LoginForm() {
           >
             Daftar Akun
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={authMode === "magiclink"}
-            className={`${styles.tabBtn} ${authMode === "magiclink" ? styles.tabActive : ""}`}
-            onClick={() => {
-              setAuthMode("magiclink");
-              setEmailError("");
-              setPasswordError("");
-              setMessage("");
-            }}
-          >
-            Magic Link
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={false}
-            className={styles.tabBtn}
-            onClick={() => {
-              setAuthMode("reviewer");
-              setReviewerError("");
-            }}
-          >
-            Reviewer
-          </button>
         </div>
 
-        {/* Email / Username Field */}
+        {/* Email Field */}
         <div className={styles.field}>
-          <label htmlFor="auth-email">Alamat Email / Username Reviewer</label>
+          <label htmlFor="auth-email">Alamat Email</label>
           <div className={styles.inputWrapper}>
             <span className={styles.inputIcon} aria-hidden="true">
               <MailIcon />
@@ -477,9 +378,10 @@ export function LoginForm() {
               ref={emailRef}
               id="auth-email"
               name="email"
-              type="text"
-              autoComplete="username email"
-              placeholder="nama@domain.com atau reviewer.naviable"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="nama@domain.com"
               value={email}
               required
               disabled={busy}
@@ -499,67 +401,46 @@ export function LoginForm() {
           )}
         </div>
 
-        {/* Password Field (hidden in magic link mode) */}
-        {authMode !== "magiclink" ? (
-          <div className={styles.field} style={{ marginTop: "16px" }}>
-            <div className={styles.fieldHeader}>
-              <label htmlFor="auth-password">Kata Sandi</label>
-              {authMode === "signin" && (
-                <button
-                  type="button"
-                  className={styles.textButton}
-                  onClick={() => {
-                    setAuthMode("magiclink");
-                    setMessage("Masukkan email Anda di atas untuk menerima tautan masuk instan.");
-                  }}
-                >
-                  Lupa kata sandi?
-                </button>
-              )}
-            </div>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputIcon} aria-hidden="true">
-                <LockIcon />
-              </span>
-              <input
-                ref={passwordRef}
-                id="auth-password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete={authMode === "signup" ? "new-password" : "current-password"}
-                placeholder={authMode === "signup" ? "Minimal 6 karakter" : "Masukkan kata sandi"}
-                value={password}
-                required
-                disabled={busy}
-                aria-invalid={Boolean(passwordError)}
-                aria-describedby={passwordError ? "password-error" : undefined}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setPasswordError("");
-                  setMessage("");
-                }}
-              />
-              <button
-                type="button"
-                className={styles.toggleVisibility}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-            {passwordError && (
-              <p id="password-error" className={styles.fieldError} role="alert">
-                {passwordError}
-              </p>
-            )}
+        <div className={styles.field} style={{ marginTop: "16px" }}>
+          <label htmlFor="auth-password">Kata Sandi</label>
+          <div className={styles.inputWrapper}>
+            <span className={styles.inputIcon} aria-hidden="true">
+              <LockIcon />
+            </span>
+            <input
+              ref={passwordRef}
+              id="auth-password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+              placeholder={authMode === "signup" ? "Minimal 6 karakter" : "Masukkan kata sandi"}
+              value={password}
+              required
+              disabled={busy}
+              aria-invalid={Boolean(passwordError)}
+              aria-describedby={passwordError ? "password-error" : undefined}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setPasswordError("");
+                setMessage("");
+              }}
+            />
+            <button
+              type="button"
+              className={styles.toggleVisibility}
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
           </div>
-        ) : (
-          <p className={styles.helperText}>
-            Kami akan mengirimkan email berisi tautan langsung untuk masuk tanpa memerlukan kata sandi.
-          </p>
-        )}
+          {passwordError && (
+            <p id="password-error" className={styles.fieldError} role="alert">
+              {passwordError}
+            </p>
+          )}
+        </div>
 
         {message && (
           <p className={styles.status} role="status">
@@ -575,24 +456,10 @@ export function LoginForm() {
               ? authMode === "signup"
                 ? "Mendaftarkan…"
                 : "Masuk ke Akun…"
-              : pending === "magiclink"
-              ? "Mengirim Magic Link…"
               : authMode === "signup"
               ? "Daftar Akun Baru"
-              : authMode === "magiclink"
-              ? "Kirim Tautan Masuk"
               : "Masuk Sekarang"}
           </span>
-        </button>
-
-        {/* Demo Fallback Button for fast local testing */}
-        <button
-          className={styles.demoButton}
-          type="button"
-          onClick={signInAsDemo}
-          title="Masuk langsung untuk mencoba fitur tanpa setup Supabase cloud"
-        >
-          <span>⚡ Masuk Cepat Mode Uji Coba (Demo)</span>
         </button>
 
         {/* Guest destination */}
@@ -605,32 +472,6 @@ export function LoginForm() {
           <span>Lanjut tanpa akun (Mode Tamu) →</span>
         </button>
 
-        {/* Subtle Reviewer Login Entry Point */}
-        <div style={{ marginTop: "22px", paddingTop: "14px", borderTop: "1px dashed var(--line)", textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
-            Untuk tim Naviable:{" "}
-            <button
-              type="button"
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--purple)",
-                fontWeight: 600,
-                textDecoration: "underline",
-                cursor: "pointer",
-                padding: 0,
-                font: "inherit",
-                fontSize: "12px",
-              }}
-              onClick={() => {
-                setAuthMode("reviewer");
-                setReviewerError("");
-              }}
-            >
-              Masuk sebagai reviewer
-            </button>
-          </p>
-        </div>
       </form>
 
 
