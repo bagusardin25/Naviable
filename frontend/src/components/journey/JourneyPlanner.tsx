@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Place, AccessibilityNeed, JourneyResponse, STATUS_META, CHAIN_ELEMENT_MAP, ChainElementCode } from '@/types';
 import { fetchJourney } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
+import { buildGoogleMapsRouteUrl, buildGoogleMapsPlaceUrl, TravelMode } from '@/lib/externalMaps';
 
 type JourneyPlannerProps = {
   places: Place[];
@@ -26,6 +27,7 @@ export function JourneyPlanner({
     geocodedPlaces[1] ? String(geocodedPlaces[1].id) : ''
   );
   const [profile, setProfile] = useState<AccessibilityNeed>(currentNeed);
+  const [travelMode, setTravelMode] = useState<TravelMode>('walking');
   const [loading, setLoading] = useState(false);
   const [journey, setJourney] = useState<JourneyResponse | null>(null);
   const [error, setError] = useState('');
@@ -212,6 +214,66 @@ export function JourneyPlanner({
             </span>
           </div>
 
+          {(() => {
+            const originPoint = journey.points[0];
+            const destPoint = journey.points[journey.points.length - 1];
+            const waypoints = journey.points.slice(1, -1);
+            const googleMapsRouteUrl =
+              originPoint && destPoint
+                ? buildGoogleMapsRouteUrl({
+                    origin: originPoint,
+                    destination: destPoint,
+                    waypoints,
+                    travelMode,
+                  })
+                : null;
+
+            return googleMapsRouteUrl ? (
+              <div className="google-maps-card" role="region" aria-label="Navigasi langsung Google Maps">
+                <div className="google-maps-card-header">
+                  <span className="google-maps-card-title">
+                    <Icon name="navigation" size={15} />
+                    <span>Navigasi Langsung (Google Maps)</span>
+                  </span>
+                  <div className="google-maps-mode-pills" role="group" aria-label="Pilih moda perjalanan">
+                    <button
+                      type="button"
+                      className={`google-maps-mode-btn ${travelMode === 'walking' ? 'active' : ''}`}
+                      onClick={() => setTravelMode('walking')}
+                      aria-pressed={travelMode === 'walking'}
+                    >
+                      Jalan Kaki
+                    </button>
+                    <button
+                      type="button"
+                      className={`google-maps-mode-btn ${travelMode === 'transit' ? 'active' : ''}`}
+                      onClick={() => setTravelMode('transit')}
+                      aria-pressed={travelMode === 'transit'}
+                    >
+                      Angkutan Umum
+                    </button>
+                  </div>
+                </div>
+                <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--muted)', lineHeight: 1.45 }}>
+                  Buka navigasi belokan jalan raya (turn-by-turn) di Google Maps dari{' '}
+                  <strong>{originPoint?.name}</strong> menuju <strong>{destPoint?.name}</strong>
+                  {waypoints.length > 0 ? ` melalui ${waypoints.length} titik transit.` : '.'}
+                </p>
+                <a
+                  href={googleMapsRouteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="google-maps-btn"
+                  aria-label={`Buka panduan rute ${originPoint?.name} ke ${destPoint?.name} di Google Maps (membuka tab baru)`}
+                >
+                  <Icon name="navigation" size={14} />
+                  <span>Buka Rute di Google Maps</span>
+                  <Icon name="external-link" size={13} />
+                </a>
+              </div>
+            ) : null;
+          })()}
+
           <ol className="journey-points-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {journey.points.map((pt, idx) => {
               const fullPlace = places.find((p) => String(p.id) === String(pt.id));
@@ -220,6 +282,10 @@ export function JourneyPlanner({
               const stepLabel = isOrigin ? '1. Titik Awal' : isDestination ? `${journey.points.length}. Titik Tujuan` : `${idx + 1}. Titik Transit`;
               const statusMeta = STATUS_META[pt.overall] ?? STATUS_META.BELUM_DIKETAHUI;
               const statusIcon = pt.overall === 'UTUH' ? 'check-circle' : pt.overall === 'TERHALANG' ? 'warning' : pt.overall === 'TIDAK_STANDAR' ? 'alert-circle' : pt.overall === 'TIDAK_ADA' ? 'x-circle' : 'help-circle';
+              const pointNavUrl =
+                pt.lat !== null && pt.lng !== null
+                  ? buildGoogleMapsPlaceUrl({ destination: pt, travelMode })
+                  : null;
 
               return (
                 <li
@@ -264,16 +330,32 @@ export function JourneyPlanner({
                     {pt.summary}
                   </p>
 
-                  {fullPlace && (
-                    <button
-                      type="button"
-                      className="secondary-action"
-                      style={{ fontSize: '11px', padding: '4px 8px', width: '100%', justifyContent: 'center' }}
-                      onClick={() => onSelectPlace(fullPlace)}
-                    >
-                      Lihat detail tempat ini ↗
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                    {fullPlace && (
+                      <button
+                        type="button"
+                        className="secondary-action"
+                        style={{ fontSize: '11px', padding: '6px 10px', flex: '1 1 auto', justifyContent: 'center' }}
+                        onClick={() => onSelectPlace(fullPlace)}
+                      >
+                        Lihat detail tempat ↗
+                      </button>
+                    )}
+                    {pointNavUrl && (
+                      <a
+                        href={pointNavUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="google-maps-btn-secondary"
+                        style={{ fontSize: '11px', padding: '6px 10px', flex: '1 1 auto', justifyContent: 'center' }}
+                        aria-label={`Buka arah ke ${pt.name} di Google Maps (membuka tab baru)`}
+                      >
+                        <Icon name="navigation" size={12} />
+                        <span>Arahkan ke sini</span>
+                        <Icon name="external-link" size={11} />
+                      </a>
+                    )}
+                  </div>
                 </li>
               );
             })}
