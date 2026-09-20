@@ -12,17 +12,20 @@ import { csvCell } from "../src/lib/evidence.js";
 import { readConfig, type Config } from "../src/config.js";
 
 const image = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1ioAAAAASUVORK5CYII=';
-async function fixture(mode: 'local' | 'supabase' = 'local') {
+async function fixture(mode: 'local' | 'supabase' = 'local', reviewer = false) {
   const directory = await mkdtemp(join(tmpdir(), 'naviable-test-'));
   const store = await new LocalStore(directory).init();
   const config: Config = { mode, production: false, host: '127.0.0.1', port: 4000, localDir: directory, origins: ['http://localhost:3000'], publicUrl: 'http://localhost:4000', trustProxy: 0 };
-  const app = createApp({ store, config, authenticate: async token => token === 'valid-test-token' ? 'test-user' : undefined, analyze: async () => { throw new Error('provider unavailable'); } });
+  const app = createApp({ store, config,
+    authenticate: async token => token === 'reviewer-test-token' ? 'reviewer-id' : token === 'valid-test-token' ? 'test-user' : token === 'other-test-token' ? 'other-user' : undefined,
+    authenticateReviewer: async token => token === 'reviewer-test-token' ? 'reviewer-id' : undefined,
+    analyze: async () => { throw new Error('provider unavailable'); } });
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address() as { port: number };
   const base = `http://127.0.0.1:${address.port}`;
-  const get = (path: string, headers?: Record<string, string>) => fetch(`${base}${path}`, { headers });
-  const post = (path: string, body: unknown, key = randomUUID(), token = mode === 'local' ? 'valid-test-token' : '') => fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
+  const get = (path: string, headers?: Record<string, string>) => fetch(`${base}${path}`, { headers: { ...(reviewer ? { Authorization: 'Bearer reviewer-test-token' } : {}), ...headers } });
+  const post = (path: string, body: unknown, key = randomUUID(), token = reviewer ? 'reviewer-test-token' : mode === 'local' ? 'valid-test-token' : '') => fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
   return { directory, store, config, get, post, close: async () => {
     server.closeAllConnections(); await new Promise<void>((yes, no) => server.close(e => e ? no(e) : yes()));
     if (!resolve(directory).startsWith(resolve(tmpdir()) + '\\') && !resolve(directory).startsWith(resolve(tmpdir()) + '/')) throw new Error('Unsafe temporary path');
@@ -214,8 +217,35 @@ test('production cannot silently run local storage', () => {
   }
 });
 
-test('reviewer workflow: list, detail, approve, revise with notes, reject, and audit trail', async () => {
+test('reviewer APIs reject guests, invalid tokens and ordinary contributors before reading or writing', async () => {
+  const f = await fixture('supabase');
+  try {
+    for (const path of ['/api/reviewer/stats', '/api/reviewer/reports', '/api/reviewer/history', '/api/reviewer/reports/10000000-0000-4000-8000-000000000001']) {
+      assert.equal((await f.get(path)).status, 401);
+      assert.equal((await f.get(path, { Authorization: 'Bearer invalid' })).status, 401);
+      assert.equal((await f.get(path, { Authorization: 'Bearer valid-test-token' })).status, 403);
+    }
+    const path = '/api/reviewer/reports/10000000-0000-4000-8000-000000000001/review';
+    assert.equal((await f.post(path, { decision: 'APPROVED', reviewer: 'admin' })).status, 401);
+    assert.equal((await f.post(path, { decision: 'APPROVED', reviewer: 'admin' }, randomUUID(), 'valid-test-token')).status, 403);
+  } finally { await f.close(); }
+});
+
+test('contributions are selected by validated actor ID, not a client-provided user ID', async () => {
   const f = await fixture();
+  try {
+    const place = (await f.store.listPlaces())[0];
+    assert.equal((await f.post('/api/reports', report(place.id))).status, 201);
+    const own = await (await f.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json();
+    const other = await (await f.get('/api/me?actorId=test-user', { Authorization: 'Bearer other-test-token' })).json();
+    assert.equal(own.total, 1);
+    assert.equal(other.total, 0);
+    assert.deepEqual(other.reports, []);
+  } finally { await f.close(); }
+});
+
+test('reviewer workflow: list, detail, approve, revise with notes, reject, and audit trail', async () => {
+  const f = await fixture('local', true);
   try {
     const statsRes = await f.get('/api/reviewer/stats');
     assert.equal(statsRes.status, 200);
@@ -251,7 +281,7 @@ test('reviewer workflow: list, detail, approve, revise with notes, reject, and a
     assert.equal(approveRes.status, 200);
     const approved = await approveRes.json();
     assert.equal(approved.report.reviewStatus, 'APPROVED');
-    assert.equal(approved.report.reviewedBy, 'reviewer.naviable');
+    assert.equal(approved.report.reviewedBy, 'reviewer-id');
 
     // Check place was updated with verifiedByTeam = true
     const place = await f.store.getPlace(target.placeId);

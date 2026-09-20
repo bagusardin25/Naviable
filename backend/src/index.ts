@@ -22,6 +22,12 @@ const app = createApp({ store, config, authenticate: async token => {
   } catch {
     return undefined;
   }
+}, authenticateReviewer: async token => {
+  const client = supabase ?? (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? adminSupabase() : null);
+  if (!client) return undefined;
+  const { data, error } = await client.auth.getUser(token);
+  if (error || typeof data.user?.app_metadata?.role !== 'string' || data.user.app_metadata.role.toUpperCase() !== 'REVIEWER') return undefined;
+  return data.user.id;
 } });
 const server = app.listen(config.port, config.host, () => console.log(`Naviable API http://${config.host}:${config.port} (${config.mode})`));
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => {

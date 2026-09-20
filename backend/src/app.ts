@@ -10,8 +10,8 @@ import { CHAIN_ELEMENTS, ELEMENT_STATUSES, summarizePlace, USER_PROFILES, type P
 import { evidenceCsv, journeyHint, observatory } from "./lib/evidence.js";
 import { analyzeAccessPhoto } from "./lib/gemini.js";
 
-type Options = { store: Store; config: Config; authenticate?: (token: string) => Promise<string | undefined>; analyze?: typeof analyzeAccessPhoto };
-export function createApp({ store, config, authenticate, analyze = analyzeAccessPhoto }: Options) {
+type Options = { store: Store; config: Config; authenticate?: (token: string) => Promise<string | undefined>; authenticateReviewer?: (token: string) => Promise<string | undefined>; analyze?: typeof analyzeAccessPhoto };
+export function createApp({ store, config, authenticate, authenticateReviewer, analyze = analyzeAccessPhoto }: Options) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
@@ -156,6 +156,12 @@ export function createApp({ store, config, authenticate, analyze = analyzeAccess
     res.json(journeyHint(await store.listPlaces(), from, to, input.profile));
   });
   // Reviewer Endpoints
+  app.use('/api/reviewer', limiter('reviewer-ip', 120), auth, async (req, res, next) => {
+    const token = /^Bearer (\S+)$/i.exec(req.headers.authorization ?? '')?.[1];
+    const reviewerId = token ? await authenticateReviewer?.(token) : undefined;
+    if (!reviewerId || reviewerId !== res.locals.actorId) throw new ApiError(403, 'Hak reviewer diperlukan');
+    next();
+  });
   app.get("/api/reviewer/stats", async (_req, res) => {
     res.json(await store.getReviewerStats());
   });
@@ -203,13 +209,12 @@ export function createApp({ store, config, authenticate, analyze = analyzeAccess
   app.post("/api/reviewer/reports/:id/review", async (req, res) => {
     const ReviewDecisionBody = z.object({
       decision: z.enum(["APPROVED", "NEEDS_REVISION", "REJECTED", "UNDER_REVIEW"]),
-      reviewer: z.string().min(1).default("reviewer.naviable"),
       note: z.string().default(""),
       checklist: z.record(z.string(), z.boolean()).optional(),
     });
     const body = ReviewDecisionBody.parse(req.body);
     const reportId = z.uuid().parse(req.params.id);
-    const updated = await store.reviewReport(reportId, body);
+    const updated = await store.reviewReport(reportId, { ...body, reviewer: res.locals.actorId });
     res.json({ ok: true, report: updated });
   });
   app.get("/api/reviewer/history", async (req, res) => {
