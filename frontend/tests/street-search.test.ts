@@ -120,3 +120,74 @@ test('getPopularStreetCorridors groups corridors and sorts by frequency', () => 
   assert.equal(corridors[0].name, 'Jl. Tunjungan');
   assert.equal(corridors[0].count, 2);
 });
+
+import { analyzeSearchQuery, matchesCategoryIntent } from '../src/lib/searchNormalizer';
+
+test('analyzeSearchQuery correctly handles conversational phrases and typos like coffe', () => {
+  // Typo "coffe" -> normalized to "coffee" with cafe intent
+  const coffeIntent = analyzeSearchQuery('coffe');
+  assert.equal(coffeIntent.category, 'cafe');
+  assert.equal(coffeIntent.clean, 'coffee');
+  assert.ok(coffeIntent.expandedTerms.includes('cafe'));
+
+  // Conversational prefix "tempat wisata" -> stripped to "wisata" with tourism intent
+  const wisataIntent = analyzeSearchQuery('tempat wisata');
+  assert.equal(wisataIntent.category, 'tourism');
+  assert.equal(wisataIntent.clean, 'wisata');
+  assert.ok(wisataIntent.expandedTerms.includes('museum'));
+  assert.ok(wisataIntent.expandedTerms.includes('taman'));
+
+  // "cari lokasi kafe nongkrong" -> "kafe nongkrong"
+  const nongkrongIntent = analyzeSearchQuery('cari lokasi kafe nongkrong');
+  assert.equal(nongkrongIntent.category, 'cafe');
+
+  // "tempat ibadah masjid" -> worship
+  const ibadahIntent = analyzeSearchQuery('tempat ibadah');
+  assert.equal(ibadahIntent.category, 'worship');
+});
+
+test('matchesPlaceQuery matches typo coffe to local cafe places', () => {
+  const cafePlace = {
+    id: 'cafe-1',
+    name: 'Calibre Coffee Roasters',
+    category: 'Cafe',
+    district: 'Genteng',
+    address: 'Jl. Walikota Mustajab No. 67, Surabaya',
+    elements: [],
+  } as unknown as Place;
+
+  // Typo search "coffe"
+  const match = matchesPlaceQuery(cafePlace, 'coffe');
+  assert.equal(match.matched, true);
+
+  // Intent match for "tempat ngopi"
+  const match2 = matchesPlaceQuery(cafePlace, 'tempat ngopi');
+  assert.equal(match2.matched, true);
+});
+
+test('matchesPlaceQuery matches conversational tempat wisata to museum and park places', () => {
+  const museumPlace = {
+    id: 'museum-1',
+    name: 'Museum Olahraga Surabaya',
+    category: 'Museum',
+    district: 'Wonokromo',
+    address: 'Jl. Indragiri No. 6, Surabaya',
+    elements: [],
+  } as unknown as Place;
+
+  const parkPlace = {
+    id: 'park-1',
+    name: 'Taman Bungkul',
+    category: 'Taman Kota',
+    district: 'Wonokromo',
+    address: 'Jl. Raya Darmo, Surabaya',
+    elements: [],
+  } as unknown as Place;
+
+  const matchMuseum = matchesPlaceQuery(museumPlace, 'tempat wisata');
+  assert.equal(matchMuseum.matched, true);
+
+  const matchPark = matchesPlaceQuery(parkPlace, 'tempat wisata');
+  assert.equal(matchPark.matched, true);
+});
+

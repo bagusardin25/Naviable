@@ -92,6 +92,8 @@ function formatTitleCase(str: string): string {
     .join(' ');
 }
 
+import { analyzeSearchQuery, matchesCategoryIntent } from './searchNormalizer';
+
 export type PlaceQueryMatch = {
   matched: boolean;
   matchedOnStreet: boolean;
@@ -101,7 +103,7 @@ export type PlaceQueryMatch = {
 
 /**
  * Checks if a Place matches a user query across its name, street/address, district, and category,
- * with intelligent Indonesian street name normalization.
+ * with intelligent Indonesian street name normalization and category intent matching.
  */
 export function matchesPlaceQuery(place: Place, rawQuery: string): PlaceQueryMatch {
   const query = rawQuery.trim();
@@ -153,9 +155,28 @@ export function matchesPlaceQuery(place: Place, rawQuery: string): PlaceQueryMat
     return { matched: true, matchedOnStreet: false, matchedField: 'district', score: 0.7 };
   }
 
-  // 5. Category match
+  // 5. Direct category match
   if (categoryNorm && (categoryNorm.includes(queryNorm) || queryNorm.includes(categoryNorm))) {
     return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.65 };
+  }
+
+  // 6. Intelligent category & synonym intent matching (e.g. "coffe", "tempat wisata", "makan")
+  const intent = analyzeSearchQuery(rawQuery);
+  if (intent.category && matchesCategoryIntent(place.category || place.rawCategory || '', intent)) {
+    return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.75 };
+  }
+
+  // 7. Check if any expanded intent term matches place name or category
+  for (const term of intent.expandedTerms) {
+    const termNorm = normalizeStreetText(term);
+    if (termNorm.length >= 3) {
+      if (nameNorm.includes(termNorm)) {
+        return { matched: true, matchedOnStreet: false, matchedField: 'name', score: 0.88 };
+      }
+      if (categoryNorm.includes(termNorm)) {
+        return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.7 };
+      }
+    }
   }
 
   return { matched: false, matchedOnStreet: false, score: 0 };
