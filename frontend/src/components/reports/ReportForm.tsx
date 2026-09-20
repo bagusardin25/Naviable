@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import { AIDraftPanel } from './AIDraftPanel';
 import { HumanLockSelector } from './HumanLockSelector';
+import { saveDraftPhoto, getDraftPhoto, deleteDraftPhoto } from '@/lib/draftStorage';
 
 type DraftData = {
   placeId?: string;
@@ -88,6 +89,23 @@ export function ReportForm({
     Boolean(draft && (draft.reporterName || draft.note || draft.placeId))
   );
   const [photo, setPhoto] = useState<{ image: string; mimeType: string } | null>(null);
+  const [photoRestored, setPhotoRestored] = useState<boolean>(false);
+
+  // Restore draft photo from IndexedDB if available
+  useEffect(() => {
+    let active = true;
+    getDraftPhoto(draftKey)
+      .then((saved) => {
+        if (active && saved) {
+          setPhoto({ image: saved.image, mimeType: saved.mimeType });
+          setPhotoRestored(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [draftKey]);
 
   const [analysis, setAnalysis] = useState<ApiAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -130,23 +148,31 @@ export function ReportForm({
     } catch {
       // ignore
     }
+    deleteDraftPhoto(draftKey).catch(() => {});
     setReporterName('');
     setNote('');
     setStatus('BELUM_DIKETAHUI');
+    setPhoto(null);
+    setPhotoRestored(false);
     setDraftRestored(false);
     setConfirmed(false);
   }
 
   function readPhoto(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    setAnalysis(null); setAiError(''); setConfirmed(false); setError(''); setPhoto(null);
+    setAnalysis(null); setAiError(''); setConfirmed(false); setError(''); setPhoto(null); setPhotoRestored(false);
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
       setError('Gunakan foto JPG, PNG, atau WebP maksimal 5 MB.'); return;
     }
     setReading(true);
     const reader = new FileReader();
-    reader.onload = () => { setPhoto({ image: String(reader.result), mimeType: file.type }); setReading(false); };
+    reader.onload = () => {
+      const photoData = { image: String(reader.result), mimeType: file.type };
+      setPhoto(photoData);
+      setReading(false);
+      saveDraftPhoto(draftKey, photoData).catch(() => {});
+    };
     reader.onerror = () => { setError('Foto tidak dapat dibaca. Silakan pilih ulang.'); setReading(false); };
     reader.readAsDataURL(file);
   }
@@ -183,6 +209,7 @@ export function ReportForm({
       } catch {
         // ignore
       }
+      deleteDraftPhoto(draftKey).catch(() => {});
       setSubmittedSuccessPlace(result.place);
     }
     catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum berhasil dikirim. Silakan coba lagi.'); }
@@ -265,7 +292,11 @@ export function ReportForm({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Icon name="save" size={15} />
-            <span>Draf laporan sebelumnya tersimpan otomatis di perangkat ini.</span>
+            <span>
+              {photo
+                ? 'Draf laporan dan foto bukti berhasil dipulihkan dari perangkat ini.'
+                : 'Draf teks laporan dipulihkan. Silakan pilih kembali foto kondisi di lapangan sebelum mengirim.'}
+            </span>
           </div>
           <button
             type="button"
@@ -362,7 +393,7 @@ export function ReportForm({
                 <div className="upload-preview-badge">
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     <Icon name="check" size={13} />
-                    <span>Foto tersimpan (klik untuk ganti)</span>
+                    <span>{photoRestored ? 'Foto draf dipulihkan (klik untuk ganti)' : 'Foto tersimpan (klik untuk ganti)'}</span>
                   </span>
                 </div>
               ) : (
@@ -371,7 +402,7 @@ export function ReportForm({
                   <small>Format JPG, PNG, atau WebP · maks 5 MB</small>
                 </>
               )}
-              <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required />
+              <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required={!photo} />
             </label>
           </div>
           <label htmlFor="report-notes">
