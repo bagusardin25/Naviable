@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { AuthChangeEvent, Session, SupabaseClient, User, UserResponse } from '@supabase/supabase-js';
-import { googleSignInOptions, reviewerGoogleSignInOptions, authCallbackError } from '../src/lib/auth/google';
+import { googleSignInOptions, reviewerGoogleSignInOptions, loginReturnGoogleSignInOptions, authCallbackError } from '../src/lib/auth/google';
 import { observeUser } from '../src/lib/auth/observe-user';
 
 test('Google always requests account selection and preserves only safe contribution destinations', () => {
@@ -17,6 +17,18 @@ test('reviewer Google login returns only to the reviewer session exchange page',
   const result = reviewerGoogleSignInOptions('https://naviable.vercel.app/ignored');
   assert.equal(result.options?.queryParams?.prompt, 'select_account');
   assert.equal(result.options?.redirectTo, 'https://naviable.vercel.app/login?mode=reviewer');
+});
+
+test('general login returns to /login carrying only a sanitized next destination', () => {
+  const result = loginReturnGoogleSignInOptions('https://naviable.vercel.app', '/jelajah?screen=profile');
+  assert.equal(result.options?.queryParams?.prompt, 'select_account');
+  assert.equal(result.options?.redirectTo, 'https://naviable.vercel.app/login?next=%2Fjelajah%3Fscreen%3Dprofile');
+  for (const unsafe of ['https://evil.example', '//evil.example', '/reviewer', '/jelajah?next=https://evil.example']) {
+    assert.equal(
+      loginReturnGoogleSignInOptions('https://naviable.vercel.app', unsafe).options?.redirectTo,
+      'https://naviable.vercel.app/login?next=%2Fjelajah',
+    );
+  }
 });
 
 test('cancelled OAuth and expired email links produce safe errors without reflecting provider text', () => {

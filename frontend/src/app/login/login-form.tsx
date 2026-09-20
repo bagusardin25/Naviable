@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { contributionLabel, loginHref, parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
-import { googleSignInOptions, reviewerGoogleSignInOptions } from "@/lib/auth/google";
+import { loginReturnGoogleSignInOptions, reviewerGoogleSignInOptions } from "@/lib/auth/google";
+import { isReviewerUser } from "@/lib/auth/session";
 import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from "./login-icons";
 import styles from "./login.module.css";
 
 const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
+
+// Marks a login started from this page, so returning with a session auto-routes
+// by role — while a plain visit with an existing session does not.
+const AUTH_RETURN_KEY = "naviable:auth-return";
 
 type AuthMode = "signin" | "signup" | "reviewer";
 
@@ -28,7 +33,7 @@ export function LoginForm() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const reviewerPasswordRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const reviewerSessionAttemptRef = useRef<string | null>(null);
+  const postLoginRef = useRef<string | null>(null);
 
   const initialMode: AuthMode =
     searchParams.get("mode") === "reviewer" || searchParams.get("role") === "reviewer" || destination.startsWith("/reviewer")
@@ -53,43 +58,69 @@ export function LoginForm() {
 
   const busy = pending !== null || reviewerPending;
 
-  useEffect(() => {
-    if (authMode !== "reviewer" || !auth.ready || !auth.user) return;
-    if (reviewerSessionAttemptRef.current === auth.user.id) return;
-    reviewerSessionAttemptRef.current = auth.user.id;
-
-    let active = true;
-    async function openReviewerSession() {
-      setReviewerError("");
-      setReviewerPending(true);
-      try {
-        const { data, error } = await supabaseBrowser().auth.getSession();
-        const token = data.session?.access_token;
-        if (error || !token) throw new Error("Sesi Google tidak tersedia. Silakan masuk kembali.");
-
-        const response = await fetch("/api/auth/reviewer-session", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-          throw new Error(result.error || "Akun Google ini belum memiliki hak admin/reviewer.");
-        }
-        if (active) router.replace("/reviewer");
-      } catch (error: unknown) {
-        if (active) {
-          setReviewerError(error instanceof Error ? error.message : "Login admin dengan Google gagal.");
-        }
-      } finally {
-        if (active) setReviewerPending(false);
-      }
+  // Exchange the live Supabase token for the reviewer session cookie, then enter
+  // the dashboard. Throws if the account lacks the server-managed REVIEWER role.
+  const establishReviewerSession = useCallback(async () => {
+    const { data, error } = await supabaseBrowser().auth.getSession();
+    const token = data.session?.access_token;
+    if (error || !token) throw new Error("Sesi Google tidak tersedia. Silakan masuk kembali.");
+    const response = await fetch("/api/auth/reviewer-session", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Akun ini belum memiliki hak admin/reviewer.");
     }
+    router.replace("/reviewer");
+  }, [router]);
 
-    void openReviewerSession();
+  // Route a freshly signed-in user by role: reviewers to the dashboard, everyone
+  // else back to their intended destination.
+  const routeByRole = useCallback(
+    async (user: { app_metadata?: Record<string, unknown> } | null) => {
+      if (isReviewerUser(user)) {
+        await establishReviewerSession();
+      } else {
+        router.replace(destination);
+      }
+    },
+    [establishReviewerSession, router, destination],
+  );
+
+  // After returning from an OAuth login started here (or a middleware bounce into
+  // reviewer mode), send the account to the right place based on its role.
+  useEffect(() => {
+    if (!auth.ready || !auth.user || typeof window === "undefined") return;
+    const fromLogin = sessionStorage.getItem(AUTH_RETURN_KEY) === "1";
+    if (!fromLogin && authMode !== "reviewer") return;
+    if (postLoginRef.current === auth.user.id) return;
+    postLoginRef.current = auth.user.id;
+    sessionStorage.removeItem(AUTH_RETURN_KEY);
+
+    const user = auth.user;
+    let active = true;
+    void (async () => {
+      if (isReviewerUser(user)) {
+        setReviewerError("");
+        setReviewerPending(true);
+        try {
+          await establishReviewerSession();
+        } catch (error: unknown) {
+          if (active) setReviewerError(error instanceof Error ? error.message : "Login admin gagal.");
+        } finally {
+          if (active) setReviewerPending(false);
+        }
+      } else if (authMode === "reviewer") {
+        if (active) setReviewerError("Akun Google ini belum memiliki hak admin/reviewer.");
+      } else {
+        router.replace(destination);
+      }
+    })();
     return () => {
       active = false;
     };
-  }, [auth.ready, auth.user, authMode, router]);
+  }, [auth.ready, auth.user, authMode, destination, router, establishReviewerSession]);
 
 
   async function signInWithGoogle() {
@@ -101,11 +132,13 @@ export function LoginForm() {
     }
     setPending("google");
     try {
+      sessionStorage.setItem(AUTH_RETURN_KEY, "1");
       const { error } = await supabaseBrowser().auth.signInWithOAuth(
-        googleSignInOptions(window.location.origin, destination),
+        loginReturnGoogleSignInOptions(window.location.origin, destination),
       );
       if (error) throw error;
     } catch (err: unknown) {
+      sessionStorage.removeItem(AUTH_RETURN_KEY);
       const errMessage = err instanceof Error ? err.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.";
       setMessage(errMessage);
       setPending(null);
@@ -121,11 +154,13 @@ export function LoginForm() {
     }
     setReviewerPending(true);
     try {
+      sessionStorage.setItem(AUTH_RETURN_KEY, "1");
       const { error } = await supabaseBrowser().auth.signInWithOAuth(
         reviewerGoogleSignInOptions(window.location.origin),
       );
       if (error) throw error;
     } catch (error: unknown) {
+      sessionStorage.removeItem(AUTH_RETURN_KEY);
       setReviewerError(error instanceof Error ? error.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.");
       setReviewerPending(false);
     }
@@ -190,7 +225,11 @@ export function LoginForm() {
       });
       if (error) throw error;
       if (data.session) {
-        router.replace(destination);
+        try {
+          await routeByRole(data.user);
+        } catch (routeError: unknown) {
+          setMessage(routeError instanceof Error ? routeError.message : "Gagal melanjutkan setelah masuk.");
+        }
       }
     } catch {
       setPasswordError("Email atau kata sandi tidak cocok. Silakan periksa kembali.");
@@ -373,7 +412,24 @@ export function LoginForm() {
         {auth.profile && !auth.error && (
           <div className={styles.status}>
             <p>Sesi aktif: {auth.profile.displayName} ({auth.profile.email}).</p>
-            <button type="button" className={`${styles.button} ${styles.google}`} disabled={busy} onClick={() => router.replace(destination)}>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.google}`}
+              disabled={busy}
+              onClick={() => {
+                void (async () => {
+                  setMessage("");
+                  setPending("google");
+                  try {
+                    await routeByRole(auth.user);
+                  } catch (error: unknown) {
+                    setMessage(error instanceof Error ? error.message : "Gagal melanjutkan sesi.");
+                  } finally {
+                    setPending(null);
+                  }
+                })();
+              }}
+            >
               Lanjut sebagai {auth.profile.shortName}
             </button>
             <p>Untuk memilih akun lain, gunakan tombol Google atau masuk dengan email.</p>

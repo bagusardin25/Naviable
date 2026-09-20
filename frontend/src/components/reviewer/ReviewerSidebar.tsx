@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, ClipboardList, History, MapPin, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import styles from '@/app/reviewer/reviewer.module.css';
 
 interface ReviewerSidebarProps {
@@ -15,6 +16,7 @@ interface ReviewerSidebarProps {
 export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
 
   const navItems = [
     { href: '/reviewer', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -67,11 +69,11 @@ export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
       <div className={styles.sidebarFooter}>
         <div className={styles.reviewerProfile}>
           <div className={styles.reviewerAvatar} aria-hidden="true">
-            R
+            {auth.profile?.initials ?? 'R'}
           </div>
           <div className={styles.reviewerInfo}>
-            <div className={styles.reviewerTitle}>Reviewer Naviable</div>
-            <div className={styles.reviewerHandle}>reviewer.naviable</div>
+            <div className={styles.reviewerTitle}>{auth.profile?.displayName ?? 'Reviewer Naviable'}</div>
+            <div className={styles.reviewerHandle}>{auth.profile?.email ?? 'Reviewer terverifikasi'}</div>
           </div>
         </div>
 

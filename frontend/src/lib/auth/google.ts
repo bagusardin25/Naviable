@@ -22,6 +22,19 @@ export function reviewerGoogleSignInOptions(origin: string): SignInWithOAuthCred
   };
 }
 
+// General login returns to /login (carrying a sanitized next) so the page can
+// route by role: reviewers to the dashboard, everyone else to their destination.
+export function loginReturnGoogleSignInOptions(origin: string, destination: string): SignInWithOAuthCredentials {
+  const next = safeReturnTo(destination);
+  return {
+    provider: 'google',
+    options: {
+      redirectTo: `${new URL(origin).origin}/login?next=${encodeURIComponent(next)}`,
+      queryParams: { prompt: 'select_account' },
+    },
+  };
+}
+
 export function authCallbackError(search: string, hash: string): string {
   const query = new URLSearchParams(search);
   const fragment = new URLSearchParams(hash.replace(/^#/, ''));
