@@ -175,6 +175,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
     root.classList.toggle('dark', preferences.darkMode);
     root.classList.toggle('contrast-mode', preferences.contrast);
+    root.classList.toggle('high-contrast', preferences.contrast);
     root.classList.toggle('large-text', preferences.largeText);
     root.classList.toggle('reduce-motion', preferences.reduceMotion);
     root.classList.toggle('dyslexia-mode', preferences.dyslexia);
@@ -185,6 +186,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
     root.setAttribute('data-a11y-dark', String(preferences.darkMode));
     root.setAttribute('data-a11y-contrast', String(preferences.contrast));
+    root.setAttribute('data-a11y-high-contrast', String(preferences.contrast));
     root.setAttribute('data-a11y-large-text', String(preferences.largeText));
     root.setAttribute('data-a11y-reduce-motion', String(preferences.reduceMotion));
     root.setAttribute('data-a11y-dyslexia', String(preferences.dyslexia));

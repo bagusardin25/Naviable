@@ -84,51 +84,97 @@ export type Place = {
   elements: ElementItem[];
 };
 
-export type StatusMeta = {
+export type AccessibilityStatusConfigItem = {
+  id: AccessibilityStatus;
   label: string;
   short: string;
   symbol: string;
+  icon: 'check' | 'warning' | 'alert-circle' | 'x-circle' | 'help-circle';
   color: string;
+  colorVar: string;
+  bgVar: string;
+  borderVar: string;
+  borderStyle: 'solid' | 'dashed' | 'dotted' | 'double';
+  badgeClass: string;
   pattern: string;
 };
 
-export const STATUS_META: Record<AccessibilityStatus, StatusMeta> = {
+export type StatusMeta = AccessibilityStatusConfigItem;
+
+export const ACCESSIBILITY_STATUS_CONFIG: Record<AccessibilityStatus, AccessibilityStatusConfigItem> = {
   UTUH: {
+    id: 'UTUH',
     label: 'Bisa digunakan',
     short: 'Dapat dipakai mandiri',
     symbol: '✓',
+    icon: 'check',
     color: '#16a25a',
+    colorVar: 'var(--status-positive-ink)',
+    bgVar: 'var(--status-positive-bg)',
+    borderVar: 'var(--status-positive-border)',
+    borderStyle: 'solid',
+    badgeClass: 'status-utuh',
     pattern: 'solid',
   },
   TERHALANG: {
+    id: 'TERHALANG',
     label: 'Terhalang',
     short: 'Ada, tetapi sedang terhalang',
     symbol: '!',
+    icon: 'warning',
     color: '#e78a16',
+    colorVar: 'var(--status-warning-ink)',
+    bgVar: 'var(--status-warning-bg)',
+    borderVar: 'var(--status-warning-border)',
+    borderStyle: 'dashed',
+    badgeClass: 'status-terhalang',
     pattern: 'dashed',
   },
   TIDAK_STANDAR: {
+    id: 'TIDAK_STANDAR',
     label: 'Perlu perhatian',
     short: 'Ada, tetapi berpotensi tidak aman/mandiri',
     symbol: '•',
+    icon: 'alert-circle',
     color: '#d4a100',
+    colorVar: 'var(--status-attention-ink)',
+    bgVar: 'var(--status-attention-bg)',
+    borderVar: 'var(--status-attention-border)',
+    borderStyle: 'dotted',
+    badgeClass: 'status-tidak_standar',
     pattern: 'dotted',
   },
   TIDAK_ADA: {
-    label: 'Tidak tersedia',
+    id: 'TIDAK_ADA',
+    label: 'Tidak ada',
     short: 'Fasilitas belum tersedia',
     symbol: '×',
+    icon: 'x-circle',
     color: '#df3a43',
+    colorVar: 'var(--status-negative-ink)',
+    bgVar: 'var(--status-negative-bg)',
+    borderVar: 'var(--status-negative-border)',
+    borderStyle: 'double',
+    badgeClass: 'status-tidak_ada',
     pattern: 'cross',
   },
   BELUM_DIKETAHUI: {
+    id: 'BELUM_DIKETAHUI',
     label: 'Belum diketahui',
     short: 'Belum ada data verifikasi',
     symbol: '?',
+    icon: 'help-circle',
     color: '#7d8798',
+    colorVar: 'var(--status-unknown-ink)',
+    bgVar: 'var(--status-unknown-bg)',
+    borderVar: 'var(--status-unknown-border)',
+    borderStyle: 'solid',
+    badgeClass: 'status-belum_diketahui',
     pattern: 'empty',
   },
 };
+
+export const STATUS_META: Record<AccessibilityStatus, StatusMeta> = ACCESSIBILITY_STATUS_CONFIG;
 
 export type WheelchairStatusMeta = {
   label: string;
@@ -225,12 +271,12 @@ export function calculatePlaceProfileStatus(
     if (contributorElements.some((e) => e.status === 'TIDAK_ADA')) {
       return {
         status: 'TIDAK_ADA',
-        label: 'Tidak tersedia',
+        label: 'Tidak ada',
         short: 'Fasilitas akses dilaporkan tidak ada',
         symbol: '✕',
         color: '#df3a43',
         pattern: 'cross',
-        ariaLabel: 'status tidak tersedia',
+        ariaLabel: 'status tidak ada',
         badgeClass: 'status-tidak_ada',
         isPreSurvey: false,
       };

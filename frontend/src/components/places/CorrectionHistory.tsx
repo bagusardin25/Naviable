@@ -4,11 +4,10 @@ import React from 'react';
 import Image from 'next/image';
 import { ApiReport, mediaUrl } from '@/lib/api';
 import {
-  AccessibilityStatus,
   CHAIN_ELEMENT_MAP,
   ChainElementCode,
-  STATUS_META,
 } from '@/types';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 const CODE_BY_NAME = Object.fromEntries(
   (Object.entries(CHAIN_ELEMENT_MAP) as [ChainElementCode, (typeof CHAIN_ELEMENT_MAP)[ChainElementCode]][]).map(
@@ -21,9 +20,6 @@ function elementLabel(name: string): string {
   return code ? `${code} · ${CHAIN_ELEMENT_MAP[code].label}` : name;
 }
 
-function statusText(status: AccessibilityStatus): string {
-  return STATUS_META[status]?.label ?? status;
-}
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -94,19 +90,13 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
               </div>
 
               <ul style={{ listStyle: 'none', margin: '0 0 8px', padding: 0, display: 'grid', gap: '4px' }}>
-                {report.elements.map((evidence) => {
-                  const meta = STATUS_META[evidence.status];
-                  return (
-                    <li key={evidence.element} style={{ fontSize: '13px', color: 'var(--ink)' }}>
-                      <span aria-hidden="true" style={{ color: meta?.color ?? 'var(--muted)', fontWeight: 700 }}>
-                        {meta?.symbol ?? '?'}
-                      </span>{' '}
-                      <strong>{elementLabel(evidence.element)}</strong>:{' '}
-                      <span>{statusText(evidence.status)}</span>
-                      {evidence.note ? <span style={{ color: 'var(--muted)' }}> — {evidence.note}</span> : null}
-                    </li>
-                  );
-                })}
+                {report.elements.map((evidence) => (
+                  <li key={evidence.element} style={{ fontSize: '13px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <strong>{elementLabel(evidence.element)}</strong>:
+                    <StatusBadge status={evidence.status} size="sm" />
+                    {evidence.note ? <span style={{ color: 'var(--muted)' }}> — {evidence.note}</span> : null}
+                  </li>
+                ))}
               </ul>
 
               <a

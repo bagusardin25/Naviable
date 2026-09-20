@@ -1,6 +1,7 @@
 import React from 'react';
 import { Place, STATUS_META, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { extractStreetName } from '@/lib/streetSearch';
 
 type PlaceCardProps = {
@@ -15,17 +16,6 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
   const freshness = getEvidenceFreshness(place.updatedAt);
   const streetName = extractStreetName(place.address);
   const statusDescription = `${meta.label}, kondisi: ${freshness.label}`;
-
-  const statusIcon =
-    meta.status === 'UTUH'
-      ? 'check-circle'
-      : meta.status === 'TERHALANG'
-      ? 'warning'
-      : meta.status === 'TIDAK_STANDAR'
-      ? 'alert-circle'
-      : meta.status === 'TIDAK_ADA'
-      ? 'x-circle'
-      : 'help-circle';
 
   const freshnessIcon =
     freshness.level === 'fresh'
@@ -55,12 +45,8 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
           )}
         </span>
       </div>
-
       <div className="place-card-badges">
-        <span className={`status-badge ${meta.badgeClass}`} data-status={meta.status}>
-          <Icon name={statusIcon} size={11} />
-          <span>{meta.label}</span>
-        </span>
+        <StatusBadge status={meta.status} size="sm" label={meta.label} />
         <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`}>
           <Icon name={freshnessIcon} size={11} />
           <span>{freshness.label}</span>

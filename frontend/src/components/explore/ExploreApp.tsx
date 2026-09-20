@@ -415,8 +415,8 @@ export default function ExploreApp() {
                       className={`status-pill-btn ${showJourney ? 'active' : ''}`}
                       style={
                         showJourney
-                          ? { background: '#6d45cc', color: '#ffffff', borderColor: '#5632b6' }
-                          : { borderColor: '#c4b5fd', color: '#6d45cc', background: '#f5f3ff' }
+                          ? { background: 'var(--purple)', color: 'var(--bg)', borderColor: 'var(--purple-700)' }
+                          : { borderColor: 'var(--border)', color: 'var(--ink)', background: 'var(--surface)' }
                       }
                       onClick={() => setShowJourney(!showJourney)}
                       title="Buka petunjuk rute akses"
@@ -509,6 +509,7 @@ export default function ExploreApp() {
                   <button
                     type="button"
                     data-status="all"
+                    aria-pressed={statusFilter === 'all'}
                     className={`status-pill-btn ${statusFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('all')}
                   >
@@ -517,15 +518,17 @@ export default function ExploreApp() {
                   <button
                     type="button"
                     data-status="UTUH"
+                    aria-pressed={statusFilter === 'UTUH'}
                     className={`status-pill-btn ${statusFilter === 'UTUH' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('UTUH')}
                   >
-                    <Icon name="check-circle" size={13} />
-                    <span>Bisa Digunakan ({statusCounts.UTUH})</span>
+                    <Icon name="check" size={13} />
+                    <span>Bisa digunakan ({statusCounts.UTUH})</span>
                   </button>
                   <button
                     type="button"
                     data-status="TERHALANG"
+                    aria-pressed={statusFilter === 'TERHALANG'}
                     className={`status-pill-btn ${statusFilter === 'TERHALANG' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TERHALANG')}
                   >
@@ -535,29 +538,32 @@ export default function ExploreApp() {
                   <button
                     type="button"
                     data-status="TIDAK_STANDAR"
+                    aria-pressed={statusFilter === 'TIDAK_STANDAR'}
                     className={`status-pill-btn ${statusFilter === 'TIDAK_STANDAR' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_STANDAR')}
                   >
                     <Icon name="alert-circle" size={13} />
-                    <span>Perlu Perhatian ({statusCounts.TIDAK_STANDAR})</span>
+                    <span>Perlu perhatian ({statusCounts.TIDAK_STANDAR})</span>
                   </button>
                   <button
                     type="button"
                     data-status="TIDAK_ADA"
+                    aria-pressed={statusFilter === 'TIDAK_ADA'}
                     className={`status-pill-btn ${statusFilter === 'TIDAK_ADA' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('TIDAK_ADA')}
                   >
                     <Icon name="x-circle" size={13} />
-                    <span>Tidak Ada ({statusCounts.TIDAK_ADA})</span>
+                    <span>Tidak ada ({statusCounts.TIDAK_ADA})</span>
                   </button>
                   <button
                     type="button"
                     data-status="BELUM_DIKETAHUI"
+                    aria-pressed={statusFilter === 'BELUM_DIKETAHUI'}
                     className={`status-pill-btn ${statusFilter === 'BELUM_DIKETAHUI' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('BELUM_DIKETAHUI')}
                   >
                     <Icon name="help-circle" size={13} />
-                    <span>Belum Diketahui ({statusCounts.BELUM_DIKETAHUI})</span>
+                    <span>Belum diketahui ({statusCounts.BELUM_DIKETAHUI})</span>
                   </button>
                 </div>
 
