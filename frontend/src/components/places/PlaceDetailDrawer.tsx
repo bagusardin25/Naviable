@@ -7,6 +7,7 @@ import { AccessibilityChain } from './AccessibilityChain';
 import { CorrectionHistory } from './CorrectionHistory';
 import { PlaceReviews } from './PlaceReviews';
 import { fetchPlaceReports, type ApiReport } from '@/lib/api';
+import { buildGoogleMapsPlaceUrl } from '@/lib/externalMaps';
 
 type PlaceDetailDrawerProps = {
   place: Place | null;
@@ -105,6 +106,10 @@ export function PlaceDetailDrawer({
   const freshness = getEvidenceFreshness(place.updatedAt);
   const conditionChanges = detectConditionChanges(historySettled ? history.reports : []);
   const unknownElements = place.elements.filter((element) => element.status === 'BELUM_DIKETAHUI').length;
+  const googleMapsPlaceUrl =
+    !place.needsGeocoding && place.lat !== null && place.lng !== null
+      ? buildGoogleMapsPlaceUrl({ destination: place, travelMode: 'walking' })
+      : null;
 
   const statusIcon =
     meta.status === 'UTUH'
@@ -298,10 +303,26 @@ export function PlaceDetailDrawer({
         </div>
       </div>
 
+      {googleMapsPlaceUrl && (
+        <a
+          id="btn-google-maps-directions"
+          href={googleMapsPlaceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="google-maps-btn"
+          style={{ width: '100%', marginTop: '14px' }}
+          aria-label={`Buka petunjuk arah ke ${place.name} di Google Maps (membuka tab baru)`}
+        >
+          <Icon name="navigation" size={15} />
+          <span>Petunjuk Arah (Google Maps)</span>
+          <Icon name="external-link" size={13} />
+        </a>
+      )}
+
       <button
         id="btn-correct-place"
         className="secondary-action"
-        style={{ width: '100%', marginTop: '14px' }}
+        style={{ width: '100%', marginTop: googleMapsPlaceUrl ? '8px' : '14px' }}
         onClick={() => onCorrectPlace(place)}
         type="button"
       >
