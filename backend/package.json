@@ -10,6 +10,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "test:providers": "node scripts/provider-smoke.mjs",
     "test:sql": "node scripts/sql-test.mjs",
     "test:smoke": "node scripts/smoke-loop.mjs",
     "seed": "tsx src/seed.ts"
