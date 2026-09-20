@@ -1,7 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import { cleanVoiceQuery, getVoiceErrorMessage } from '@/lib/voice-search';
+
+function subscribeNoop() {
+  return () => {};
+}
+
+function checkSpeechSupport(): boolean {
+  if (typeof window === 'undefined') return false;
+  const speechWindow = window as unknown as IWindowWithSpeech;
+  return Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition);
+}
 
 // Definisi antarmuka Web Speech API untuk kompatibilitas lintas peramban & TypeScript
 interface IWindowWithSpeech extends Window {
@@ -69,7 +79,11 @@ export function useVoiceSearch({
   onResult,
   onError,
 }: UseVoiceSearchOptions = {}): UseVoiceSearchResult {
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = useSyncExternalStore(
+    subscribeNoop,
+    checkSpeechSupport,
+    () => false
+  );
   const [isListening, setIsListening] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -77,23 +91,15 @@ export function useVoiceSearch({
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const isManuallyAbortedRef = useRef(false);
   const latestTranscriptRef = useRef('');
+  const interimTranscriptRef = useRef('');
 
-  // Periksa dukungan Web Speech API saat mount
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const speechWindow = window as unknown as IWindowWithSpeech;
-    const hasSpeechSupport = Boolean(
-      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition
-    );
-    setIsSupported(hasSpeechSupport);
-  }, []);
-
-  // Simpan callback terbaru agar tidak menyebabkan re-instansiasi
+  // Simpan callback terbaru di dalam effect agar sesuai aturan React 19
   const onResultRef = useRef(onResult);
-  onResultRef.current = onResult;
-
   const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
+  useEffect(() => {
+    onResultRef.current = onResult;
+    onErrorRef.current = onError;
+  });
 
   const cancelListening = useCallback(() => {
     isManuallyAbortedRef.current = true;
@@ -105,6 +111,7 @@ export function useVoiceSearch({
       }
     }
     setIsListening(false);
+    interimTranscriptRef.current = '';
     setInterimTranscript('');
   }, []);
 
@@ -128,6 +135,7 @@ export function useVoiceSearch({
     setErrorMessage(null);
     setInterimTranscript('');
     latestTranscriptRef.current = '';
+    interimTranscriptRef.current = '';
     isManuallyAbortedRef.current = false;
 
     const speechWindow = window as unknown as IWindowWithSpeech;
@@ -177,12 +185,14 @@ export function useVoiceSearch({
         }
 
         if (interim) {
+          interimTranscriptRef.current = interim;
           setInterimTranscript(interim);
         }
 
         if (final) {
           const cleaned = cleanVoiceQuery(final);
           latestTranscriptRef.current = cleaned;
+          interimTranscriptRef.current = cleaned;
           setInterimTranscript(cleaned);
           if (cleaned && onResultRef.current) {
             onResultRef.current(cleaned);
@@ -206,8 +216,8 @@ export function useVoiceSearch({
       recognition.onend = () => {
         setIsListening(false);
         // Jika recognition selesai dan ada transkrip interim yang belum difinalisasi
-        if (!latestTranscriptRef.current && interimTranscript.trim()) {
-          const cleaned = cleanVoiceQuery(interimTranscript);
+        if (!latestTranscriptRef.current && interimTranscriptRef.current.trim()) {
+          const cleaned = cleanVoiceQuery(interimTranscriptRef.current);
           if (cleaned) {
             latestTranscriptRef.current = cleaned;
             onResultRef.current?.(cleaned);
@@ -224,7 +234,7 @@ export function useVoiceSearch({
       setIsListening(false);
       onErrorRef.current?.(friendlyMsg);
     }
-  }, [lang, interimTranscript]);
+  }, [lang]);
 
   // Bersihkan saat komponen unmount
   useEffect(() => {

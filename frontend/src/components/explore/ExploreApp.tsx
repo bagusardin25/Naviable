@@ -74,7 +74,7 @@ export default function ExploreApp() {
     }
   }
 
-  function setScreen(next: Screen) {
+  const setScreen = useCallback((next: Screen) => {
     if (next === 'profile' && !auth.user) {
       setShowAuthModal(true);
       return;
@@ -85,7 +85,7 @@ export default function ExploreApp() {
     if (next !== screen) {
       router.push(screenHref(next, searchParams.toString()));
     }
-  }
+  }, [auth.user, screen, router, searchParams]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,7 +179,7 @@ export default function ExploreApp() {
     : 'Memuat data tempat dari server…';
 
   const handleSearchSubmit = useCallback(
-    (query: string, source: 'voice' | 'text') => {
+    (query: string) => {
       const clean = query.trim();
       if (!clean) return;
 
@@ -203,7 +203,7 @@ export default function ExploreApp() {
         setTimeout(() => setCustomAnnouncement(null), 5000);
       }
     },
-    [places]
+    [places, setScreen]
   );
 
   function handleSelectPlace(place: Place) {
