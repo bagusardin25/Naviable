@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, ClipboardList, History, MapPin, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from '@/app/reviewer/reviewer.module.css';
 
 interface ReviewerSidebarProps {
@@ -14,15 +16,16 @@ interface ReviewerSidebarProps {
 }
 
 export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
 
   const navItems = [
-    { href: '/reviewer', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-    { href: '/reviewer/reports', label: 'Laporan Masuk', icon: ClipboardList, exact: false },
-    { href: '/reviewer/history', label: 'Riwayat Review', icon: History, exact: false },
-    { href: '/jelajah', label: 'Kembali ke Peta', icon: MapPin, exact: false },
+    { href: '/reviewer', label: t('reviewer.dashboardNav'), icon: LayoutDashboard, exact: true },
+    { href: '/reviewer/reports', label: t('reviewer.incomingNav'), icon: ClipboardList, exact: false },
+    { href: '/reviewer/history', label: t('reviewer.historyNav'), icon: History, exact: false },
+    { href: '/jelajah', label: t('reviewer.backToMapNav'), icon: MapPin, exact: false },
   ];
 
   async function handleLogout() {
@@ -36,13 +39,13 @@ export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
   }
 
   return (
-    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`} aria-label="Navigasi Reviewer">
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`} aria-label={t('reviewer.panelTitle')}>
       <div className={styles.sidebarHeader}>
         <Link href="/" className={styles.sidebarBrand} onClick={onClose}>
           <Image src="/logo-only-light-3.png" alt="NaviAble Logo" width={32} height={32} />
           <span>NaviAble</span>
         </Link>
-        <span className={styles.badgeReviewer}>Reviewer</span>
+        <span className={styles.badgeReviewer}>{t('reviewer.badge')}</span>
       </div>
 
       <nav className={styles.sidebarNav}>
@@ -67,6 +70,10 @@ export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
       </nav>
 
       <div className={styles.sidebarFooter}>
+        <div style={{ paddingBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+          <LanguageSwitcher size="sm" />
+        </div>
+
         <div className={styles.reviewerProfile}>
           <div className={styles.reviewerAvatar} aria-hidden="true">
             {auth.profile?.initials ?? 'R'}
@@ -81,10 +88,10 @@ export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
           type="button"
           onClick={handleLogout}
           className={styles.logoutButton}
-          aria-label="Keluar dari akun reviewer"
+          aria-label={t('reviewer.logoutNav')}
         >
           <LogOut size={16} aria-hidden="true" />
-          <span>Logout</span>
+          <span>{t('reviewer.logoutNav')}</span>
         </button>
       </div>
     </aside>

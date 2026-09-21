@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { contributionLabel, loginHref, parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
+import { parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/hooks/useTranslation";
 import { loginReturnGoogleSignInOptions, reviewerGoogleSignInOptions } from "@/lib/auth/google";
 import { isReviewerUser } from "@/lib/auth/session";
 import { AuthModeSwitch, type AuthMode } from "@/components/auth/AuthModeSwitch";
@@ -22,13 +23,22 @@ const AUTH_RETURN_KEY = "naviable:auth-return";
 type LoginMode = AuthMode | "reviewer";
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const auth = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const destination = safeReturnTo(searchParams.get("next"));
   const returnQuery = destination.split("?")[1] ?? "";
   const guestDestination = screenHref("map", returnQuery);
-  const action = contributionLabel(parseScreen(new URLSearchParams(returnQuery).get("screen")));
+  const screen = parseScreen(new URLSearchParams(returnQuery).get("screen"));
+  const actionText =
+    screen === 'add'
+      ? t('auth.actionAddPlace')
+      : screen === 'report'
+      ? t('auth.actionReport')
+      : screen === 'review'
+      ? t('auth.actionReview')
+      : t('auth.actionContribute');
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -49,7 +59,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState<"google" | "email" | null>(null);
-  const [policy, setPolicy] = useState("Ketentuan Layanan");
+  const [policy, setPolicy] = useState(t('auth.termsBtn'));
 
   // Reviewer specific states
   const [reviewerUsername, setReviewerUsername] = useState("");
@@ -124,12 +134,11 @@ export function LoginForm() {
     };
   }, [auth.ready, auth.user, authMode, destination, router, establishReviewerSession]);
 
-
   async function signInWithGoogle() {
     if (busy) return;
     setMessage("");
     if (!authConfigured) {
-      setMessage("Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.");
+      setMessage(t('auth.supabaseNotConfigured'));
       return;
     }
     setPending("google");
@@ -141,7 +150,7 @@ export function LoginForm() {
       if (error) throw error;
     } catch (err: unknown) {
       sessionStorage.removeItem(AUTH_RETURN_KEY);
-      const errMessage = err instanceof Error ? err.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.";
+      const errMessage = err instanceof Error ? err.message : t('auth.googleConnectFailed');
       setMessage(errMessage);
       setPending(null);
     }
@@ -151,7 +160,7 @@ export function LoginForm() {
     if (busy) return;
     setReviewerError("");
     if (!authConfigured) {
-      setReviewerError("Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.");
+      setReviewerError(t('auth.supabaseNotConfigured'));
       return;
     }
     setReviewerPending(true);
@@ -163,7 +172,7 @@ export function LoginForm() {
       if (error) throw error;
     } catch (error: unknown) {
       sessionStorage.removeItem(AUTH_RETURN_KEY);
-      setReviewerError(error instanceof Error ? error.message : "Tidak dapat terhubung ke Google. Silakan coba lagi.");
+      setReviewerError(error instanceof Error ? error.message : t('auth.googleConnectFailed'));
       setReviewerPending(false);
     }
   }
@@ -177,19 +186,19 @@ export function LoginForm() {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError("Masukkan alamat email yang valid (contoh: relawan@naviable.org).");
+      setEmailError(t('validation.emailInvalid'));
       emailRef.current?.focus();
       return;
     }
 
     if (!password || password.length < 6) {
-      setPasswordError("Kata sandi minimal terdiri dari 6 karakter.");
+      setPasswordError(t('validation.passwordMinLength'));
       passwordRef.current?.focus();
       return;
     }
 
     if (!authConfigured) {
-      setMessage("Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.");
+      setMessage(t('auth.supabaseNotConfigured'));
       return;
     }
 
@@ -200,17 +209,17 @@ export function LoginForm() {
           email: trimmedEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}${loginHref(destination)}`,
+            emailRedirectTo: `${window.location.origin}${destination ? `/login?next=${encodeURIComponent(destination)}` : '/login'}`,
           },
         });
         if (error) throw error;
         if (data.session) {
           router.replace(destination);
         } else {
-          setMessage(`Jika alamat ini dapat didaftarkan, tautan konfirmasi dikirim ke ${trimmedEmail}. Periksa kotak masuk dan spam; jika sudah memiliki akun, pilih Masuk.`);
+          setMessage(t('auth.signUpVerificationSent', { email: trimmedEmail }));
         }
       } catch (err: unknown) {
-        const errMessage = err instanceof Error ? err.message : "Gagal mendaftarkan akun.";
+        const errMessage = err instanceof Error ? err.message : t('auth.signUpFailed');
         setMessage(errMessage);
       } finally {
         setPending(null);
@@ -234,7 +243,7 @@ export function LoginForm() {
         }
       }
     } catch {
-      setPasswordError("Email atau kata sandi tidak cocok. Silakan periksa kembali.");
+      setPasswordError(t('auth.credentialsInvalidError'));
       passwordRef.current?.focus();
     } finally {
       setPending(null);
@@ -292,8 +301,8 @@ export function LoginForm() {
       <div className={styles.loginShell}>
         <header className={styles.heading}>
           <p className={styles.modeKicker}>Portal reviewer</p>
-          <h1 id="login-heading">Masuk sebagai reviewer</h1>
-          <p>Verifikasi laporan aksesibilitas dengan akun yang telah diberi hak reviewer Naviable.</p>
+          <h1 id="login-heading">{t('auth.reviewerHeading')}</h1>
+          <p>{t('auth.reviewerSub')}</p>
         </header>
 
         <div className={styles.form}>
@@ -305,7 +314,7 @@ export function LoginForm() {
               setReviewerError("");
             }}
           >
-            Masuk sebagai pengguna umum
+            {t('auth.reviewerBackToUser')}
           </button>
 
           <div className={styles.socialButtons}>
@@ -316,17 +325,17 @@ export function LoginForm() {
               disabled={busy}
             >
               <GoogleIcon />
-              <span>{reviewerPending ? "Memeriksa akun…" : "Lanjut sebagai reviewer dengan Google"}</span>
+              <span>{reviewerPending ? t('auth.reviewerGoogleChecking') : t('auth.reviewerGoogleBtn')}</span>
             </button>
           </div>
 
           <div className={styles.divider}>
-            <span>atau gunakan email reviewer</span>
+            <span>{t('auth.orWithEmail')}</span>
           </div>
 
           <form onSubmit={submitReviewerLogin} noValidate aria-busy={busy}>
             <div className={styles.field}>
-              <label htmlFor="reviewer-username">Email reviewer</label>
+              <label htmlFor="reviewer-username">{t('auth.reviewerUsernameLabel')}</label>
               <div className={styles.inputWrapper}>
                 <span className={styles.inputIcon} aria-hidden="true">
                   <MailIcon />
@@ -350,7 +359,7 @@ export function LoginForm() {
             </div>
 
             <div className={`${styles.field} ${styles.fieldSpaced}`}>
-              <label htmlFor="reviewer-password">Kata Sandi</label>
+              <label htmlFor="reviewer-password">{t('auth.reviewerPasswordLabel')}</label>
               <div className={styles.inputWrapper}>
                 <span className={styles.inputIcon} aria-hidden="true">
                   <LockIcon />
@@ -361,7 +370,7 @@ export function LoginForm() {
                   name="reviewer-password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  placeholder="Masukkan kata sandi"
+                  placeholder={t('auth.passwordPlaceholderSignIn')}
                   value={reviewerPassword}
                   required
                   disabled={busy}
@@ -374,7 +383,7 @@ export function LoginForm() {
                   type="button"
                   className={styles.toggleVisibility}
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                   aria-pressed={showPassword}
                 >
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -390,7 +399,7 @@ export function LoginForm() {
 
             <button className={`${styles.button} ${styles.loginButton}`} type="submit" disabled={busy}>
               <LoginIcon />
-              <span>{reviewerPending ? "Memeriksa…" : "Masuk sebagai reviewer"}</span>
+              <span>{reviewerPending ? t('auth.reviewerEmailChecking') : t('auth.reviewerEmailSubmit')}</span>
             </button>
           </form>
         </div>
@@ -419,7 +428,7 @@ export function LoginForm() {
         {auth.error && <p className={`${styles.status} ${styles.statusError}`} role="alert">{auth.error}</p>}
         {auth.profile && !auth.error && (
           <div className={styles.status}>
-            <p>Sesi aktif: {auth.profile.displayName} ({auth.profile.email}).</p>
+            <p>{t('auth.activeSession', { name: auth.profile.displayName, email: auth.profile.email })}</p>
             <button
               type="button"
               className={`${styles.button} ${styles.google}`}
@@ -438,15 +447,15 @@ export function LoginForm() {
                 })();
               }}
             >
-              Lanjut sebagai {auth.profile.shortName}
+              {t('auth.continueAs', { name: auth.profile.shortName })}
             </button>
-            <p>Untuk memilih akun lain, gunakan tombol Google atau masuk dengan email.</p>
+            <p>{t('auth.chooseAnotherGoogle')}</p>
           </div>
         )}
 
         {searchParams.has("next") && (
           <p role="note" className={styles.status}>
-            Masuk untuk {action}. Setelah masuk, Anda akan langsung kembali ke aksi ini. Peta dan informasi lokasi tetap bisa dijelajahi tanpa akun.
+            {t('auth.actionPromptPrefix')} {actionText}. {t('auth.actionPromptSuffix')}
           </p>
         )}
 
@@ -459,19 +468,22 @@ export function LoginForm() {
             disabled={busy}
           >
             <GoogleIcon />
-            <span>{pending === "google" ? "Menghubungkan Google…" : "Lanjut dengan Google"}</span>
+            <span>{pending === "google" ? t('auth.googleConnecting') : t('auth.googleContinue')}</span>
           </button>
         </div>
 
         <div className={styles.divider}>
-          <span>atau masuk dengan email</span>
+          <span>{t('auth.orWithEmail')}</span>
         </div>
 
         <AuthModeSwitch
-          mode={authMode}
+          mode={authMode as AuthMode}
           className={styles.modeTabs}
           buttonClassName={styles.tabBtn}
           activeClassName={styles.tabActive}
+          signinLabel={t('auth.tabSignIn')}
+          signupLabel={t('auth.tabSignUp')}
+          ariaLabel={t('auth.modalTitle')}
           onChange={(mode) => {
             setAuthMode(mode);
             setEmailError("");
@@ -482,7 +494,7 @@ export function LoginForm() {
 
         {/* Email Field */}
         <div className={styles.field}>
-          <label htmlFor="auth-email">Alamat Email</label>
+          <label htmlFor="auth-email">{t('auth.emailLabel')}</label>
           <div className={styles.inputWrapper}>
             <span className={styles.inputIcon} aria-hidden="true">
               <MailIcon />
@@ -494,7 +506,7 @@ export function LoginForm() {
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="nama@domain.com"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               required
               disabled={busy}
@@ -515,7 +527,7 @@ export function LoginForm() {
         </div>
 
         <div className={`${styles.field} ${styles.fieldSpaced}`}>
-          <label htmlFor="auth-password">Kata Sandi</label>
+          <label htmlFor="auth-password">{t('auth.passwordLabel')}</label>
           <div className={styles.inputWrapper}>
             <span className={styles.inputIcon} aria-hidden="true">
               <LockIcon />
@@ -526,7 +538,7 @@ export function LoginForm() {
               name="password"
               type={showPassword ? "text" : "password"}
               autoComplete={authMode === "signup" ? "new-password" : "current-password"}
-              placeholder={authMode === "signup" ? "Minimal 6 karakter" : "Masukkan kata sandi"}
+              placeholder={authMode === "signup" ? t('auth.passwordPlaceholderSignUp') : t('auth.passwordPlaceholderSignIn')}
               value={password}
               required
               disabled={busy}
@@ -542,8 +554,9 @@ export function LoginForm() {
               type="button"
               className={styles.toggleVisibility}
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+              aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
               aria-pressed={showPassword}
+              tabIndex={-1}
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
@@ -567,42 +580,42 @@ export function LoginForm() {
           <span>
             {pending === "email"
               ? authMode === "signup"
-                ? "Mendaftarkan…"
-                : "Masuk ke Akun…"
+                ? t('auth.submittingSignUp')
+                : t('auth.submittingSignIn')
               : authMode === "signup"
-              ? "Daftar Akun Baru"
-              : "Masuk Sekarang"}
+              ? t('auth.submitSignUp')
+              : t('auth.submitSignIn')}
           </span>
         </button>
 
         <button className={styles.guestLink} type="button" onClick={() => router.push(guestDestination)}>
-          Lanjut menjelajahi peta tanpa akun <span aria-hidden="true">→</span>
+          {t('auth.guestContinue')} <span aria-hidden="true">→</span>
         </button>
 
       </form>
 
 
       <p className={styles.legal}>
-        Dengan masuk, Anda menyetujui{" "}
-        <button type="button" onClick={() => openPolicy("Ketentuan Layanan")}>
-          Ketentuan Layanan
+        {t('auth.legalPrefix')}{" "}
+        <button type="button" onClick={() => openPolicy(t('auth.termsBtn'))}>
+          {t('auth.termsBtn')}
         </button>{" "}
-        dan{" "}
-        <button type="button" onClick={() => openPolicy("Kebijakan Privasi")}>
-          Kebijakan Privasi
+        {t('auth.andText')}{" "}
+        <button type="button" onClick={() => openPolicy(t('auth.privacyBtn'))}>
+          {t('auth.privacyBtn')}
         </button>{" "}
-        Naviable.
+        {t('auth.legalSuffix')}
       </p>
 
       <dialog ref={dialogRef} className={styles.policyDialog} aria-labelledby="policy-title">
         <h2 id="policy-title">{policy}</h2>
-        <p>Dokumen {policy.toLowerCase()} Naviable sedang diselaraskan. Anda dapat menjelajahi peta langsung tanpa mendaftar.</p>
+        <p>{t('auth.policyAlignNotice')}</p>
         <button
           className={`${styles.button} ${styles.loginButton}`}
           type="button"
           onClick={() => dialogRef.current?.close()}
         >
-          Tutup
+          {t('auth.policyCloseBtn')}
         </button>
       </dialog>
     </div>

@@ -1,8 +1,11 @@
+'use client';
+
 import React from 'react';
 import { Place, AccessibilityNeed } from '@/types';
 import type { ExternalPlaceResult } from '@/lib/externalGeocoding';
 import { PlaceCard } from './PlaceCard';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type PlaceListProps = {
   places: Place[];
@@ -29,23 +32,24 @@ export function PlaceList({
   onAddExternalPlace,
   onViewExternalPlace,
 }: PlaceListProps) {
+  const { t, locale } = useTranslation();
   const geocodedCount = places.filter((p) => !p.needsGeocoding).length;
   const unlocatedCount = places.filter((p) => p.needsGeocoding).length;
 
   const unrecordedExternal = externalPlaces.filter((ext) => !ext.isExistingInNaviable);
 
   return (
-    <aside className={`places-panel ${className}`.trim()} aria-label="Daftar tempat">
+    <aside className={`places-panel ${className}`.trim()} aria-label={t('map.placesHeader')}>
       <div className="panel-heading">
         <div>
-          <span className="eyebrow">Data tempat Surabaya</span>
-          <h2>Daftar Tempat</h2>
+          <span className="eyebrow">{locale === 'en' ? 'Surabaya places data' : 'Data tempat Surabaya'}</span>
+          <h2>{t('map.placesHeader')}</h2>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-            <span>{geocodedCount} titik di peta</span>
-            {unlocatedCount > 0 && <span> · {unlocatedCount} belum ada titik peta</span>}
+            <span>{geocodedCount} {t('map.pointsOnMap')}</span>
+            {unlocatedCount > 0 && <span> · {unlocatedCount} {t('map.withoutMapPoints')}</span>}
           </div>
         </div>
-        <span className="count-pill">{places.length} tempat</span>
+        <span className="count-pill">{places.length} {t('map.placesCount')}</span>
       </div>
 
       <div className="place-list" role="list">
@@ -57,20 +61,20 @@ export function PlaceList({
                 style={{ margin: '0 auto 12px', width: '28px', height: '28px', borderTopColor: 'var(--navy)' }}
               />
               <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', margin: '0 0 4px' }}>
-                Mencari lokasi di OpenStreetMap...
+                {t('map.searchingOsm')}
               </p>
               <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>
-                Mengecek ketersediaan titik umum di Surabaya untuk &quot;{searchQuery}&quot;
+                {locale === 'en'
+                  ? `Checking available Surabaya public points for "${searchQuery}"`
+                  : `Mengecek ketersediaan titik umum di Surabaya untuk "${searchQuery}"`}
               </p>
             </div>
           ) : unrecordedExternal.length > 0 ? (
             <div className="external-suggestion-container">
               <div className="external-suggestion-header">
-                <span className="external-badge-unrecorded">Belum Terdata di Naviable</span>
-                <h3>Ditemukan di Peta Surabaya</h3>
-                <p>
-                  Tempat publik ini belum memiliki data aksesibilitas. Jadilah orang pertama yang mendatanya!
-                </p>
+                <span className="external-badge-unrecorded">{t('map.publicUnrecorded')}</span>
+                <h3>{locale === 'en' ? 'Found on Surabaya Map' : 'Ditemukan di Peta Surabaya'}</h3>
+                <p>{t('map.beFirstToMap')}</p>
               </div>
 
               <div className="external-cards-list">
@@ -88,19 +92,19 @@ export function PlaceList({
                         type="button"
                         className="btn-external-view"
                         onClick={() => onViewExternalPlace?.(ext)}
-                        title="Lihat titik di peta"
+                        title={t('map.viewPoint')}
                       >
                         <Icon name="map-pin" size={13} />
-                        <span>Lihat Titik</span>
+                        <span>{t('map.viewPoint')}</span>
                       </button>
                       <button
                         type="button"
                         className="btn-external-add"
                         onClick={() => onAddExternalPlace?.(ext)}
-                        title="Tambah tempat baru ke Naviable"
+                        title={locale === 'en' ? 'Add new place to Naviable' : 'Tambah tempat baru ke Naviable'}
                       >
                         <Icon name="plus" size={13} />
-                        <span>Tambah ke Naviable</span>
+                        <span>{locale === 'en' ? 'Add to Naviable' : 'Tambah ke Naviable'}</span>
                       </button>
                     </div>
                   </div>
@@ -110,10 +114,12 @@ export function PlaceList({
           ) : (
             <div className="empty-places" style={{ padding: '36px 16px', textAlign: 'center' }}>
               <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', margin: '0 0 6px' }}>
-                Belum ada tempat yang cocok
+                {t('map.noPointsFound')}
               </p>
               <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-                Coba gunakan nama tempat lain, atau klik sembarang titik pada peta untuk menambahkan tempat baru.
+                {locale === 'en'
+                  ? 'Try searching for another place name, or click anywhere on the map to add a new place.'
+                  : 'Coba gunakan nama tempat lain, atau klik sembarang titik pada peta untuk menambahkan tempat baru.'}
               </p>
             </div>
           )
@@ -133,9 +139,12 @@ export function PlaceList({
             {unrecordedExternal.length > 0 && searchQuery.trim().length >= 3 && (
               <div className="external-bottom-suggestion">
                 <div className="external-bottom-text">
-                  <span className="external-badge-unrecorded">Tempat Publik Lain</span>
+                  <span className="external-badge-unrecorded">
+                    {locale === 'en' ? 'Other Public Places' : 'Tempat Publik Lain'}
+                  </span>
                   <p style={{ margin: '3px 0 0', fontSize: '12px', fontWeight: 600, color: 'var(--ink)' }}>
-                    {unrecordedExternal[0].name} ({unrecordedExternal[0].category}) belum terdata di Naviable
+                    {unrecordedExternal[0].name} ({unrecordedExternal[0].category}){' '}
+                    {locale === 'en' ? 'not yet mapped in Naviable' : 'belum terdata di Naviable'}
                   </p>
                 </div>
                 <button
@@ -145,7 +154,7 @@ export function PlaceList({
                   onClick={() => onAddExternalPlace?.(unrecordedExternal[0])}
                 >
                   <Icon name="plus" size={12} />
-                  <span>➕ Tambah Tempat Ini</span>
+                  <span>{locale === 'en' ? '➕ Add This Place' : '➕ Tambah Tempat Ini'}</span>
                 </button>
               </div>
             )}

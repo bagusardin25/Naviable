@@ -6,7 +6,9 @@ type AuthModeSwitchProps = {
   className: string;
   buttonClassName: string;
   activeClassName: string;
+  signinLabel?: string;
   signupLabel?: string;
+  ariaLabel?: string;
 };
 
 export function AuthModeSwitch({
@@ -15,21 +17,25 @@ export function AuthModeSwitch({
   className,
   buttonClassName,
   activeClassName,
+  signinLabel = 'Masuk',
   signupLabel = 'Daftar Akun',
+  ariaLabel = 'Pilih masuk atau daftar akun',
 }: AuthModeSwitchProps) {
   return (
-    <div className={className} role="group" aria-label="Pilih masuk atau daftar akun">
+    <div className={className} role="tablist" aria-label={ariaLabel}>
       <button
         type="button"
-        aria-pressed={mode === 'signin'}
+        role="tab"
+        aria-selected={mode === 'signin'}
         className={`${buttonClassName} ${mode === 'signin' ? activeClassName : ''}`}
         onClick={() => onChange('signin')}
       >
-        Masuk
+        {signinLabel}
       </button>
       <button
         type="button"
-        aria-pressed={mode === 'signup'}
+        role="tab"
+        aria-selected={mode === 'signup'}
         className={`${buttonClassName} ${mode === 'signup' ? activeClassName : ''}`}
         onClick={() => onChange('signup')}
       >

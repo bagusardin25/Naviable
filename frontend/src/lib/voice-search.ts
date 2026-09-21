@@ -2,6 +2,7 @@
  * Utilitas pemrosesan teks, fuzzy matching, dan error untuk fitur pencarian suara (Voice Search)
  */
 import type { Place } from '@/types';
+import type { Locale } from '@/locales';
 import { normalizeStreetText } from './streetSearch';
 
 /**
@@ -21,7 +22,7 @@ export function cleanVoiceQuery(raw: string): string {
   // Bersihkan awalan kata perintah lisan bahasa Indonesia ("cari", "carikan", "pencarian")
   // Contoh: "Cari Puskesmas Jagir" -> "Puskesmas Jagir"
   // Namun jika ucapannya hanya "Cari" saja, jangan jadikan string kosong jika tidak ada kelanjutannya.
-  const prefixMatch = cleaned.match(/^(?:cari(?:kan)?|pencarian)\s+(.+)$/i);
+  const prefixMatch = cleaned.match(/^(?:cari(?:kan)?|pencarian|search(?:\s+for)?|find|look\s+for)\s+(.+)$/i);
   if (prefixMatch && prefixMatch[1]?.trim()) {
     cleaned = prefixMatch[1].trim();
   }
@@ -35,7 +36,27 @@ export function cleanVoiceQuery(raw: string): string {
 /**
  * Pemetaan kode error Web Speech API ke pesan bahasa Indonesia yang ramah dan aksesibel.
  */
-export function getVoiceErrorMessage(errorCode: string): string {
+export function getVoiceErrorMessage(errorCode: string, locale: Locale = 'id'): string {
+  if (locale === 'en') {
+    switch (errorCode) {
+      case 'not-allowed':
+      case 'permission-denied':
+        return 'Microphone permission was denied. Enable microphone access in your browser settings to use voice search.';
+      case 'no-speech':
+        return 'No speech was detected. Please try again and speak closer to the microphone.';
+      case 'network':
+        return 'Voice recognition is unavailable because of a network problem.';
+      case 'audio-capture':
+        return 'No microphone was found, or it is being used by another application.';
+      case 'not-supported':
+        return 'This browser does not support voice recognition. Please use Google Chrome, Edge, or another modern browser.';
+      case 'aborted':
+        return 'Voice search was cancelled.';
+      default:
+        return 'There was a problem processing your voice. Please try again shortly.';
+    }
+  }
+
   switch (errorCode) {
     case 'not-allowed':
     case 'permission-denied':

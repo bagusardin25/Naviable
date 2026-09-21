@@ -9,6 +9,7 @@ import { CorrectionHistory } from './CorrectionHistory';
 import { PlaceReviews } from './PlaceReviews';
 import { fetchPlaceReports, type ApiReport } from '@/lib/api';
 import { buildGoogleMapsPlaceUrl } from '@/lib/externalMaps';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type PlaceDetailDrawerProps = {
   place: Place | null;
@@ -27,6 +28,7 @@ export function PlaceDetailDrawer({
   signedIn,
   activeNeed = 'Mobilitas',
 }: PlaceDetailDrawerProps) {
+  const { t, formatDate } = useTranslation();
   const drawerRef = useRef<HTMLElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
@@ -112,7 +114,6 @@ export function PlaceDetailDrawer({
       ? buildGoogleMapsPlaceUrl({ destination: place, travelMode: 'walking' })
       : null;
 
-
   const freshnessIcon =
     freshness.level === 'fresh'
       ? 'check-circle'
@@ -122,11 +123,14 @@ export function PlaceDetailDrawer({
       ? 'history'
       : 'info';
 
+  const localizedFreshnessLabel = t(`freshness.${freshness.level}`) || freshness.label;
+  const localizedNeed = t(`needs.${activeNeed}`) || activeNeed;
+
   return (
     <section
       ref={drawerRef}
       className="detail-drawer"
-      aria-label={`Detail kondisi akses ${place.name}`}
+      aria-label={`${t('places.detailAria')} ${place.name}`}
       role="dialog"
       aria-modal="true"
     >
@@ -134,7 +138,7 @@ export function PlaceDetailDrawer({
         id="drawer-close-btn"
         className="drawer-close"
         onClick={onClose}
-        aria-label="Tutup detail tempat"
+        aria-label={t('places.closeDetail')}
         type="button"
       >
         <Icon name="close" />
@@ -142,16 +146,16 @@ export function PlaceDetailDrawer({
 
       <div className="detail-title">
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
-          <span className="eyebrow">Profil {activeNeed}</span>
-          <StatusBadge status={meta.status} size="sm" label={meta.label} />
-          <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span className="eyebrow">{t('places.profileEyebrow')} {localizedNeed}</span>
+          <StatusBadge status={meta.status} size="sm" />
+          <span className={`freshness-badge ${freshness.badgeClass}`} title={`${t('places.lastUpdated')} ${localizedFreshnessLabel}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Icon name={freshnessIcon} size={11} />
-            <span>{freshness.label}</span>
+            <span>{localizedFreshnessLabel}</span>
           </span>
           {place.needsGeocoding ? (
-            <span className="badge-needs-geocoding">Belum ada titik peta</span>
+            <span className="badge-needs-geocoding">{t('places.needsGeocodingBadge')}</span>
           ) : (
-            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} laporan warga` : 'Belum diverifikasi'}</span>
+            <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} ${t('places.citizenReportsCount')}` : t('places.unverifiedNoticeTitle')}</span>
           )}
         </div>
 
@@ -167,15 +171,15 @@ export function PlaceDetailDrawer({
         <div role="status" className="drawer-history-box">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, marginBottom: '4px' }}>
             <Icon name="history" size={14} />
-            <span>Riwayat pembaruan kondisi:</span>
+            <span>{t('places.conditionHistoryTitle')}</span>
           </div>
           {conditionChanges.map((change, idx) => (
             <div key={idx} style={{ marginTop: '4px', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <strong>{change.elementLabel}</strong> diperbarui dari{' '}
+              <strong>{change.elementLabel}</strong> {t('places.updatedFrom')}{' '}
               <StatusBadge status={change.previousStatus} size="sm" variant="compact" />{' '}
-              →{' '}
+              {t('places.to')}{' '}
               <StatusBadge status={change.currentStatus} size="sm" variant="compact" />{' '}
-              oleh <em>{change.currentReporter}</em> ({new Date(change.currentDate).toLocaleDateString('id-ID')}).
+              {t('places.by')} <em>{change.currentReporter}</em> ({formatDate(new Date(change.currentDate), { day: 'numeric', month: 'numeric', year: 'numeric' })}).
             </div>
           ))}
         </div>
@@ -185,7 +189,7 @@ export function PlaceDetailDrawer({
         <div className="geocoding-notice-box" role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
           <Icon name="warning" size={16} className="flex-shrink-0" style={{ marginTop: '2px' }} />
           <div>
-            <strong>Belum ada titik peta:</strong> Tempat ini tercatat di data publik, tetapi belum memiliki titik koordinat presisi. Data koordinat akan dilengkapi sebelum ditampilkan pada peta.
+            <strong>{t('places.unlocatedNoticeTitle')}</strong> {t('places.unlocatedNoticeBody')}
           </div>
         </div>
       )}
@@ -196,11 +200,11 @@ export function PlaceDetailDrawer({
             <Icon name="camera" size={18} />
           </span>
           <div>
-            <strong>Laporan kondisi dari warga</strong>
+            <strong>{t('places.citizenReportsNoticeTitle')}</strong>
             <div style={{ fontSize: '11.5px', marginTop: '3px', lineHeight: 1.5, opacity: 0.9 }}>
-              Sudah ada {place.reportCount} laporan warga
-              {place.coverage ? ` (${place.coverage.known} dari ${place.coverage.total} titik akses terkonfirmasi)` : ''}.
-              {unknownElements > 0 ? ` Masih ada ${unknownElements} titik akses yang belum lengkap.` : ' Seluruh titik akses utama sudah memiliki bukti foto.'}
+              {place.reportCount} {t('places.citizenReportsCount')}
+              {place.coverage ? ` (${place.coverage.known} / ${place.coverage.total} ${t('places.confirmedAccessPoints')})` : ''}.
+              {unknownElements > 0 ? ` ${unknownElements} ${t('places.unconfirmedRemaining')}` : ` ${t('places.allConfirmedWithPhotos')}`}
             </div>
           </div>
         </div>
@@ -210,9 +214,9 @@ export function PlaceDetailDrawer({
             <Icon name="info" size={18} />
           </span>
           <div>
-            <strong>Belum diverifikasi</strong>
+            <strong>{t('places.unverifiedNoticeTitle')}</strong>
             <div style={{ fontSize: '11.5px', marginTop: '3px', lineHeight: 1.5, opacity: 0.9 }}>
-              Informasi awal dari data publik. Belum diverifikasi langsung di lapangan. Bantu laporkan kondisi sebenarnya dengan foto.
+              {t('places.unverifiedNoticeBody')}
             </div>
           </div>
         </div>
@@ -221,7 +225,7 @@ export function PlaceDetailDrawer({
       {place.features && place.features.length > 0 && (
         <div className="drawer-features-box">
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink)', display: 'block', marginBottom: '6px' }}>
-            Fasilitas yang tercatat:
+            {t('places.recordedFeatures')}
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {place.features.map((feat, idx) => (
@@ -235,19 +239,19 @@ export function PlaceDetailDrawer({
 
       <div className="evidence-meta" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
         <div>
-          <span style={{ color: '#64748b' }}>Sumber:</span>{' '}
-          <strong>{place.sourceName || 'Data publik'}</strong>
+          <span style={{ color: '#64748b' }}>{t('places.sourceLabel')}</span>{' '}
+          <strong>{place.sourceName || t('places.publicData')}</strong>
         </div>
         <div>
-          <span style={{ color: '#64748b' }}>Lisensi:</span>{' '}
-          <strong>{place.sourceLicense || 'Terbuka'}</strong>
+          <span style={{ color: '#64748b' }}>{t('places.licenseLabel')}</span>{' '}
+          <strong>{place.sourceLicense || t('places.licenseOpen')}</strong>
         </div>
         <div>
-          <span style={{ color: 'var(--text-secondary, #64748b)' }}>Jenis bukti:</span>{' '}
+          <span style={{ color: 'var(--text-secondary, #64748b)' }}>{t('places.evidenceTypeLabel')}</span>{' '}
           <span>{place.evidenceLevelLabel}</span>
         </div>
         <div>
-          <span style={{ color: 'var(--text-secondary, #64748b)' }}>Diambil:</span>{' '}
+          <span style={{ color: 'var(--text-secondary, #64748b)' }}>{t('places.retrievedLabel')}</span>{' '}
           <span>{place.retrievedAt || '2026-09-13'}</span>
         </div>
       </div>
@@ -260,13 +264,13 @@ export function PlaceDetailDrawer({
             rel="noopener noreferrer"
             style={{ color: 'var(--purple, #6d45cc)', textDecoration: 'underline', wordBreak: 'break-all' }}
           >
-            Buka sumber asli ↗
+            {t('places.openOriginalSource')}
           </a>
         </div>
       )}
 
       <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '16px 0 8px', color: 'var(--ink, #1e293b)' }}>
-        Kondisi akses
+        {t('places.accessConditionsTitle')}
       </h3>
       <AccessibilityChain key={`chain-${place.id}`} elements={place.elements} />
 
@@ -280,9 +284,9 @@ export function PlaceDetailDrawer({
       <div className="journey-hint" role="note">
         <Icon name="route" />
         <div>
-          <strong>Catatan perjalanan</strong>
+          <strong>{t('places.journeyNotesTitle')}</strong>
           <span>
-            Periksa akses dari halte atau titik transit ke pintu masuk hingga fasilitas utama. Naviable menandai titik akses yang masih terputus.
+            {t('places.journeyNotesDesc')}
           </span>
         </div>
       </div>
@@ -295,10 +299,10 @@ export function PlaceDetailDrawer({
           rel="noopener noreferrer"
           className="google-maps-btn"
           style={{ width: '100%', marginTop: '14px' }}
-          aria-label={`Buka petunjuk arah ke ${place.name} di Google Maps (membuka tab baru)`}
+          aria-label={t('places.gmapsDirectionsAria', { name: place.name })}
         >
           <Icon name="navigation" size={15} />
-          <span>Petunjuk Arah (Google Maps)</span>
+          <span>{t('places.gmapsDirections')}</span>
           <Icon name="external-link" size={13} />
         </a>
       )}
@@ -310,9 +314,11 @@ export function PlaceDetailDrawer({
         onClick={() => onCorrectPlace(place)}
         type="button"
       >
-        Laporkan Perubahan
+        {t('places.reportChange')}
       </button>
-      <p className="flow-help">Informasi tidak sesuai kondisi lapangan? Koreksi elemen aksesibilitas dengan bukti foto.{!signedIn && ' Masuk diperlukan untuk mengirim laporan.'}</p>
+      <p className="flow-help">
+        {t('places.flowHelpReport')}{!signedIn && t('places.flowHelpReportAuth')}
+      </p>
       <PlaceReviews key={String(place.id)} placeId={String(place.id)} onWrite={() => onWriteReview(place)} signedIn={signedIn} />
     </section>
   );

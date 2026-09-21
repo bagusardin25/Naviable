@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { AIDraftPanel } from './AIDraftPanel';
 import { HumanLockSelector } from './HumanLockSelector';
 import { saveDraftPhoto, getDraftPhoto, deleteDraftPhoto } from '@/lib/draftStorage';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type DraftData = {
   placeId?: string;
@@ -57,6 +58,7 @@ export function ReportForm({
   onCancel,
   onSubmitReport,
 }: ReportFormProps) {
+  const { t } = useTranslation();
   const adding = mode === 'add';
   const placeId = adding ? '' : String(targetPlace?.id ?? '');
   const draftKey = `naviable_report_draft_v2:${draftOwner}:${mode}:${placeId}`;
@@ -121,7 +123,6 @@ export function ReportForm({
   const currentElement = targetPlace?.elements.find(element => element.code === elementCode);
   const similarPlaces = adding && location.name.trim().length >= 3 ? places.filter(p => p.name.toLowerCase().includes(location.name.trim().toLowerCase())).slice(0, 5) : [];
 
-
   // Persist draft on edit
   useEffect(() => {
     if (!placeId && !reporterName && !note) return;
@@ -164,7 +165,7 @@ export function ReportForm({
     setAnalysis(null); setAiError(''); setConfirmed(false); setError(''); setPhoto(null); setPhotoRestored(false);
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-      setError('Gunakan foto JPG, PNG, atau WebP maksimal 5 MB.'); return;
+      setError(t('reports.photoSizeError')); return;
     }
     setReading(true);
     const reader = new FileReader();
@@ -174,7 +175,7 @@ export function ReportForm({
       setReading(false);
       saveDraftPhoto(draftKey, photoData).catch(() => {});
     };
-    reader.onerror = () => { setError('Foto tidak dapat dibaca. Silakan pilih ulang.'); setReading(false); };
+    reader.onerror = () => { setError(t('reports.photoReadError')); setReading(false); };
     reader.readAsDataURL(file);
   }
 
@@ -182,7 +183,7 @@ export function ReportForm({
     if (!photo || analyzing) return;
     setAnalyzing(true); setAiError(''); setConfirmed(false);
     try { setAnalysis(await analyzePhoto(photo.image, photo.mimeType)); }
-    catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : 'Bantuan foto sedang tidak tersedia. Anda tetap bisa mengisi checklist secara manual.'); }
+    catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : t('reports.aiUnavailableError')); }
     finally { setAnalyzing(false); }
   }
 
@@ -195,9 +196,9 @@ export function ReportForm({
         return;
       }
     }
-    if (!photo || !confirmed) { setError('Unggah foto dan centang konfirmasi kondisi terlebih dahulu.'); return; }
+    if (!photo || !confirmed) { setError(t('reports.photoAndConfirmationRequired')); return; }
     if (integrityBlocked) { setError('Foto memiliki penanda asal AI terverifikasi. Ambil dan unggah foto baru dari lokasi.'); return; }
-    if (adding && !coordinatesConfirmed) { setError('Periksa dan konfirmasi titik koordinat lokasi baru.'); return; }
+    if (adding && !coordinatesConfirmed) { setError(t('reports.coordsConfirmationRequired')); return; }
     const evidence = { reporterName, ...photo, humanConfirmed: true as const, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
     const payload: ReportPayload = { placeId, ...evidence };
     const newPayload = { ...evidence, location };
@@ -214,7 +215,7 @@ export function ReportForm({
       deleteDraftPhoto(draftKey).catch(() => {});
       setSubmittedSuccessPlace(result.place);
     }
-    catch (e) { setError(e instanceof Error ? e.message : 'Laporan belum berhasil dikirim. Silakan coba lagi.'); }
+    catch (e) { setError(e instanceof Error ? e.message : t('reports.submissionFailedError')); }
     finally { setSubmitting(false); }
   }
 
@@ -225,17 +226,17 @@ export function ReportForm({
           <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--notice-warning-bg)', border: '1px solid var(--notice-warning-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--orange)' }}>
             <Icon name="check" size={28} />
           </div>
-          <span className="eyebrow" style={{ color: 'var(--orange)', fontWeight: 700 }}>Status Laporan</span>
-          <h1 style={{ fontSize: '1.4rem', margin: '6px 0 12px', color: 'var(--ink)' }}>MENUNGGU REVIEW</h1>
+          <span className="eyebrow" style={{ color: 'var(--orange)', fontWeight: 700 }}>{t('reports.successEyebrow')}</span>
+          <h1 style={{ fontSize: '1.4rem', margin: '6px 0 12px', color: 'var(--ink)' }}>{t('reports.successTitle')}</h1>
           <p style={{ color: 'var(--ink)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '16px' }}>
-            Laporan untuk <strong>{submittedSuccessPlace.name}</strong> telah berhasil dikirim ke antrean review Naviable.
+            {t('reports.successBody', { name: submittedSuccessPlace.name })}
           </p>
           <div style={{ background: 'var(--surface-secondary)', border: '1px solid var(--line)', borderRadius: '10px', padding: '12px 16px', marginBottom: '24px', fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'left' }}>
             <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--ink)' }}>
-              Proses Kurasi & Verifikasi:
+              {t('reports.successCurateTitle')}
             </p>
             <p style={{ margin: 0, lineHeight: 1.5 }}>
-              Reviewer Naviable akan memeriksa bukti foto, kesesuaian elemen akses, dan titik lokasi sebelum laporan dipublikasikan sebagai data terverifikasi (Bukti telah diperiksa).
+              {t('reports.successCurateDesc')}
             </p>
           </div>
           <button
@@ -244,7 +245,7 @@ export function ReportForm({
             onClick={() => onSubmitReport(submittedSuccessPlace)}
             style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
           >
-            Selesai & Buka Peta
+            {t('reports.successDoneBtn')}
           </button>
         </div>
       </div>
@@ -254,15 +255,14 @@ export function ReportForm({
   return (
     <div className="page-scroll">
 
-      <button type="button" className="secondary-action" onClick={onCancel}>← {adding ? 'Kembali ke Jelajahi' : 'Kembali ke detail lokasi'}</button>
-      <div className="page-title"><div><span className="eyebrow">Kontribusi warga</span><h1>{adding ? 'Tambah Lokasi Baru' : 'Laporkan Perubahan'}</h1><p>{adding ? 'Untuk tempat yang belum ada di Naviable. Periksa nama lokasi agar tidak membuat duplikat, lalu tambahkan bukti kondisi awal.' : `Koreksi informasi aksesibilitas ${targetPlace?.name}. Pilih bagian yang berubah, jelaskan kondisi terbaru, dan sertakan foto lapangan.`}</p></div></div>
+      <button type="button" className="secondary-action" onClick={onCancel}>← {adding ? t('reports.backToExplore') : t('reports.backToDetail')}</button>
+      <div className="page-title"><div><span className="eyebrow">{t('reports.citizenContribution')}</span><h1>{adding ? t('reports.addNewPlaceTitle') : t('reports.reportChangeTitle')}</h1><p>{adding ? t('reports.addNewPlaceDesc') : t('reports.reportChangeDesc', { name: targetPlace?.name ?? '' })}</p></div></div>
       {!signedIn && (
         <div className="auth-prompt-banner" role="status">
           <div>
-            <strong>Mode Pengisian Draf Lokasi</strong>
+            <strong>{t('reports.draftModeNoticeTitle')}</strong>
             <p>
-              Anda belum masuk akun. Anda bebas melengkapi formulir terlebih dahulu, lalu masuk atau daftar
-              melalui pop-up untuk mempublikasikan {adding ? 'lokasi baru' : 'laporan perubahan'}.
+              {t('reports.draftModeNoticeDesc')}
             </p>
           </div>
           {onRequireAuth && (
@@ -271,7 +271,7 @@ export function ReportForm({
               className="auth-prompt-btn"
               onClick={onRequireAuth}
             >
-              Masuk / Daftar
+              {t('reports.authPromptBtn')}
             </button>
           )}
         </div>
@@ -296,8 +296,8 @@ export function ReportForm({
             <Icon name="save" size={15} />
             <span>
               {photo
-                ? 'Draf laporan dan foto bukti berhasil dipulihkan dari perangkat ini.'
-                : 'Draf teks laporan dipulihkan. Silakan pilih kembali foto kondisi di lapangan sebelum mengirim.'}
+                ? t('reports.draftRestoredText')
+                : t('reports.draftRestoredTextNoPhoto')}
             </span>
           </div>
           <button
@@ -313,19 +313,19 @@ export function ReportForm({
               fontSize: '11px',
             }}
           >
-            Hapus Draf
+            {t('reports.clearDraftBtn')}
           </button>
         </div>
       )}
       <form onSubmit={publish} className="report-grid" aria-busy={busy}>
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
-          <h2>1. Informasi & Foto Lokasi</h2>
+          <h2>{t('reports.step1Title')}</h2>
           {adding ? <>
-            <label htmlFor="new-place-name">Nama lokasi<input type="text" id="new-place-name" placeholder="Contoh: Puskesmas Gubeng" value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
-            {similarPlaces.length > 0 && <div className="flow-notice"><p>Nama serupa sudah ada. Jika ini lokasi yang sama, buka detailnya untuk melaporkan perubahan:</p>{similarPlaces.map(p => <p key={p.id}><Link href={placeHref(String(p.id))}>{p.name} — {p.address}</Link></p>)}</div>}
-            <label htmlFor="new-place-category">Kategori<input type="text" id="new-place-category" placeholder="Pilih atau ketik, mis. health, mall, transport" list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
+            <label htmlFor="new-place-name">{t('reports.placeNameLabel')}<input type="text" id="new-place-name" placeholder="Contoh: Puskesmas Gubeng" value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
+            {similarPlaces.length > 0 && <div className="flow-notice"><p>{t('reports.similarPlacesFound')}</p>{similarPlaces.map(p => <p key={p.id}><Link href={placeHref(String(p.id))}>{p.name} — {p.address}</Link></p>)}</div>}
+            <label htmlFor="new-place-category">{t('reports.categoryLabel')}<input type="text" id="new-place-category" placeholder="Pilih atau ketik, mis. health, mall, transport" list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
             <datalist id="place-categories">{Array.from(new Set(places.map(p => p.category))).map(category => <option key={category} value={category} />)}</datalist>
-            <label htmlFor="new-place-address">Alamat lengkap<input type="text" id="new-place-address" placeholder="Nama jalan, nomor, kelurahan" value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
+            <label htmlFor="new-place-address">{t('reports.fullAddressLabel')}<input type="text" id="new-place-address" placeholder="Nama jalan, nomor, kelurahan" value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
             {hasMapCoordinates && (
               <div
                 style={{
@@ -343,7 +343,7 @@ export function ReportForm({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--purple-700)' }}>
                   <Icon name="map-pin-plus" size={16} />
                   <span>
-                    Titik dipilih dari peta: <strong>{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</strong>
+                    {t('reports.pointSelectedFromMap', { lat: location.lat.toFixed(5), lng: location.lng.toFixed(5) })}
                   </span>
                 </div>
                 <button
@@ -361,69 +361,79 @@ export function ReportForm({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Ubah di peta
+                  {t('reports.changeOnMap')}
                 </button>
               </div>
             )}
             <div className="coordinate-fields">
-              <label htmlFor="new-place-lat">Lintang<input id="new-place-lat" type="number" step="any" min={-90} max={90} value={location.lat} required onChange={e => { setLocation({ ...location, lat: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
-              <label htmlFor="new-place-lng">Bujur<input id="new-place-lng" type="number" step="any" min={-180} max={180} value={location.lng} required onChange={e => { setLocation({ ...location, lng: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
+              <label htmlFor="new-place-lat">{t('reports.latitudeLabel')}<input id="new-place-lat" type="number" step="any" min={-90} max={90} value={location.lat} required onChange={e => { setLocation({ ...location, lat: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
+              <label htmlFor="new-place-lng">{t('reports.longitudeLabel')}<input id="new-place-lng" type="number" step="any" min={-180} max={180} value={location.lng} required onChange={e => { setLocation({ ...location, lng: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
             </div>
             <p className="flow-help">
               {hasMapCoordinates
-                ? 'Titik koordinat sudah diisi otomatis dari peta. Anda dapat menyesuaikan angka di atas jika diperlukan.'
-                : 'Koordinat awal adalah pusat Surabaya. Ganti dengan koordinat tempat yang Anda kunjungi atau klik langsung titik di peta.'}
+                ? t('reports.coordAutoHelp')
+                : t('reports.coordCenterHelp')}
             </p>
-            <label className="flow-check"><input type="checkbox" required checked={coordinatesConfirmed} onChange={e => setCoordinatesConfirmed(e.target.checked)} />Saya sudah memastikan koordinat menunjuk lokasi ini.</label>
-          </> : <div className="flow-notice"><strong>{targetPlace?.name}</strong><p>{targetPlace?.address}</p><span>Lokasi laporan ini tidak dapat diganti. Kembali ke Jelajahi untuk memilih lokasi lain.</span></div>}
+            <label className="flow-check"><input type="checkbox" required checked={coordinatesConfirmed} onChange={e => setCoordinatesConfirmed(e.target.checked)} />{t('reports.coordConfirmedCheck')}</label>
+          </> : <div className="flow-notice"><strong>{targetPlace?.name}</strong><p>{targetPlace?.address}</p><span>{t('reports.fixedLocationNotice')}</span></div>}
           <label htmlFor="reporter-name">
-            Nama Anda (ditampilkan ke publik)
+            {t('reports.reporterNameLabel')}
             <input type="text" id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} placeholder="Contoh: Budi Santoso" required autoComplete="name" />
           </label>
-          {!adding && currentElement && <div className="flow-notice" aria-live="polite"><strong>Data saat ini: {STATUS_META[currentElement.status].label}</strong><p>{currentElement.note || 'Belum ada catatan kondisi.'}</p><small>{currentElement.isPreSurveyEvidence ? 'Sumber pra-survei, belum diverifikasi di lapangan.' : currentElement.lockedBy === 'kontributor' ? 'Berdasarkan laporan kontributor.' : 'Belum ada bukti lapangan.'}</small></div>}
+          {!adding && currentElement && (
+            <div className="flow-notice" aria-live="polite">
+              <strong>{t('reports.currentDataLabel', { status: t(`status.${currentElement.status}.label`) || STATUS_META[currentElement.status].label })}</strong>
+              <p>{currentElement.note || t('reports.noCurrentNotes')}</p>
+              <small>{currentElement.isPreSurveyEvidence ? t('reports.presurveySourceUnverified') : currentElement.lockedBy === 'kontributor' ? t('reports.basedOnContributor') : t('reports.noFieldEvidence')}</small>
+            </div>
+          )}
           <label htmlFor="report-element-select">
-            Bagian yang dilaporkan
+            {t('reports.reportedElementLabel')}
             <select id="report-element-select" value={elementCode} onChange={e => { setElementCode(e.target.value as ChainElementCode); setStatus('BELUM_DIKETAHUI'); setConfirmed(false); }} required>
-              {(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => <option key={code} value={code}>{code} — {CHAIN_ELEMENT_MAP[code].label}</option>)}
+              {(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => (
+                <option key={code} value={code}>
+                  {code} — {t(`elements.${code}.name`) || CHAIN_ELEMENT_MAP[code].label}
+                </option>
+              ))}
             </select>
           </label>
           <div>
-            <span className="field-label-text">Foto Kondisi di Lapangan</span>
-            <label htmlFor="file-upload-input" className="upload-box" aria-label="Unggah foto kondisi di lapangan">
+            <span className="field-label-text">{t('reports.photoFieldLabel')}</span>
+            <label htmlFor="file-upload-input" className="upload-box" aria-label={t('reports.photoFieldLabel')}>
               <Icon name="camera" size={26} />
               {photo ? (
                 <div className="upload-preview-badge">
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     <Icon name="check" size={13} />
-                    <span>{photoRestored ? 'Foto draf dipulihkan (klik untuk ganti)' : 'Foto tersimpan (klik untuk ganti)'}</span>
+                    <span>{photoRestored ? t('reports.photoRestoredText') : t('reports.photoStoredText')}</span>
                   </span>
                 </div>
               ) : (
                 <>
-                  <span>Pilih foto kondisi di lapangan</span>
-                  <small>Format JPG, PNG, atau WebP · maks 5 MB</small>
+                  <span>{t('reports.photoUploadBoxText')}</span>
+                  <small>{t('reports.photoFormatHelp')}</small>
                 </>
               )}
               <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required={!photo} />
             </label>
           </div>
           <label htmlFor="report-notes">
-            Catatan Tambahan (opsional)
-            <textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder="Ceritakan kondisi yang Anda temui (misal: ramp terlalu curam, pintu darurat terkunci, jalan berlubang)." rows={4} />
+            {t('reports.additionalNotesLabel')}
+            <textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder={t('reports.additionalNotesPlaceholder')} rows={4} />
           </label>
         </fieldset>
-        <section className="card ai-card" aria-label="Pemeriksaan dan konfirmasi">
+        <section className="card ai-card" aria-label={t('reports.inspectionAndConfirmationAria')}>
           <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} uploadedPhotoUrl={photo?.image ?? null} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
-          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? 'Memeriksa foto…' : 'Periksa foto & bantu kenali kondisi (opsional)'}</button>
+          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? t('reports.aiAnalyzingBtnText') : t('reports.aiAnalyzeBtnText')}</button>
           <fieldset disabled={busy || analyzing} style={{ border: 0, padding: 0, minWidth: 0 }}>
-            <h2>{adding ? 'Kondisi awal yang Anda temui' : 'Kondisi terbaru yang Anda temui'}</h2>
+            <h2>{adding ? t('reports.initialConditionHeading') : t('reports.updatedConditionHeading')}</h2>
             <HumanLockSelector currentStatus={status} onSelectStatus={s => { setStatus(s); setConfirmed(false); }} />
             <label style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'flex-start', fontSize: '12px' }}>
               <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required disabled={integrityBlocked} style={{ marginTop: '2px' }} />
-              <span>Saya sudah memeriksa foto dan memastikan kondisi ini sesuai dengan yang ada di lokasi.</span>
+              <span>{t('reports.humanConfirmationCheck')}</span>
             </label>
           </fieldset>
-          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? 'Mengirim…' : adding ? 'Tambahkan Lokasi' : 'Kirim Laporan Perubahan'}</button>
+          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? t('reports.submittingReport') : adding ? t('reports.submitAddPlace') : t('reports.submitCorrection')}</button>
           {error && <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '12px', border: '1px solid #fecaca' }}>{error}</p>}
         </section>
       </form>

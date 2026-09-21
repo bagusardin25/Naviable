@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { Eye, CheckCircle2, RotateCcw, XCircle, RefreshCw } from 'lucide-react';
 import { fetchReviewerHistory } from '@/lib/api';
 import type { ReviewerAuditItem } from '@/types';
-import { REVIEW_STATUS_META } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from '../reviewer.module.css';
 
 export default function ReviewerHistoryPage() {
+  const { t, formatDate } = useTranslation();
   const [history, setHistory] = useState<ReviewerAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +57,20 @@ export default function ReviewerHistoryPage() {
     }
   }
 
+  function getStatusLabel(status: string) {
+    switch (status) {
+      case 'APPROVED':
+      case 'PUBLISHED':
+        return t('reviewer.filterApproved');
+      case 'NEEDS_REVISION':
+        return t('reviewer.filterRevision');
+      case 'REJECTED':
+        return t('reviewer.filterRejected');
+      default:
+        return t('reviewer.filterAwaiting');
+    }
+  }
+
   function getDecisionIcon(status: string) {
     switch (status) {
       case 'APPROVED':
@@ -75,9 +90,9 @@ export default function ReviewerHistoryPage() {
       <div className={styles.pageHeader}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <h1 className={styles.pageTitle}>Riwayat Review</h1>
+            <h1 className={styles.pageTitle}>{t('reviewer.historyPageTitle')}</h1>
             <p className={styles.pageSubtitle}>
-              Catatan audit keputusan verifikasi laporan yang telah diproses oleh tim reviewer Naviable.
+              {t('reviewer.historyPageSub')}
             </p>
           </div>
           <button
@@ -88,31 +103,30 @@ export default function ReviewerHistoryPage() {
             aria-label="Segarkan riwayat review"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-            <span>Segarkan</span>
+            <span>{t('reviewer.refreshBtn')}</span>
           </button>
         </div>
       </div>
 
       <div className={styles.tableContainer}>
         {loading ? (
-          <div className={styles.emptyState}>Memuat riwayat review…</div>
+          <div className={styles.emptyState}>{t('reviewer.loadingHistory')}</div>
         ) : history.length === 0 ? (
-          <div className={styles.emptyState}>Belum ada laporan yang telah selesai direview.</div>
+          <div className={styles.emptyState}>{t('reviewer.noHistoryYet')}</div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">Tempat & Lokasi</th>
-                <th scope="col">Reviewer</th>
-                <th scope="col">Keputusan</th>
-                <th scope="col">Tanggal Review</th>
-                <th scope="col">Catatan Review</th>
-                <th scope="col" style={{ textAlign: 'right' }}>Detail</th>
+                <th scope="col">{t('reviewer.tablePlace')}</th>
+                <th scope="col">{t('reviewer.historyReviewerCol')}</th>
+                <th scope="col">{t('reviewer.historyDecisionCol')}</th>
+                <th scope="col">{t('reviewer.historyDateCol')}</th>
+                <th scope="col">{t('reviewer.historyNoteCol')}</th>
+                <th scope="col" style={{ textAlign: 'right' }}>{t('reviewer.historyDetailCol')}</th>
               </tr>
             </thead>
             <tbody>
               {history.map(item => {
-                const meta = REVIEW_STATUS_META[item.reviewStatus] ?? REVIEW_STATUS_META.APPROVED;
                 return (
                   <tr key={item.id}>
                     <td>
@@ -131,19 +145,23 @@ export default function ReviewerHistoryPage() {
                     <td>
                       <span className={`${styles.badge} ${getBadgeClass(item.reviewStatus)}`}>
                         {getDecisionIcon(item.reviewStatus)}
-                        <span>{meta.label}</span>
+                        <span>{getStatusLabel(item.reviewStatus)}</span>
                       </span>
                     </td>
                     <td style={{ color: 'var(--muted)', fontSize: '12.5px' }}>
                       {item.reviewedAt
-                        ? new Date(item.reviewedAt).toLocaleDateString('id-ID', {
+                        ? formatDate(item.reviewedAt, {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit',
                           })
-                        : new Date(item.createdAt).toLocaleDateString('id-ID')}
+                        : formatDate(item.createdAt, {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
                     </td>
                     <td style={{ maxWidth: '280px' }}>
                       <p
@@ -156,15 +174,15 @@ export default function ReviewerHistoryPage() {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                         }}
-                        title={item.reviewNote || 'Tidak ada catatan'}
+                        title={item.reviewNote || t('reviewer.noSpecialNotes')}
                       >
-                        {item.reviewNote || 'Tanpa catatan khusus'}
+                        {item.reviewNote || t('reviewer.noSpecialNotes')}
                       </p>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <Link href={`/reviewer/reports/${item.id}`} className={styles.secondaryButton}>
                         <Eye size={14} aria-hidden="true" />
-                        <span>Lihat</span>
+                        <span>{t('common.view')}</span>
                       </Link>
                     </td>
                   </tr>

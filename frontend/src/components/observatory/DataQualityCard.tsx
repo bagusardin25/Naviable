@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { Place } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type DataQualityCardProps = {
   places: Place[];
 };
 
 export function DataQualityCard({ places }: DataQualityCardProps) {
+  const { t } = useTranslation();
   const total = places.length;
   const geocoded = places.filter((p) => !p.needsGeocoding && p.lat !== null && p.lng !== null).length;
   const needsGeocoding = places.filter((p) => p.needsGeocoding || p.lat === null || p.lng === null).length;
@@ -17,16 +19,16 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
     <div
       className="card"
       style={{ marginTop: '16px', padding: '16px 20px', minWidth: 0 }}
-      aria-label="Kelengkapan data lokasi"
+      aria-label={t('observatory.qualityCardAria')}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', minWidth: 0 }}>
         <div style={{ minWidth: 0 }}>
-          <span className="eyebrow">Kelengkapan Data</span>
+          <span className="eyebrow">{t('observatory.qualityEyebrow')}</span>
           <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, margin: '2px 0 4px', color: 'var(--ink)', overflowWrap: 'break-word' }}>
-            Kelengkapan Titik di Peta
+            {t('observatory.qualityTitle')}
           </h2>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', margin: 0, overflowWrap: 'break-word' }}>
-            Perbandingan tempat yang sudah memiliki koordinat peta dengan tempat yang masih butuh penandaan lokasi.
+            {t('observatory.qualityDesc')}
           </p>
         </div>
         <span
@@ -42,27 +44,27 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
             textAlign: 'center',
           }}
         >
-          {percentage}% Sudah Ada Titik Peta
+          {t('observatory.alreadyMappedPill', { percentage })}
         </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px', marginBottom: '14px' }}>
         <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: '8px', border: '1px solid var(--border)', minWidth: 0 }}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Titik Peta Tersedia</span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>{t('observatory.mappedAvailable')}</span>
           <strong style={{ fontSize: 'var(--text-xl)', color: 'var(--green)', display: 'block', margin: '2px 0' }}>{geocoded}</strong>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Bisa dilihat langsung di peta</span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>{t('observatory.mappedAvailableSub')}</span>
         </div>
 
         <div style={{ padding: '10px 14px', background: 'var(--notice-warning-bg)', borderRadius: '8px', border: '1px solid var(--notice-warning-border)', minWidth: 0 }}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--notice-warning-ink)', display: 'block', overflowWrap: 'break-word' }}>Belum Ada Titik Peta</span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--notice-warning-ink)', display: 'block', overflowWrap: 'break-word' }}>{t('observatory.unmappedCount')}</span>
           <strong style={{ fontSize: 'var(--text-xl)', color: 'var(--orange)', display: 'block', margin: '2px 0' }}>{needsGeocoding}</strong>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--notice-warning-ink)', display: 'block', overflowWrap: 'break-word' }}>Masih butuh bantuan penandaan lokasi</span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--notice-warning-ink)', display: 'block', overflowWrap: 'break-word' }}>{t('observatory.unmappedSub')}</span>
         </div>
 
         <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: '8px', border: '1px solid var(--border)', minWidth: 0 }}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Total Tempat Terdata</span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>{t('observatory.totalRecorded')}</span>
           <strong style={{ fontSize: 'var(--text-xl)', color: 'var(--ink)', display: 'block', margin: '2px 0' }}>{total}</strong>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>Fasilitas publik yang tercatat</span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', display: 'block', overflowWrap: 'break-word' }}>{t('observatory.totalRecordedSub')}</span>
         </div>
       </div>
 
@@ -79,7 +81,7 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
           overflowWrap: 'break-word',
         }}
       >
-        <strong style={{ color: 'var(--ink)' }}>Mengapa semua tempat tetap dicatat?</strong> Tempat yang belum memiliki titik peta tetap kami tampilkan agar tidak terlewatkan. Relawan dapat membantu menambahkan lokasi saat survei ke lapangan.
+        <strong style={{ color: 'var(--ink)' }}>{t('observatory.whyRecordAllTitle')}</strong> {t('observatory.whyRecordAllBody')}
       </div>
     </div>
   );

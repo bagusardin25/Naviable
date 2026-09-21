@@ -3,18 +3,20 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAccessibility } from '@/hooks/useAccessibility';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from '@/components/ui/Icon';
 import type { AccessibilityWidgetPosition } from '@/types';
-
-const POSITION_OPTIONS: { id: AccessibilityWidgetPosition; label: string }[] = [
-  { id: 'left', label: 'Kiri' },
-  { id: 'right', label: 'Kanan' },
-];
 
 export function AccessibilityWidget() {
   const pathname = usePathname() || '';
   const isJelajahPage = pathname === '/jelajah' || pathname.startsWith('/jelajah');
   const isLoginPage = pathname === '/login';
+  const { t } = useTranslation();
+
+  const POSITION_OPTIONS: { id: AccessibilityWidgetPosition; label: string }[] = [
+    { id: 'left', label: t('a11yWidget.posLeft') },
+    { id: 'right', label: t('a11yWidget.posRight') },
+  ];
 
   const {
     settings,
@@ -177,7 +179,7 @@ export function AccessibilityWidget() {
     <div
       className={wrapperClass}
       role="region"
-      aria-label="Fitur Aksesibilitas"
+      aria-label={t('a11yWidget.regionAria')}
     >
       {/* Floating Trigger Button (only shown when not on jelajah/dashboard) */}
       {!isJelajahPage && (
@@ -192,15 +194,15 @@ export function AccessibilityWidget() {
           aria-expanded={isWidgetOpen}
           aria-haspopup="dialog"
           aria-controls="a11y-widget-panel"
-          aria-label="Buka pengaturan aksesibilitas"
-          title="Pengaturan Aksesibilitas"
+          aria-label={t('a11yWidget.triggerBtnAria')} /* aria-label="Buka pengaturan aksesibilitas" */
+          title={t('a11yWidget.triggerBtnTitle')}
         >
           <span className="a11y-widget-icon-wrapper" aria-hidden="true">
             <Icon name="access" size={20} />
           </span>
-          <span className="a11y-widget-label">Aksesibilitas</span>
+          <span className="a11y-widget-label">{t('a11yWidget.triggerBtnLabel')}</span>
           {activeFeaturesCount > 0 && (
-            <span className="a11y-active-badge" aria-label={`${activeFeaturesCount} fitur aktif`}>
+            <span className="a11y-active-badge" aria-label={t('a11yWidget.activeFeaturesBadge', { count: activeFeaturesCount })}>
               {activeFeaturesCount}
             </span>
           )}
@@ -224,16 +226,16 @@ export function AccessibilityWidget() {
                 <Icon name="access" size={18} />
               </div>
               <div>
-                <h2 id="a11y-panel-title">Aksesibilitas</h2>
-                <p>Sesuaikan tampilan dan interaksi dengan kebutuhan Anda.</p>
+                <h2 id="a11y-panel-title">{t('a11yWidget.panelTitle')}</h2>
+                <p>{t('a11yWidget.panelSubtitle')}</p>
               </div>
             </div>
             <button
               type="button"
               className="a11y-panel-close-btn"
               onClick={handleClose}
-              title="Tutup panel aksesibilitas"
-              aria-label="Tutup panel aksesibilitas"
+              title={t('a11yWidget.closeBtnTitle')}
+              aria-label={t('a11yWidget.closeBtnAria')}
             >
               <Icon name="close" size={16} />
             </button>
@@ -244,7 +246,7 @@ export function AccessibilityWidget() {
             <div className="a11y-section">
               <span className="a11y-section-title">
                 <Icon name="sparkles" size={14} />
-                <span>Fitur Aksesibilitas</span>
+                <span>{t('a11yWidget.sectionFeatures')}</span>{/* <span>Fitur Aksesibilitas</span> */}
               </span>
               <div className="a11y-feature-grid">
                 {/* 1. Gangguan Motorik */}
@@ -261,9 +263,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.motorMode ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Gangguan Motorik</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.motorCardName')}</strong>
                   <span className="feature-card-desc">
-                    Perbesar area sentuh & ruang tombol untuk navigasi yang lebih mudah.
+                    {t('a11yWidget.motorCardDesc')}
                   </span>
                 </button>
 
@@ -281,9 +283,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.dyslexia ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Huruf Ramah Disleksia</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.dyslexiaCardName')}</strong>
                   <span className="feature-card-desc">
-                    Gunakan OpenDyslexic dan spasi alternatif yang lebih ramah dibaca.
+                    {t('a11yWidget.dyslexiaCardDesc')}
                   </span>
                 </button>
 
@@ -298,9 +300,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.textScale > 100 ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Ukuran Teks</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.textSizeCardName')}</strong>
                   <span className="feature-card-desc">
-                    Sesuaikan skala teks dari 100% hingga 200% sesuai kebutuhan.
+                    {t('a11yWidget.textSizeCardDesc')}
                   </span>
 
                   {/* Stepper + Slider Control */}
@@ -329,8 +331,8 @@ export function AccessibilityWidget() {
                           setTextScale(Math.max(100, settings.textScale - 10));
                         }}
                         disabled={settings.textScale <= 100}
-                        aria-label="Perkecil ukuran teks"
-                        title="Perkecil ukuran teks"
+                        aria-label={t('a11yWidget.decreaseTextSize')}
+                        title={t('a11yWidget.decreaseTextSize')}
                         style={{
                           width: '34px',
                           height: '34px',
@@ -370,8 +372,8 @@ export function AccessibilityWidget() {
                           setTextScale(Math.min(200, settings.textScale + 10));
                         }}
                         disabled={settings.textScale >= 200}
-                        aria-label="Perbesar ukuran teks"
-                        title="Perbesar ukuran teks"
+                        aria-label={t('a11yWidget.increaseTextSize')}
+                        title={t('a11yWidget.increaseTextSize')}
                         style={{
                           width: '34px',
                           height: '34px',
@@ -399,7 +401,7 @@ export function AccessibilityWidget() {
                       step="10"
                       value={settings.textScale}
                       onChange={(e) => setTextScale(Number(e.target.value))}
-                      aria-label="Ukuran teks"
+                      aria-label={t('a11yWidget.textSizeAria')}
                       aria-valuemin={100}
                       aria-valuemax={200}
                       aria-valuenow={settings.textScale}
@@ -427,9 +429,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.contrast ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Kontras Tinggi</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.contrastCardName')}</strong>
                   <span className="feature-card-desc">
-                    Tingkatkan ketegasan batas dan kontras teks agar terbaca jelas.
+                    {t('a11yWidget.contrastCardDesc')}
                   </span>
                 </button>
 
@@ -447,9 +449,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.colorBlind ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Buta Warna</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.colorBlindCardName')}</strong>
                   <span className="feature-card-desc">
-                    Ubah seluruh tampilan situs menjadi hitam putih.
+                    {t('a11yWidget.colorBlindCardDesc')}
                   </span>
                 </button>
 
@@ -467,9 +469,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.highlightInteractive ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Highlight Tautan & Tombol</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.highlightCardName')}</strong>
                   <span className="feature-card-desc">
-                    Beri garis bawah tegas pada tautan serta bingkai pada tombol dan aksi.
+                    {t('a11yWidget.highlightCardDesc')}
                   </span>
                 </button>
 
@@ -487,9 +489,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.readingGuide ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Panduan Baca</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.readingGuideCardName')}</strong>
                   <span className="feature-card-desc">
-                    Tampilkan garis bantu horizontal mengikuti arah kursor baca.
+                    {t('a11yWidget.readingGuideCardDesc')}
                   </span>
                 </button>
 
@@ -507,9 +509,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.voiceMode ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Mode Suara</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.voiceModeCardName')}</strong>
                   <span className="feature-card-desc">
-                    Arahkan kursor atau gunakan tombol Tab untuk mendengarkan teks elemen.
+                    {t('a11yWidget.voiceModeCardDesc')}
                   </span>
                 </button>
               </div>
@@ -519,7 +521,7 @@ export function AccessibilityWidget() {
             <div className="a11y-section a11y-section-separated">
               <span className="a11y-section-title">
                 <Icon name="eye" size={14} />
-                <span>Tampilan &amp; Gerakan</span>
+                <span>{t('a11yWidget.sectionDisplayMotion')}</span>{/* <span>Tampilan &amp; Gerakan</span> */}
               </span>
               <div className="a11y-feature-grid">
                 <button
@@ -535,9 +537,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.darkMode ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Mode Gelap</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.darkModeCardName')}</strong>
                   <span className="feature-card-desc">
-                    Gunakan palet gelap untuk mengurangi silau pada layar.
+                    {t('a11yWidget.darkModeCardDesc')}
                   </span>
                 </button>
                 <button
@@ -553,9 +555,9 @@ export function AccessibilityWidget() {
                     </span>
                     <span className={`feature-status-dot ${settings.reduceMotion ? 'on' : ''}`} />
                   </div>
-                  <strong className="feature-card-name">Kurangi Gerakan</strong>
+                  <strong className="feature-card-name">{t('a11yWidget.reduceMotionCardName')}</strong>
                   <span className="feature-card-desc">
-                    Minimalkan animasi dan transisi yang tidak diperlukan.
+                    {t('a11yWidget.reduceMotionCardDesc')}
                   </span>
                 </button>
               </div>
@@ -566,12 +568,12 @@ export function AccessibilityWidget() {
               <div className="a11y-section a11y-section-separated a11y-position-section">
                 <span className="a11y-section-title">
                   <Icon name="move" size={14} />
-                  <span>Posisi Widget</span>
+                  <span>{t('a11yWidget.sectionPosition')}</span>{/* <span>Posisi Widget</span> */}
                 </span>
                 <div
                   className="a11y-position-grid"
                   role="radiogroup"
-                  aria-label="Pilih posisi widget aksesibilitas"
+                  aria-label={t('a11yWidget.positionRadioGroupAria')}
                 >
                   {POSITION_OPTIONS.map((option) => {
                     const isSelected = currentPos === option.id;
@@ -599,10 +601,10 @@ export function AccessibilityWidget() {
               type="button"
               className="a11y-reset-btn"
               onClick={resetSettings}
-              title="Kembalikan semua preferensi ke pengaturan awal"
+              title={t('a11yWidget.resetBtnTitle')}
             >
               <Icon name="refresh" size={15} />
-              <span>Kembalikan ke Awal</span>
+              <span>{t('a11yWidget.resetBtnLabel')}</span>
             </button>
           </div>
         </div>

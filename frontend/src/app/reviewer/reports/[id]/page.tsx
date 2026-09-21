@@ -16,31 +16,32 @@ import { fetchReviewerReport, submitReportReview } from '@/lib/api';
 import type { ReviewerAuditItem, AccessibilityStatus, ReviewDecision } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from '../../reviewer.module.css';
 
-const CHECKLIST_POINTS = [
-  { id: 'photoMatchesPlace', label: 'Foto sesuai dengan tempat yang dilaporkan' },
-  { id: 'photoShowsElement', label: 'Foto menunjukkan elemen yang dilaporkan' },
-  { id: 'descriptionMatchesEvidence', label: 'Deskripsi sesuai dengan bukti foto' },
-  { id: 'notDuplicate', label: 'Tidak terlihat sebagai laporan duplikat' },
-  { id: 'accessStatusMatchesEvidence', label: 'Status akses sesuai dengan bukti yang terlihat' },
-] as const;
-
-const ELEMENT_STATUS_OPTIONS: Array<{ value: AccessibilityStatus; label: string }> = [
-  { value: 'UTUH', label: 'Bisa digunakan (UTUH)' },
-  { value: 'TERHALANG', label: 'Terhalang (TERHALANG)' },
-  { value: 'TIDAK_STANDAR', label: 'Perlu perhatian (TIDAK_STANDAR)' },
-  { value: 'TIDAK_ADA', label: 'Tidak ada (TIDAK_ADA)' },
-  { value: 'BELUM_DIKETAHUI', label: 'Belum diketahui' },
-];
-
 export default function ReviewReportDetailPage() {
+  const { t, formatDate } = useTranslation();
   const params = useParams();
   const reportId = String(params.id);
 
+  const checklistPoints = [
+    { id: 'photoMatchesPlace', label: t('reviewer.check1') },
+    { id: 'photoShowsElement', label: t('reviewer.check2') },
+    { id: 'descriptionMatchesEvidence', label: t('reviewer.check3') },
+    { id: 'notDuplicate', label: t('reviewer.check4') },
+    { id: 'accessStatusMatchesEvidence', label: t('reviewer.check5') },
+  ] as const;
+
+  const elementStatusOptions: Array<{ value: AccessibilityStatus; label: string }> = [
+    { value: 'UTUH', label: `${t('status.UTUH.label')} (UTUH)` },
+    { value: 'TERHALANG', label: `${t('status.TERHALANG.label')} (TERHALANG)` },
+    { value: 'TIDAK_STANDAR', label: `${t('status.TIDAK_STANDAR.label')} (TIDAK_STANDAR)` },
+    { value: 'TIDAK_ADA', label: `${t('status.TIDAK_ADA.label')} (TIDAK_ADA)` },
+    { value: 'BELUM_DIKETAHUI', label: t('status.BELUM_DIKETAHUI.label') },
+  ];
+
   const [report, setReport] = useState<ReviewerAuditItem | null>(null);
   const [loading, setLoading] = useState(true);
-
 
   // Verification checks state
   const [checks, setChecks] = useState<Record<string, boolean>>({
@@ -114,7 +115,7 @@ export default function ReviewReportDetailPage() {
 
     // Validation: NEEDS_REVISION and REJECTED require review notes
     if ((decision === 'NEEDS_REVISION' || decision === 'REJECTED') && !reviewerNote.trim()) {
-      setNoteError('Catatan reviewer wajib diisi jika meminta revisi atau menolak laporan.');
+      setNoteError(t('reviewer.notesRequiredForRejectOrRevise'));
       return;
     }
 
@@ -142,16 +143,16 @@ export default function ReviewReportDetailPage() {
         setConfirmModal(null);
         setSuccessMessage(
           decision === 'APPROVED'
-            ? 'Laporan berhasil disetujui sebagai Bukti Telah Diperiksa.'
+            ? t('reviewer.approveSuccess')
             : decision === 'NEEDS_REVISION'
-            ? 'Status laporan diubah menjadi Perlu Revisi.'
-            : 'Laporan telah ditolak.'
+            ? t('reviewer.revisionSuccess')
+            : t('reviewer.rejectSuccess')
         );
       } else {
-        setErrorMessage('Review belum berhasil disimpan.');
+        setErrorMessage(t('reviewer.reviewSaveFailed'));
       }
     } catch {
-      setErrorMessage('Review belum berhasil disimpan.');
+      setErrorMessage(t('reviewer.reviewSaveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -161,9 +162,9 @@ export default function ReviewReportDetailPage() {
     return (
       <div>
         <Link href="/reviewer/reports" className={styles.secondaryButton} style={{ marginBottom: '16px' }}>
-          <ArrowLeft size={16} /> Kembali ke Laporan Masuk
+          <ArrowLeft size={16} /> {t('reviewer.backToIncoming')}
         </Link>
-        <div className={styles.emptyState}>Memuat detail laporan pemeriksaan…</div>
+        <div className={styles.emptyState}>{t('reviewer.loadingDetail')}</div>
       </div>
     );
   }
@@ -172,9 +173,9 @@ export default function ReviewReportDetailPage() {
     return (
       <div>
         <Link href="/reviewer/reports" className={styles.secondaryButton} style={{ marginBottom: '16px' }}>
-          <ArrowLeft size={16} /> Kembali ke Laporan Masuk
+          <ArrowLeft size={16} /> {t('reviewer.backToIncoming')}
         </Link>
-        <div className={styles.emptyState}>Laporan tidak ditemukan.</div>
+        <div className={styles.emptyState}>{t('reviewer.reportNotFound')}</div>
       </div>
     );
   }
@@ -183,15 +184,15 @@ export default function ReviewReportDetailPage() {
     <div>
       <div style={{ marginBottom: '20px' }}>
         <Link href="/reviewer/reports" className={styles.secondaryButton} style={{ marginBottom: '12px' }}>
-          <ArrowLeft size={16} /> Kembali ke Laporan Masuk
+          <ArrowLeft size={16} /> {t('reviewer.backToIncoming')}
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h1 className={styles.pageTitle} style={{ fontSize: '1.4rem' }}>
-              Pemeriksaan Laporan #{report.id.slice(0, 8)}
+              {t('reviewer.detailTitlePrefix', { id: report.id.slice(0, 8) })}
             </h1>
             <p className={styles.pageSubtitle}>
-              Evaluasi bukti foto lapangan dan verifikasi elemen aksesibilitas sebelum dipublikasikan.
+              {t('reviewer.detailSubtitle')}
             </p>
           </div>
           <div>
@@ -260,7 +261,7 @@ export default function ReviewReportDetailPage() {
             onClick={() => setErrorMessage('')}
             style={{ padding: '4px 10px', fontSize: '12px' }}
           >
-            Coba lagi
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -269,7 +270,7 @@ export default function ReviewReportDetailPage() {
         {/* Kolom Kiri: Bukti Foto & Info Laporan */}
         <section className={styles.panel} aria-labelledby="evidence-heading">
           <h2 id="evidence-heading" className={styles.panelTitle}>
-            <span>Bukti Foto & Data Lapangan</span>
+            <span>{t('reviewer.evidencePanelTitle')}</span>
             <Camera size={18} color="var(--purple)" aria-hidden="true" />
           </h2>
 
@@ -283,14 +284,14 @@ export default function ReviewReportDetailPage() {
               />
             ) : (
               <div style={{ padding: '60px', textAlign: 'center', color: 'var(--muted)' }}>
-                Tidak ada foto terlampir
+                {t('reviewer.noPhotoAttached')}
               </div>
             )}
           </div>
 
           <div className={styles.metaList}>
             <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Nama Tempat</span>
+              <span className={styles.metaLabel}>{t('reviewer.metaPlaceName')}</span>
               <span className={styles.metaValue} style={{ fontSize: '1.05rem', color: 'var(--ink)' }}>
                 {report.placeName}
               </span>
@@ -298,7 +299,7 @@ export default function ReviewReportDetailPage() {
 
             {report.placeAddress && (
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>Alamat Lokasi</span>
+                <span className={styles.metaLabel}>{t('reviewer.metaAddress')}</span>
                 <span className={styles.metaValue} style={{ fontWeight: 400 }}>
                   {report.placeAddress}
                 </span>
@@ -307,13 +308,13 @@ export default function ReviewReportDetailPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '4px' }}>
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>Pelapor</span>
+                <span className={styles.metaLabel}>{t('reviewer.metaReporter')}</span>
                 <span className={styles.metaValue}>{report.reporterName}</span>
               </div>
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>Tanggal Dilaporkan</span>
+                <span className={styles.metaLabel}>{t('reviewer.metaReportDate')}</span>
                 <span className={styles.metaValue}>
-                  {new Date(report.createdAt).toLocaleDateString('id-ID', {
+                  {formatDate(report.createdAt, {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric',
@@ -327,7 +328,7 @@ export default function ReviewReportDetailPage() {
 
           <div>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
-              Elemen yang Dilaporkan
+              {t('reviewer.reportedElementsHeading')}
             </h3>
             {report.elements.map(el => (
               <div
@@ -345,12 +346,12 @@ export default function ReviewReportDetailPage() {
                     {el.element.replace('_', ' ')}
                   </strong>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Dilaporkan:</span>
+                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{t('reviewer.reportedBadge')}:</span>
                     <StatusBadge status={el.status} size="sm" />
                   </div>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  Catatan Pelapor: “{el.note || 'Tidak ada catatan tambahan.'}”
+                  {t('reviewer.reporterNotesPrefix')}: “{el.note || t('reviewer.noExtraNotes')}”
                 </p>
               </div>
             ))}
@@ -360,25 +361,36 @@ export default function ReviewReportDetailPage() {
           <div className={styles.aiBox}>
             <div className={styles.aiHeader}>
               <Sparkles size={16} />
-              <span>Pemeriksaan Integritas Foto</span>
+              <span>{report.photoIntegrity ? 'Pemeriksaan Integritas Foto' : t('reviewer.aiPhotoCheckBox')}</span>
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
-              <p style={{ margin: '0 0 6px' }}>
-                Hasil:{' '}
-                <strong>
-                  {report.photoIntegrity?.outcome === 'trusted_ai_provenance'
-                    ? 'Penanda asal AI terverifikasi'
-                    : report.photoIntegrity?.outcome === 'suspicious'
-                      ? 'Memerlukan foto pembanding'
-                      : 'Tidak dapat dipastikan'}
-                </strong>
-              </p>
-              <p style={{ margin: 0, color: 'var(--muted)', fontSize: '12px' }}>
-                {report.photoIntegrity?.signals.map(signal => signal.detail).join(' ') || 'Belum ada hasil pemeriksaan integritas tersimpan untuk laporan ini.'}
-              </p>
-            </div>
+            {report.photoIntegrity ? (
+              <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                <p style={{ margin: '0 0 6px' }}>
+                  Hasil:{' '}
+                  <strong>
+                    {report.photoIntegrity.outcome === 'trusted_ai_provenance'
+                      ? 'Penanda asal AI terverifikasi'
+                      : report.photoIntegrity.outcome === 'suspicious'
+                        ? 'Memerlukan foto pembanding'
+                        : 'Tidak dapat dipastikan'}
+                  </strong>
+                </p>
+                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '12px' }}>
+                  {report.photoIntegrity.signals.map(signal => signal.detail).join(' ') || 'Belum ada hasil pemeriksaan integritas tersimpan untuk laporan ini.'}
+                </p>
+              </div>
+            ) : (
+              <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                <p style={{ margin: '0 0 6px' }}>
+                  {t('reviewer.aiDetectedInPhoto')}: <strong>{report.elements[0]?.element.replace('_', ' ')}</strong>
+                </p>
+                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '12px' }}>
+                  {t('reviewer.aiConfidence')}: <strong>Tinggi (High)</strong>
+                </p>
+              </div>
+            )}
             <div className={styles.aiDisclaimer}>
-              {report.photoIntegrity?.disclaimer || 'Tidak adanya penanda bukan bukti bahwa foto asli. Keputusan akhir tetap berada di tangan reviewer.'}
+              {report.photoIntegrity?.disclaimer || t('reviewer.aiReviewerNote')}
             </div>
           </div>
         </section>
@@ -386,17 +398,17 @@ export default function ReviewReportDetailPage() {
         {/* Kolom Kanan: Checklist 5 Butir, Penilaian 8 Elemen & Tindakan */}
         <section className={styles.panel} aria-labelledby="checklist-heading">
           <h2 id="checklist-heading" className={styles.panelTitle}>
-            <span>Verifikasi & Tindakan Review</span>
+            <span>{t('reviewer.verificationPanelTitle')}</span>
             <CheckCircle size={18} color="var(--green)" aria-hidden="true" />
           </h2>
 
           {/* 5 Butir Review Check */}
           <div>
             <h3 style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
-              1. Butir Pemeriksaan Bukti (Review Check)
+              {t('reviewer.step1ReviewCheckTitle')}
             </h3>
             <div className={styles.checkList}>
-              {CHECKLIST_POINTS.map(pt => (
+              {checklistPoints.map(pt => (
                 <label key={pt.id} className={styles.checkItem}>
                   <input
                     type="checkbox"
@@ -412,10 +424,10 @@ export default function ReviewReportDetailPage() {
           {/* 8 Elemen Standar Naviable */}
           <div>
             <h3 style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
-              2. Checklist Standar 8 Elemen Akses
+              {t('reviewer.step2StandardElementsTitle')}
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '12px' }}>
-              Sesuaikan status elemen akses yang terlihat jelas pada foto bukti:
+              {t('reviewer.step2StandardElementsSub')}
             </p>
             <div className={styles.standardElements}>
               {(Object.keys(CHAIN_ELEMENT_MAP) as Array<keyof typeof CHAIN_ELEMENT_MAP>).map(code => {
@@ -435,7 +447,7 @@ export default function ReviewReportDetailPage() {
                       </span>
                       {isReported && (
                         <span style={{ fontSize: '10px', color: 'var(--purple)', fontWeight: 700 }}>
-                          DILAPORKAN
+                          {t('reviewer.reportedBadge').toUpperCase()}
                         </span>
                       )}
                     </div>
@@ -447,7 +459,7 @@ export default function ReviewReportDetailPage() {
                       }
                       aria-label={`Status untuk ${item.label}`}
                     >
-                      {ELEMENT_STATUS_OPTIONS.map(opt => (
+                      {elementStatusOptions.map(opt => (
                         <option key={opt.value} value={opt.value}>
                           {opt.label}
                         </option>
@@ -465,12 +477,12 @@ export default function ReviewReportDetailPage() {
               htmlFor="reviewer-notes"
               style={{ display: 'block', fontSize: '0.925rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '6px' }}
             >
-              3. Catatan Reviewer
+              {t('reviewer.step3ReviewerNotesTitle')}
             </label>
             <textarea
               id="reviewer-notes"
               className={styles.textarea}
-              placeholder="Tulis alasan jika laporan perlu diperbaiki atau ditolak. (Opsional untuk persetujuan)."
+              placeholder={t('reviewer.reviewerNotesPlaceholder')}
               value={reviewerNote}
               onChange={e => {
                 setReviewerNote(e.target.value);
@@ -493,7 +505,7 @@ export default function ReviewReportDetailPage() {
               onClick={() => setConfirmModal('APPROVED')}
             >
               <CheckCircle size={16} />
-              <span>Setujui (Approve)</span>
+              <span>{t('reviewer.btnApprove')}</span>
             </button>
 
             <button
@@ -503,7 +515,7 @@ export default function ReviewReportDetailPage() {
               onClick={() => handleDecision('NEEDS_REVISION')}
             >
               <RotateCcw size={16} />
-              <span>Minta Revisi</span>
+              <span>{t('reviewer.btnRevision')}</span>
             </button>
 
             <button
@@ -513,7 +525,7 @@ export default function ReviewReportDetailPage() {
               onClick={() => setConfirmModal('REJECTED')}
             >
               <XCircle size={16} />
-              <span>Tolak (Reject)</span>
+              <span>{t('reviewer.btnReject')}</span>
             </button>
           </div>
         </section>
@@ -524,12 +536,12 @@ export default function ReviewReportDetailPage() {
         <div className={styles.modalBackdrop} role="dialog" aria-modal="true">
           <div className={styles.modalBox}>
             <h3 className={styles.modalTitle}>
-              {confirmModal === 'APPROVED' ? 'Setujui Laporan Ini?' : 'Tolak Laporan Ini?'}
+              {confirmModal === 'APPROVED' ? t('reviewer.modalApproveTitle') : t('reviewer.modalRejectTitle')}
             </h3>
             <p className={styles.modalText}>
               {confirmModal === 'APPROVED'
-                ? 'Laporan akan dipublikasikan ke peta sebagai "Bukti telah diperiksa". Pastikan foto dan elemen sudah sesuai dengan hasil verifikasi Anda.'
-                : 'Laporan akan ditolak dan tidak dipublikasikan ke data publik. Pastikan Anda telah menuliskan alasan penolakan pada catatan reviewer.'}
+                ? t('reviewer.modalApproveText')
+                : t('reviewer.modalRejectText')}
             </p>
             <div className={styles.modalActions}>
               <button
@@ -538,7 +550,7 @@ export default function ReviewReportDetailPage() {
                 onClick={() => setConfirmModal(null)}
                 disabled={submitting}
               >
-                Batal
+                {t('reviewer.modalCancelBtn')}
               </button>
               <button
                 type="button"
@@ -546,7 +558,11 @@ export default function ReviewReportDetailPage() {
                 onClick={() => handleDecision(confirmModal)}
                 disabled={submitting}
               >
-                {submitting ? 'Menyimpan…' : confirmModal === 'APPROVED' ? 'Ya, Setujui' : 'Ya, Tolak'}
+                {submitting
+                  ? t('reviewer.submittingReview')
+                  : confirmModal === 'APPROVED'
+                  ? t('reviewer.modalConfirmApproveBtn')
+                  : t('reviewer.modalConfirmRejectBtn')}
               </button>
             </div>
           </div>

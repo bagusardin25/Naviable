@@ -5,7 +5,7 @@ import { findBestMatchingPlace } from '@/lib/voice-search';
 import { matchesPlaceQuery, getPopularStreetCorridors } from '@/lib/streetSearch';
 import { fetchExternalPlaces, type ExternalPlaceResult } from '@/lib/externalGeocoding';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { loginHref, parseScreen, screenHref } from '@/lib/navigation';
+import { parseScreen, screenHref } from '@/lib/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Place,
@@ -33,8 +33,10 @@ import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ExploreApp() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const screen = parseScreen(searchParams.get('screen'));
@@ -330,7 +332,7 @@ export default function ExploreApp() {
   return (
     <main className={appClassName}>
       <a href="#main-content" className="skip-link">
-        Lewati ke konten utama
+        {t('landing.skipToMain')}
       </a>
       <div role="status" aria-live="polite" aria-atomic="true" className="visually-hidden">
         {liveAnnouncement}
@@ -349,10 +351,6 @@ export default function ExploreApp() {
           onSearchChange={setSearchQuery}
           onSearchSubmit={handleSearchSubmit}
           onOpenAccessibility={toggleWidget}
-          accountHref={auth.user ? screenHref('profile') : loginHref(screenHref(screen))}
-          authReady={auth.ready}
-          userProfile={auth.profile}
-          onOpenAuth={() => setShowAuthModal(true)}
           localPlaces={places}
           externalPlaces={externalPlaces}
           externalLoading={externalLoading}
@@ -366,11 +364,11 @@ export default function ExploreApp() {
           }}
         />
 
-        {loading && <p role="status" style={{ padding: '10px 20px' }}>Memuat data tempat dari server…</p>}
-        {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>Coba lagi</button></div>}
+        {loading && <p role="status" style={{ padding: '10px 20px' }}>{t('common.loading')}</p>}
+        {apiError && <div role="alert" style={{ padding: '10px 20px' }}>{apiError} <button type="button" onClick={() => { setLoading(true); setReload(value => value + 1); }}>{t('common.retry')}</button></div>}
         {screen === 'map' && (
           <>
-            <div className="mobile-view-tabs" role="tablist" aria-label="Pilih tampilan peta atau daftar">
+            <div className="mobile-view-tabs" role="tablist" aria-label={t('map.viewTabsAria')}>
               <button
                 type="button"
                 role="tab"
@@ -379,7 +377,7 @@ export default function ExploreApp() {
                 onClick={() => setMobileTab('map')}
               >
                 <Icon name="map" size={15} />
-                <span>Peta</span>
+                <span>{t('map.tabMap')}</span>
               </button>
               <button
                 type="button"
@@ -389,7 +387,7 @@ export default function ExploreApp() {
                 onClick={() => setMobileTab('list')}
               >
                 <Icon name="list" size={15} />
-                <span>Daftar ({filteredPlaces.length})</span>
+                <span>{t('map.tabList')} ({filteredPlaces.length})</span>
               </button>
             </div>
 
@@ -398,7 +396,7 @@ export default function ExploreApp() {
 
               <section
                 className={`map-panel ${mobileTab !== 'map' ? 'mobile-hidden' : 'mobile-active'} ${mobileFiltersOpen ? 'mobile-filters-open' : ''}`}
-                aria-label="Peta interaktif aksesibilitas Surabaya"
+                aria-label={t('map.interactiveMapAria')}
               >
                 <div className="map-toolbar">
                   <NeedFilterTabs currentNeed={need} onSelectNeed={setNeed} />
@@ -412,7 +410,7 @@ export default function ExploreApp() {
                       onClick={() => setMobileFiltersOpen(open => !open)}
                     >
                       <Icon name="filter" size={15} />
-                      <span>{mobileFiltersOpen ? 'Tutup filter' : 'Filter'}{additionalFilterCount > 0 ? ` (${additionalFilterCount})` : ''}</span>
+                      <span>{mobileFiltersOpen ? t('map.closeFilter') : t('map.filterButton')}{additionalFilterCount > 0 ? ` (${additionalFilterCount})` : ''}</span>
                     </button>
                     <button
                       id="btn-toggle-journey"
@@ -424,10 +422,10 @@ export default function ExploreApp() {
                           : { borderColor: 'var(--border)', color: 'var(--ink)', background: 'var(--surface)' }
                       }
                       onClick={() => setShowJourney(!showJourney)}
-                      title="Buka petunjuk rute akses"
+                      title={t('map.routeGuidanceTitle')}
                     >
                       <Icon name="compass" size={14} />
-                      <span>Petunjuk Rute</span>
+                      <span>{t('map.routeGuidance')}</span>
                     </button>
 
                     <select
@@ -435,9 +433,9 @@ export default function ExploreApp() {
                       className="filter-select map-category-filter"
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      aria-label="Filter berdasarkan kategori lokasi"
+                      aria-label={t('map.categoryFilterAria')}
                     >
-                      <option value="all">Semua Kategori ({places.length})</option>
+                      <option value="all">{t('map.allCategories')} ({places.length})</option>
                       {availableCategories.map((cat) => (
                         <option key={cat} value={cat}>
                           {cat} ({places.filter((p) => p.category === cat).length})
@@ -455,20 +453,20 @@ export default function ExploreApp() {
                           setCategoryFilter('all');
                           setSearchQuery('');
                         }}
-                        title="Reset semua filter"
+                        title={t('map.resetFilterTitle')}
                       >
                         <Icon name="close" size={13} />
-                        <span>Reset Filter</span>
+                        <span>{t('map.resetFilter')}</span>
                       </button>
                     )}
                   </div>
                 </div>
 
                 {popularCorridors.length > 0 && (
-                  <div className="street-corridors-bar" role="group" aria-label="Pilih koridor jalan populer">
+                  <div className="street-corridors-bar" role="group" aria-label={t('map.streetCorridorsAria')}>
                     <span className="street-corridors-label">
                       <Icon name="location" size={12} />
-                      <span>Jalan:</span>
+                      <span>{t('map.streetPrefix')}</span>
                     </span>
                     <div className="street-corridors-chips">
                       {popularCorridors.map((c) => {
@@ -487,7 +485,7 @@ export default function ExploreApp() {
                               }
                             }}
                             aria-pressed={isActive}
-                            title={`Tampilkan tempat di ${c.name} (${c.count} lokasi)`}
+                            title={`${c.name} (${c.count})`}
                           >
                             {c.name} ({c.count})
                           </button>
@@ -507,9 +505,9 @@ export default function ExploreApp() {
                 )}
 
                 {/* Status Filter Bar evaluated dynamically for active need profile */}
-                <div id="map-status-filters" className="status-filter-bar" role="toolbar" aria-label={`Filter kondisi untuk kebutuhan ${need}`}>
+                <div id="map-status-filters" className="status-filter-bar" role="toolbar" aria-label={t('map.conditionFor', { need: t(`needs.${need}`, need) })}>
                   <span className="status-filter-label">
-                    Kondisi ({need}):
+                    {t('map.conditionFor', { need: t(`needs.${need}`, need) })}
                   </span>
                   <button
                     type="button"
@@ -518,7 +516,7 @@ export default function ExploreApp() {
                     className={`status-pill-btn ${statusFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setStatusFilter('all')}
                   >
-                    Semua ({statusCounts.all})
+                    {t('common.all')} ({statusCounts.all})
                   </button>
                   <button
                     type="button"
@@ -528,7 +526,7 @@ export default function ExploreApp() {
                     onClick={() => setStatusFilter('UTUH')}
                   >
                     <Icon name="check" size={13} />
-                    <span>Bisa digunakan ({statusCounts.UTUH})</span>
+                    <span>{t('status.UTUH.label')} ({statusCounts.UTUH})</span>
                   </button>
                   <button
                     type="button"
@@ -538,7 +536,7 @@ export default function ExploreApp() {
                     onClick={() => setStatusFilter('TERHALANG')}
                   >
                     <Icon name="warning" size={13} />
-                    <span>Terhalang ({statusCounts.TERHALANG})</span>
+                    <span>{t('status.TERHALANG.label')} ({statusCounts.TERHALANG})</span>
                   </button>
                   <button
                     type="button"
@@ -548,7 +546,7 @@ export default function ExploreApp() {
                     onClick={() => setStatusFilter('TIDAK_STANDAR')}
                   >
                     <Icon name="alert-circle" size={13} />
-                    <span>Perlu perhatian ({statusCounts.TIDAK_STANDAR})</span>
+                    <span>{t('status.TIDAK_STANDAR.label')} ({statusCounts.TIDAK_STANDAR})</span>
                   </button>
                   <button
                     type="button"
@@ -558,7 +556,7 @@ export default function ExploreApp() {
                     onClick={() => setStatusFilter('TIDAK_ADA')}
                   >
                     <Icon name="x-circle" size={13} />
-                    <span>Tidak ada ({statusCounts.TIDAK_ADA})</span>
+                    <span>{t('status.TIDAK_ADA.label')} ({statusCounts.TIDAK_ADA})</span>
                   </button>
                   <button
                     type="button"
@@ -568,7 +566,7 @@ export default function ExploreApp() {
                     onClick={() => setStatusFilter('BELUM_DIKETAHUI')}
                   >
                     <Icon name="help-circle" size={13} />
-                    <span>Belum diketahui ({statusCounts.BELUM_DIKETAHUI})</span>
+                    <span>{t('status.BELUM_DIKETAHUI.label')} ({statusCounts.BELUM_DIKETAHUI})</span>
                   </button>
                 </div>
 
@@ -654,11 +652,9 @@ export default function ExploreApp() {
           <div className="page-scroll dashboard-page">
             <div className="page-title">
               <div>
-                <span className="eyebrow">Data & Riset Warga</span>
-                <h1>Data Keterbukaan Akses Surabaya</h1>
-                <p>
-                  Ringkasan kondisi ruang publik dari pengamatan warga Surabaya untuk komunitas disabilitas, pegiat advokasi, dan perencana kota.
-                </p>
+                <span className="eyebrow">{t('observatory.pageEyebrow')}</span>
+                <h1>{t('observatory.pageTitle')}</h1>
+                <p>{t('observatory.pageSubtitle')}</p>
               </div>
             </div>
 
@@ -683,12 +679,12 @@ export default function ExploreApp() {
         onSuccess={() => setShowAuthModal(false)}
         actionDescription={
           screen === 'add'
-            ? 'menambahkan lokasi baru'
+            ? t('auth.actionAddPlace')
             : screen === 'report'
-            ? 'melaporkan perubahan kondisi'
+            ? t('auth.actionReport')
             : screen === 'review'
-            ? 'menulis review pengalaman'
-            : 'berkontribusi di Naviable'
+            ? t('auth.actionReview')
+            : t('auth.actionContribute')
         }
       />
     </main>

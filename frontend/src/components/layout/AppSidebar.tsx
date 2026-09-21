@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Screen } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { AuthUserProfile } from '@/lib/auth/user-profile';
 
 type AppSidebarProps = {
@@ -15,12 +16,13 @@ type AppSidebarProps = {
 };
 
 export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfile }: AppSidebarProps) {
+  const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const signedIn = Boolean(userProfile);
 
   return (
     <aside className="sidebar">
-      <Link href="/" className="brand" aria-label="NaviAble — kembali ke beranda">
+      <Link href="/" className="brand" aria-label={t('nav.backToHome')}>
         {!imgError ? (
           <Image
             src="/logo-only-light-3.png"
@@ -43,54 +45,54 @@ export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfi
         <span>NaviAble</span>
       </Link>
 
-      <nav aria-label="Navigasi utama">
+      <nav aria-label={t('nav.mainNavLabel')}>
         <button
           id="nav-map"
           type="button"
           className={currentScreen === 'map' ? 'active' : ''}
           onClick={() => onSelectScreen('map')}
-          aria-label="Jelajahi"
+          aria-label={t('nav.explore')}
           aria-current={currentScreen === 'map' ? 'page' : undefined}
         >
           <Icon name="map" />
-          <span>Jelajahi</span>
+          <span>{t('nav.explore')}</span>
         </button>
         <button
           id="nav-report"
           type="button"
           className={currentScreen === 'add' ? 'active' : ''}
           onClick={() => onSelectScreen('add')}
-          aria-label="Tambah Lokasi"
+          aria-label={t('nav.addPlace')}
           aria-current={currentScreen === 'add' ? 'page' : undefined}
         >
           <Icon name="report" />
-          <span className="nav-label-full">Tambah Lokasi</span>
-          <span className="nav-label-mobile">Tambah</span>
+          <span className="nav-label-full">{t('nav.addPlace')}</span>
+          <span className="nav-label-mobile">{t('nav.addPlaceMobile')}</span>
         </button>
         <button
           id="nav-dashboard"
           type="button"
           className={currentScreen === 'dashboard' ? 'active' : ''}
           onClick={() => onSelectScreen('dashboard')}
-          aria-label="Informasi Aksesibilitas"
+          aria-label={t('nav.dashboard')}
           aria-current={currentScreen === 'dashboard' ? 'page' : undefined}
         >
           <Icon name="dashboard" />
-          <span className="nav-label-full">Informasi Aksesibilitas</span>
-          <span className="nav-label-mobile">Informasi</span>
+          <span className="nav-label-full">{t('nav.dashboard')}</span>
+          <span className="nav-label-mobile">{t('nav.dashboardMobile')}</span>
         </button>
         <button
           id="nav-profile"
           type="button"
           className={currentScreen === 'profile' ? 'active' : ''}
           onClick={() => onSelectScreen('profile')}
-          aria-label={userProfile ? `Kontribusi Saya — ${userProfile.displayName}` : 'Masuk'}
+          aria-label={userProfile ? `${t('nav.myContributions')} — ${userProfile.displayName}` : t('nav.signIn')}
           title={userProfile?.displayName}
           aria-current={currentScreen === 'profile' ? 'page' : undefined}
         >
           <Icon name="user" />
-          <span className="nav-label-full">{signedIn ? 'Kontribusi Saya' : 'Masuk'}</span>
-          <span className="nav-label-mobile">{userProfile?.shortName ?? 'Masuk'}</span>
+          <span className="nav-label-full">{signedIn ? t('nav.myContributions') : t('nav.signIn')}</span>
+          <span className="nav-label-mobile">{userProfile?.shortName ?? (signedIn ? t('nav.myContributions') : t('nav.signIn'))}</span>
         </button>
       </nav>
 
@@ -100,10 +102,10 @@ export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfi
         </div>
         <div className="sidebar-account-copy">
           <strong title={userProfile?.displayName}>
-            {!authReady ? 'Memeriksa sesi…' : userProfile?.displayName ?? 'Mode tamu'}
+            {!authReady ? t('common.checkingSession') : userProfile?.displayName ?? t('common.guestMode')}
           </strong>
           <span title={userProfile?.email}>
-            {!authReady ? 'Mohon tunggu' : userProfile?.email ?? 'Jelajahi tanpa akun'}
+            {!authReady ? t('common.pleaseWait') : userProfile?.email ?? t('common.exploreWithoutAccount')}
           </span>
         </div>
       </div>

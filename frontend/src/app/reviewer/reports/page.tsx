@@ -5,22 +5,23 @@ import Link from 'next/link';
 import { Search, Eye } from 'lucide-react';
 import { fetchReviewerReports } from '@/lib/api';
 import type { ReviewerAuditItem } from '@/types';
-import { REVIEW_STATUS_META } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from '../reviewer.module.css';
 
-const FILTER_OPTIONS = [
-  { id: 'all', label: 'Semua' },
-  { id: 'SUBMITTED', label: 'Menunggu Review' },
-  { id: 'NEEDS_REVISION', label: 'Perlu Revisi' },
-  { id: 'APPROVED', label: 'Disetujui' },
-  { id: 'REJECTED', label: 'Ditolak' },
-];
-
 export default function ReviewerReportsPage() {
+  const { t, formatDate } = useTranslation();
   const [reports, setReports] = useState<ReviewerAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const filterOptions = [
+    { id: 'all', label: t('reviewer.filterAll') },
+    { id: 'SUBMITTED', label: t('reviewer.filterAwaiting') },
+    { id: 'NEEDS_REVISION', label: t('reviewer.filterRevision') },
+    { id: 'APPROVED', label: t('reviewer.filterApproved') },
+    { id: 'REJECTED', label: t('reviewer.filterRejected') },
+  ];
 
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +60,6 @@ export default function ReviewerReportsPage() {
     };
   }, [activeFilter, searchQuery]);
 
-
   function getBadgeClass(status: string) {
     switch (status) {
       case 'SUBMITTED':
@@ -77,19 +77,34 @@ export default function ReviewerReportsPage() {
     }
   }
 
+  function getStatusLabel(status: string) {
+    switch (status) {
+      case 'APPROVED':
+      case 'PUBLISHED':
+        return t('reviewer.filterApproved');
+      case 'NEEDS_REVISION':
+        return t('reviewer.filterRevision');
+      case 'REJECTED':
+        return t('reviewer.filterRejected');
+      case 'SUBMITTED':
+      default:
+        return t('reviewer.filterAwaiting');
+    }
+  }
+
   return (
     <div>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Laporan Masuk</h1>
+        <h1 className={styles.pageTitle}>{t('reviewer.incomingPageTitle')}</h1>
         <p className={styles.pageSubtitle}>
-          Daftar seluruh laporan kondisi akses dari kontributor warga yang perlu diperiksa dan diverifikasi.
+          {t('reviewer.incomingPageSub')}
         </p>
       </div>
 
       {/* Toolbar: Filters & Search */}
       <div className={styles.toolbar}>
         <div className={styles.filterTabs} role="tablist" aria-label="Filter status laporan">
-          {FILTER_OPTIONS.map(opt => (
+          {filterOptions.map(opt => (
             <button
               key={opt.id}
               type="button"
@@ -107,10 +122,10 @@ export default function ReviewerReportsPage() {
           <Search size={16} color="var(--muted)" aria-hidden="true" />
           <input
             type="search"
-            placeholder="Cari tempat atau pelapor…"
+            placeholder={t('reviewer.searchPlaceholder')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            aria-label="Cari tempat atau pelapor"
+            aria-label={t('reviewer.searchPlaceholder')}
           />
         </form>
       </div>
@@ -118,29 +133,28 @@ export default function ReviewerReportsPage() {
       {/* Reports Table / Card List */}
       <div className={styles.tableContainer}>
         {loading ? (
-          <div className={styles.emptyState}>Memuat daftar laporan…</div>
+          <div className={styles.emptyState}>{t('common.loading')}</div>
         ) : reports.length === 0 ? (
           <div className={styles.emptyState}>
             {activeFilter === 'SUBMITTED' || activeFilter === 'all'
-              ? 'Belum ada laporan yang menunggu review.'
-              : 'Tidak ada laporan yang sesuai dengan filter.'}
+              ? t('reviewer.noPendingReports')
+              : t('reviewer.noPendingReports')}
           </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">Bukti</th>
-                <th scope="col">Tempat</th>
-                <th scope="col">Pelapor</th>
-                <th scope="col">Elemen Akses</th>
-                <th scope="col">Tanggal Laporan</th>
-                <th scope="col">Status</th>
-                <th scope="col" style={{ textAlign: 'right' }}>Aksi</th>
+                <th scope="col">{t('common.photo')}</th>
+                <th scope="col">{t('reviewer.tablePlace')}</th>
+                <th scope="col">{t('reviewer.tableReporter')}</th>
+                <th scope="col">{t('reviewer.tableElements')}</th>
+                <th scope="col">{t('reviewer.tableDate')}</th>
+                <th scope="col">{t('reviewer.tableStatus')}</th>
+                <th scope="col" style={{ textAlign: 'right' }}>{t('reviewer.tableAction')}</th>
               </tr>
             </thead>
             <tbody>
               {reports.map(report => {
-                const meta = REVIEW_STATUS_META[report.reviewStatus] ?? REVIEW_STATUS_META.SUBMITTED;
                 return (
                   <tr key={report.id}>
                     <td style={{ width: '60px' }}>
@@ -185,7 +199,7 @@ export default function ReviewerReportsPage() {
                       </span>
                     </td>
                     <td style={{ color: 'var(--muted)', fontSize: '12.5px' }}>
-                      {new Date(report.createdAt).toLocaleDateString('id-ID', {
+                      {formatDate(report.createdAt, {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
@@ -193,13 +207,13 @@ export default function ReviewerReportsPage() {
                     </td>
                     <td>
                       <span className={`${styles.badge} ${getBadgeClass(report.reviewStatus)}`}>
-                        {meta.label}
+                        {getStatusLabel(report.reviewStatus)}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <Link href={`/reviewer/reports/${report.id}`} className={styles.actionButton}>
                         <Eye size={14} aria-hidden="true" />
-                        <span>Periksa</span>
+                        <span>{t('reviewer.inspectBtn')}</span>
                       </Link>
                     </td>
                   </tr>

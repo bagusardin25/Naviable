@@ -321,7 +321,7 @@ button { cursor: pointer; }
   position: relative;
   flex: 1;
   min-width: 0;
-  max-width: 760px;
+  max-width: 840px;
   margin: 0 auto;
 }
 .search-box {
@@ -573,6 +573,80 @@ body.reduce-motion .voice-bar {
 .topbar-icon-button:hover {
   color: var(--purple);
   border-color: var(--purple);
+}
+/* Language Switcher Segmented Control */
+.lang-switcher-segmented {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-secondary, #f1f5f9);
+  border: 1.5px solid var(--border, #cbd5e1);
+  border-radius: 10px;
+  padding: 2px 3px;
+  gap: 2px;
+  height: 38px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.lang-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted, #64748b);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  line-height: 1;
+  transition: all .15s ease;
+  min-width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.lang-btn:hover {
+  color: var(--ink, #0f172a);
+}
+.lang-btn:focus-visible {
+  outline: 2px solid var(--purple, #6d45cc);
+  outline-offset: 1px;
+}
+.lang-btn.active {
+  background: var(--surface, #ffffff);
+  color: var(--purple, #6d45cc);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.lang-separator {
+  color: var(--border, #cbd5e1);
+  font-size: 11px;
+  user-select: none;
+  opacity: 0.7;
+}
+.dark .lang-switcher-segmented {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.dark .lang-btn {
+  color: rgba(255, 255, 255, 0.65);
+}
+.dark .lang-btn:hover {
+  color: #ffffff;
+}
+.dark .lang-btn.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+.high-contrast .lang-switcher-segmented {
+  border: 2px solid currentColor !important;
+  background: transparent !important;
+}
+.high-contrast .lang-btn {
+  color: currentColor !important;
+}
+.high-contrast .lang-btn.active {
+  background: currentColor !important;
+  color: var(--bg, #000) !important;
 }
 .a11y-button {
   border: 0;
@@ -3621,68 +3695,24 @@ html.dark[data-a11y-color-blind="true"],
   border-style: double !important;
 }
 
-/* 3. Highlight Interactive Elements Mode (Links, Buttons, Controls, CTAs) */
-.highlight-links a:not(.brand):not(.nav-brand):not(.logo-link):not([data-no-highlight]),
-.highlight-interactive a:not(.brand):not(.nav-brand):not(.logo-link):not([data-no-highlight]),
-[data-a11y-highlight-links="true"] a:not(.brand):not(.nav-brand):not(.logo-link):not([data-no-highlight]),
-[data-a11y-highlight-interactive="true"] a:not(.brand):not(.nav-brand):not(.logo-link):not([data-no-highlight]) {
+/* 3. Highlight Links Mode: semantic links only */
+html.highlight-links a[href],
+html.highlight-interactive a[href],
+html[data-a11y-highlight-links="true"] a[href],
+html[data-a11y-highlight-interactive="true"] a[href] {
   text-decoration: underline !important;
-  text-underline-offset: 4px !important;
-  text-decoration-thickness: 2.5px !important;
-  text-decoration-color: var(--purple) !important;
-  font-weight: 600 !important;
+  text-decoration-line: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px !important;
+  text-decoration-color: currentColor !important;
 }
 
-.highlight-links a:not(.brand):not(.nav-brand):not(.logo-link):hover,
-.highlight-links a:not(.brand):not(.nav-brand):not(.logo-link):focus-visible,
-.highlight-interactive a:not(.brand):not(.nav-brand):not(.logo-link):hover,
-.highlight-interactive a:not(.brand):not(.nav-brand):not(.logo-link):focus-visible,
-[data-a11y-highlight-links="true"] a:not(.brand):not(.nav-brand):not(.logo-link):hover,
-[data-a11y-highlight-links="true"] a:not(.brand):not(.nav-brand):not(.logo-link):focus-visible,
-[data-a11y-highlight-interactive="true"] a:not(.brand):not(.nav-brand):not(.logo-link):hover,
-[data-a11y-highlight-interactive="true"] a:not(.brand):not(.nav-brand):not(.logo-link):focus-visible {
-  text-decoration-thickness: 3.5px !important;
-}
-
-.highlight-links button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.highlight-links [role="button"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.highlight-links [role="link"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.highlight-links select:not(:disabled),
-.highlight-links input[type="button"]:not(:disabled),
-.highlight-links input[type="submit"]:not(:disabled),
-.highlight-interactive button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.highlight-interactive [role="button"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.highlight-interactive [role="link"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.highlight-interactive select:not(:disabled),
-.highlight-interactive input[type="button"]:not(:disabled),
-.highlight-interactive input[type="submit"]:not(:disabled),
-[data-a11y-highlight-links="true"] button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-highlight-links="true"] [role="button"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-highlight-links="true"] [role="link"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-highlight-links="true"] select:not(:disabled),
-[data-a11y-highlight-links="true"] input[type="button"]:not(:disabled),
-[data-a11y-highlight-links="true"] input[type="submit"]:not(:disabled),
-[data-a11y-highlight-interactive="true"] button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-highlight-interactive="true"] [role="button"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-highlight-interactive="true"] [role="link"]:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-highlight-interactive="true"] select:not(:disabled),
-[data-a11y-highlight-interactive="true"] input[type="button"]:not(:disabled),
-[data-a11y-highlight-interactive="true"] input[type="submit"]:not(:disabled) {
-  outline: 2.5px solid var(--purple) !important;
+html.highlight-links a[href][data-icon-only-link],
+html.highlight-interactive a[href][data-icon-only-link],
+html[data-a11y-highlight-links="true"] a[href][data-icon-only-link],
+html[data-a11y-highlight-interactive="true"] a[href][data-icon-only-link] {
+  outline: 2px solid currentColor !important;
   outline-offset: 3px !important;
-}
-
-.dark.highlight-links button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.dark.highlight-interactive button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.dark[data-a11y-highlight-interactive="true"] button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.dark[data-a11y-highlight-links="true"] button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]) {
-  outline-color: #a78bfa !important;
-}
-
-.contrast-mode.highlight-links button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-.contrast-mode.highlight-interactive button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]),
-[data-a11y-contrast="true"] button:not(:disabled):not([aria-disabled="true"]):not([data-no-highlight]) {
-  outline-color: #facc15 !important;
 }
 
 /* 4. Reading Guide Overlay */

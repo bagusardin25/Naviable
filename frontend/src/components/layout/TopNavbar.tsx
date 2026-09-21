@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
-import type { AuthUserProfile } from '@/lib/auth/user-profile';
+import { useTranslation } from '@/hooks/useTranslation';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import type { Place } from '@/types';
 import type { ExternalPlaceResult } from '@/lib/externalGeocoding';
 import { matchesPlaceQuery } from '@/lib/streetSearch';
@@ -16,10 +17,6 @@ type TopNavbarProps = {
   onSearchChange: (query: string) => void;
   onSearchSubmit?: (query: string, source: 'voice' | 'text') => void;
   onOpenAccessibility?: () => void;
-  accountHref: string;
-  authReady: boolean;
-  userProfile: AuthUserProfile | null;
-  onOpenAuth?: () => void;
   localPlaces?: Place[];
   externalPlaces?: ExternalPlaceResult[];
   externalLoading?: boolean;
@@ -32,16 +29,13 @@ export function TopNavbar({
   onSearchChange,
   onSearchSubmit,
   onOpenAccessibility,
-  accountHref,
-  authReady,
-  userProfile,
-  onOpenAuth,
   localPlaces = [],
   externalPlaces = [],
   externalLoading = false,
   onSelectLocalPlace,
   onSelectExternalPlace,
 }: TopNavbarProps) {
+  const { t, locale } = useTranslation();
   const [voiceNotification, setVoiceNotification] = useState<{
     message: string;
     type: 'info' | 'error' | 'success';
@@ -69,37 +63,33 @@ export function TopNavbar({
     stopListening,
     cancelListening,
   } = useVoiceSearch({
-    lang: 'id-ID',
+    lang: locale === 'id' ? 'id-ID' : 'en-US',
     onResult: (transcript) => {
       onSearchChange(transcript);
       onSearchSubmit?.(transcript, 'voice');
-      showNotification(`Mencari "${transcript}"`, 'success', 3000);
-      setVoiceAnnouncement(`Hasil pencarian suara diterapkan: ${transcript}`);
+      showNotification(t('map.voiceSearching', { transcript }), 'success', 3000);
+      setVoiceAnnouncement(t('map.voiceApplied', { transcript }));
     },
     onError: (err) => {
       showNotification(err, 'error', 4500);
-      setVoiceAnnouncement(`Kesalahan pencarian suara: ${err}`);
+      setVoiceAnnouncement(t('map.voiceError', { error: err }));
     },
   });
 
   const handleVoiceSearchClick = () => {
     if (isListening) {
       stopListening();
-      setVoiceAnnouncement('Pencarian suara dihentikan.');
+      setVoiceAnnouncement(t('map.voiceStopped'));
       return;
     }
 
     if (!isSupported) {
-      showNotification(
-        'Pencarian suara belum didukung di peramban ini. Silakan gunakan peramban berbasis Chromium (Chrome/Edge) atau gunakan pencarian teks.',
-        'info',
-        4500
-      );
-      setVoiceAnnouncement('Pencarian suara belum didukung di peramban ini. Silakan gunakan pencarian teks.');
+      showNotification(t('map.voiceNotSupported'), 'info', 4500);
+      setVoiceAnnouncement(t('map.voiceNotSupported'));
       return;
     }
 
-    setVoiceAnnouncement('Mendengarkan suara. Silakan sebutkan nama tempat atau fasilitas.');
+    setVoiceAnnouncement(t('map.voiceStartPrompt'));
     startListening();
   };
 
@@ -159,7 +149,7 @@ export function TopNavbar({
         <span>Surabaya, Indonesia</span>
       </div>
 
-      <Link href="/" className="topbar-mobile-brand" aria-label="NaviAble — kembali ke beranda">
+      <Link href="/" className="topbar-mobile-brand" aria-label={t('nav.backToHome')} data-icon-only-link>
         <Image
           src="/logo-only-light-3.png"
           alt="NaviAble"
@@ -184,8 +174,8 @@ export function TopNavbar({
               if (searchQuery.trim().length >= 2) setIsDropdownOpen(true);
             }}
             onKeyDown={handleInputKeyDown}
-            placeholder="Cari tempat atau nama jalan (misal: Telkom University, Tunjungan)..."
-            aria-label="Cari tempat atau jalan aksesibel di Surabaya"
+            placeholder={t('map.searchPlaceholder')}
+            aria-label={t('map.searchAriaLabel')}
             autoComplete="off"
           />
           <button
@@ -194,12 +184,12 @@ export function TopNavbar({
             className={`search-voice-btn ${isListening ? 'listening' : ''}`}
             aria-label={
               isListening
-                ? 'Sedang mendengarkan ucapan... Klik untuk selesai'
-                : 'Mulai pencarian suara'
+                ? (locale === 'id' ? 'Sedang mendengarkan ucapan... Klik untuk selesai' : 'Listening... Click to finish')
+                : t('map.voiceSearchTitle')
             }
             aria-pressed={isListening}
             onClick={handleVoiceSearchClick}
-            title={isListening ? 'Selesai mendengarkan' : 'Pencarian suara'}
+            title={isListening ? t('map.voiceSearchStop') : t('map.voiceSearchTitle')}
           >
             <Icon name="mic" size={18} />
             {isListening && <span className="voice-pulse-ring" aria-hidden="true" />}
@@ -208,12 +198,12 @@ export function TopNavbar({
 
         {/* Search Autocomplete Dropdown */}
         {isDropdownOpen && searchQuery.trim().length >= 2 && (localMatches.length > 0 || unrecordedExternal.length > 0 || externalLoading) && (
-          <div className="search-autocomplete-dropdown" role="listbox" aria-label="Saran pencarian tempat">
+          <div className="search-autocomplete-dropdown" role="listbox" aria-label={t('map.searchAriaLabel')}>
             {localMatches.length > 0 && (
               <div className="autocomplete-section">
                 <div className="autocomplete-section-title">
                   <Icon name="check-circle" size={13} />
-                  <span>Tempat Terdaftar di Naviable</span>
+                  <span>{t('map.registeredInNaviable')}</span>
                 </div>
                 {localMatches.map((place) => (
                   <button
@@ -231,7 +221,7 @@ export function TopNavbar({
                         {place.category} · {place.district}
                       </span>
                     </div>
-                    <span className="autocomplete-pill-audited">Terdata</span>
+                    <span className="autocomplete-pill-audited">{t('map.recordedPill')}</span>
                   </button>
                 ))}
               </div>
@@ -240,7 +230,7 @@ export function TopNavbar({
             {externalLoading && (
               <div className="autocomplete-loading">
                 <div className="map-spinner small" />
-                <span>Mencari di OpenStreetMap Surabaya...</span>
+                <span>{t('map.searchingOsm')}</span>
               </div>
             )}
 
@@ -248,14 +238,14 @@ export function TopNavbar({
               <div className="autocomplete-section external-section">
                 <div className="autocomplete-section-title external-title">
                   <Icon name="map-pin" size={13} />
-                  <span>Tempat Publik (Belum Terdata di Naviable)</span>
+                  <span>{t('map.publicUnrecorded')}</span>
                 </div>
                 {unrecordedExternal.map((ext) => (
                   <div key={ext.id} className="autocomplete-item external-item">
                     <div className="autocomplete-item-main">
                       <div className="autocomplete-name-row">
                         <span className="autocomplete-place-name">{ext.name}</span>
-                        <span className="autocomplete-badge-unrecorded">Belum Terdata</span>
+                        <span className="autocomplete-badge-unrecorded">{t('map.unrecordedPill')}</span>
                       </div>
                       <span className="autocomplete-place-sub">{ext.address}</span>
                     </div>
@@ -268,10 +258,10 @@ export function TopNavbar({
                           setIsDropdownOpen(false);
                           onSelectExternalPlace?.(ext, 'view');
                         }}
-                        title="Lihat titik di peta"
+                        title={t('map.viewPoint')}
                       >
                         <Icon name="map-pin" size={13} />
-                        <span>Titik</span>
+                        <span>{t('map.viewPoint')}</span>
                       </button>
                       <button
                         type="button"
@@ -281,10 +271,10 @@ export function TopNavbar({
                           setIsDropdownOpen(false);
                           onSelectExternalPlace?.(ext, 'add');
                         }}
-                        title="Tambah tempat ini ke Naviable"
+                        title={t('map.addPoint')}
                       >
                         <Icon name="plus" size={13} />
-                        <span>➕ Tambah</span>
+                        <span>{t('map.addPoint')}</span>
                       </button>
                     </div>
                   </div>
@@ -293,7 +283,7 @@ export function TopNavbar({
             )}
 
             <div className="autocomplete-footer">
-              <span>Tekan <kbd>Enter</kbd> untuk hasil lengkap pada peta & daftar</span>
+              <span>{t('map.pressEnterForFull')}</span>
             </div>
           </div>
         )}
@@ -305,7 +295,7 @@ export function TopNavbar({
 
         {/* Panel status suara saat aktif mendengarkan */}
         {isListening && (
-          <div className="voice-search-card listening" role="region" aria-label="Status pencarian suara">
+          <div className="voice-search-card listening" role="region" aria-label={t('map.voiceStatusAria')}>
             <div className="voice-listening-content">
               <div className="voice-wave-indicator" aria-hidden="true">
                 <span className="voice-bar" />
@@ -314,11 +304,9 @@ export function TopNavbar({
                 <span className="voice-bar" />
               </div>
               <div className="voice-listening-info">
-                <p className="voice-status-title">Mendengarkan suara...</p>
+                <p className="voice-status-title">{t('map.voiceListening')}</p>
                 <p className="voice-transcript-preview">
-                  {interimTranscript
-                    ? `“${interimTranscript}”`
-                    : 'Sebutkan nama tempat (contoh: Puskesmas Jagir, Taman Bungkul)'}
+                  {interimTranscript ? `“${interimTranscript}”` : t('map.voiceMentionPrompt')}
                 </p>
               </div>
               <div className="voice-card-actions">
@@ -326,21 +314,21 @@ export function TopNavbar({
                   type="button"
                   className="voice-cancel-btn"
                   onClick={cancelListening}
-                  aria-label="Batalkan pencarian suara"
-                  title="Batal"
+                  aria-label={t('map.voiceCancel')}
+                  title={t('map.voiceCancel')}
                 >
                   <Icon name="x" size={14} />
-                  <span>Batal</span>
+                  <span>{t('map.voiceCancel')}</span>
                 </button>
                 <button
                   type="button"
                   className="voice-done-btn"
                   onClick={stopListening}
-                  aria-label="Selesai berbicara"
-                  title="Selesai"
+                  aria-label={t('map.voiceDone')}
+                  title={t('map.voiceDone')}
                 >
                   <Icon name="check" size={14} />
-                  <span>Selesai</span>
+                  <span>{t('map.voiceDone')}</span>
                 </button>
               </div>
             </div>
@@ -364,7 +352,7 @@ export function TopNavbar({
               type="button"
               className="voice-toast-close-btn"
               onClick={() => setVoiceNotification(null)}
-              aria-label="Tutup notifikasi"
+              aria-label={t('common.close')}
             >
               <Icon name="x" size={13} />
             </button>
@@ -373,40 +361,7 @@ export function TopNavbar({
       </div>
 
       <div className="topbar-actions">
-        {!authReady ? (
-          <span className="topbar-icon-button topbar-auth-loading" role="status" aria-label="Memeriksa sesi akun">
-            <Icon name="user" size={18} />
-          </span>
-        ) : userProfile ? (
-          <Link
-            href={accountHref}
-            className="topbar-account-button"
-            aria-label={`Buka Kontribusi Saya untuk ${userProfile.displayName}`}
-            title={`${userProfile.displayName} · ${userProfile.email}`}
-          >
-            <span className="topbar-account-avatar" aria-hidden="true">{userProfile.initials}</span>
-            <span className="topbar-account-name">{userProfile.shortName}</span>
-          </Link>
-        ) : onOpenAuth ? (
-          <button
-            type="button"
-            className="topbar-icon-button"
-            onClick={onOpenAuth}
-            aria-label="Masuk untuk berkontribusi"
-            title="Masuk / Daftar"
-          >
-            <Icon name="user" size={18} />
-          </button>
-        ) : (
-          <Link
-            href={accountHref}
-            className="topbar-icon-button"
-            aria-label="Masuk untuk berkontribusi"
-            title="Masuk / Akun"
-          >
-            <Icon name="user" size={18} />
-          </Link>
-        )}
+        <LanguageSwitcher variant="compact" />
         <button
           id="btn-accessibility"
           type="button"
@@ -415,11 +370,11 @@ export function TopNavbar({
           aria-expanded={isWidgetOpen}
           aria-haspopup="dialog"
           aria-controls="a11y-widget-panel"
-          aria-label={isWidgetOpen ? 'Tutup panel aksesibilitas' : 'Buka panel aksesibilitas'}
-          title="Pengaturan Aksesibilitas"
+          aria-label={isWidgetOpen ? t('a11yWidget.closeBtnAria') : t('a11yWidget.triggerBtnAria')}
+          title={t('a11yWidget.triggerBtnTitle')}
         >
           <Icon name="access" />
-          <span>Aksesibilitas</span>
+          <span>{t('a11yWidget.triggerBtnLabel')}</span>
         </button>
       </div>
     </header>

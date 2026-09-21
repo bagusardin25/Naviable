@@ -3,19 +3,23 @@ import { useEffect, useState } from 'react';
 import { fetchContributions, type ApiReport } from '@/lib/api';
 import { supabaseBrowser } from '@/lib/supabase';
 import type { AuthUserProfile } from '@/lib/auth/user-profile';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function ContributorProfile({ userProfile, onSignedOut }: { userProfile: AuthUserProfile; onSignedOut: () => void }) {
+  const { t, formatDate } = useTranslation();
   const [data, setData] = useState<{ mode: string; total: number; reports: ApiReport[] } | null>(null);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
+
   useEffect(() => {
     let active = true;
     fetchContributions()
       .then(value => { if (active) setData(value); })
-      .catch(e => { if (active) setError(e instanceof Error ? e.message : 'Riwayat kontribusi gagal dimuat.'); });
+      .catch(e => { if (active) setError(e instanceof Error ? e.message : t('profile.loadError')); });
     return () => { active = false; };
-  }, [reload]);
+  }, [reload, t]);
+
   async function signOut() {
     setSigningOut(true);
     setError('');
@@ -26,10 +30,11 @@ export function ContributorProfile({ userProfile, onSignedOut }: { userProfile: 
       }
       onSignedOut();
     } catch {
-      setError('Akun belum berhasil keluar. Periksa koneksi lalu coba lagi.');
+      setError(t('profile.signOutError'));
       setSigningOut(false);
     }
   }
+
   return (
     <div className="page-scroll profile-page">
       <section className="profile-hero">
@@ -38,39 +43,39 @@ export function ContributorProfile({ userProfile, onSignedOut }: { userProfile: 
           <span className="eyebrow">{userProfile.providerLabel}</span>
           <h1>{userProfile.displayName}</h1>
           <p className="profile-email">{userProfile.email}</p>
-          <p>Kontribusi Saya · Riwayat laporan kondisi akses yang Anda kirimkan.</p>
+          <p>{t('profile.subtitle')}</p>
         </div>
       </section>
 
       <button type="button" className="secondary-action" onClick={signOut} disabled={signingOut}>
-        {signingOut ? 'Mengeluarkan akun…' : 'Keluar Akun'}
+        {signingOut ? t('profile.signingOutBtn') : t('profile.signOutBtn')}
       </button>
 
       {error && (
         <p role="alert" style={{ color: 'var(--notice-error-ink)', background: 'var(--notice-error-bg)', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginTop: '16px', border: '1px solid var(--notice-error-border)' }}>
           {error}{' '}
           <button type="button" className="text-action" onClick={() => { setData(null); setError(''); setReload(value => value + 1); }}>
-            Coba lagi
+            {t('common.retry')}
           </button>
         </p>
       )}
 
-      {!data && !error && <p role="status" style={{ padding: '24px 0', color: 'var(--muted)' }}>Memuat riwayat kontribusi…</p>}
+      {!data && !error && <p role="status" style={{ padding: '24px 0', color: 'var(--muted)' }}>{t('profile.loadingHistory')}</p>}
 
       {data && (
         <div className="profile-grid">
           <article className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h2>Laporan Terkirim</h2>
+            <h2>{t('profile.submittedReportsCard')}</h2>
             <strong className="big-number">{data.total}</strong>
             <p style={{ color: 'var(--muted)', fontSize: '12px', margin: '4px 0 16px' }}>
-              Laporan kondisi akses yang Anda bantu perbarui untuk fasilitas publik di Surabaya.
+              {t('profile.submittedReportsSub')}
             </p>
           </article>
 
           <article className="card">
             <div className="card-title-row" style={{ marginBottom: '12px' }}>
-              <h2>Laporan Terbaru</h2>
-              <span className="count-pill">{data.reports.length} laporan</span>
+              <h2>{t('profile.latestReportsCard')}</h2>
+              <span className="count-pill">{t('profile.reportsCountPill', { count: data.reports.length })}</span>
             </div>
             {data.reports.length ? (
               <div style={{ display: 'grid', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
@@ -88,18 +93,19 @@ export function ContributorProfile({ userProfile, onSignedOut }: { userProfile: 
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700 }}>
                       <span>{r.reporterName}</span>
                       <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
-                        {new Date(r.createdAt).toLocaleDateString('id-ID')}
+                        {formatDate(new Date(r.createdAt), { day: 'numeric', month: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
                     <div style={{ color: '#64748b', fontSize: '11px', marginTop: '3px' }}>
-                      Kondisi: {r.elements.map((e) => e.status).join(', ')}
+                      {t('profile.conditionPrefix')}{' '}
+                      {r.elements.map((e) => t(`status.${e.status}.label`) || e.status).join(', ')}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <p style={{ color: '#64748b', fontSize: '13px' }}>
-                Belum ada laporan yang tercatat. Anda bisa mulai berkontribusi dengan memotret dan melaporkan kondisi fasilitas di sekitar Anda.
+                {t('profile.noReportsYet')}
               </p>
             )}
           </article>

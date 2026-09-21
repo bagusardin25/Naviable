@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AccessibilityNeed } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type NeedFilterTabsProps = {
   currentNeed: AccessibilityNeed;
@@ -11,10 +12,12 @@ type NeedFilterTabsProps = {
 const NEEDS: AccessibilityNeed[] = ['Mobilitas', 'Visual', 'Auditori', 'Sensorik'];
 
 export function NeedFilterTabs({ currentNeed, onSelectNeed }: NeedFilterTabsProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="need-filter-wrapper">
-      <span className="eyebrow">Kebutuhan akses</span>
-      <div className="need-tabs" role="tablist" aria-label="Pilih jenis kebutuhan akses">
+      <span className="eyebrow">{t('needs.label')}</span>
+      <div className="need-tabs" role="tablist" aria-label={t('needs.label')}>
         {NEEDS.map((n) => (
           <button
             key={n}
@@ -25,7 +28,7 @@ export function NeedFilterTabs({ currentNeed, onSelectNeed }: NeedFilterTabsProp
             className={currentNeed === n ? 'active' : ''}
             onClick={() => onSelectNeed(n)}
           >
-            {n}
+            {t(`needs.${n}`, n)}
           </button>
         ))}
       </div>

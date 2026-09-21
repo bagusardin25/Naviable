@@ -1,11 +1,13 @@
 import React from 'react';
 import { Place } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type DashboardStatsProps = {
   places: Place[];
 };
 
 export function DashboardStats({ places }: DashboardStatsProps) {
+  const { t } = useTranslation();
   const brokenCount = places.filter((p) => ['TERHALANG', 'TIDAK_STANDAR', 'TIDAK_ADA'].includes(p.overall)).length;
   const unknownCount = places
     .flatMap((p) => p.elements)
@@ -13,29 +15,29 @@ export function DashboardStats({ places }: DashboardStatsProps) {
   const totalPhotos = places.reduce((sum, p) => sum + p.photos, 0);
 
   return (
-    <div className="metric-grid" aria-label="Statistik keterbukaan akses">
+    <div className="metric-grid" aria-label={t('observatory.statsAria')}>
       <article>
-        <span>Tempat Terdata</span>
+        <span>{t('observatory.recordedPlaces')}</span>
         <strong>{places.length}</strong>
-        <small>Fasilitas publik di Surabaya</small>
+        <small>{t('observatory.publicFacilities')}</small>
       </article>
 
       <article>
-        <span>Akses Masih Terputus</span>
+        <span>{t('observatory.brokenAccess')}</span>
         <strong style={{ color: 'var(--orange, #e78a16)' }}>{brokenCount}</strong>
-        <small>Perlu perbaikan segera</small>
+        <small>{t('observatory.needsUrgentFix')}</small>
       </article>
 
       <article>
-        <span>Data Belum Lengkap</span>
+        <span>{t('observatory.incompleteData')}</span>
         <strong style={{ color: 'var(--muted, #7d8798)' }}>{unknownCount}</strong>
-        <small>Butuh pengecekan warga</small>
+        <small>{t('observatory.needsCitizenCheck')}</small>
       </article>
 
       <article>
-        <span>Foto Kondisi Warga</span>
+        <span>{t('observatory.citizenPhotos')}</span>
         <strong style={{ color: 'var(--purple, #6d45cc)' }}>{totalPhotos}</strong>
-        <small>Kontribusi dari lapangan</small>
+        <small>{t('observatory.fieldContributions')}</small>
       </article>
     </div>
   );

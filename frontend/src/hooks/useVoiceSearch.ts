@@ -79,6 +79,7 @@ export function useVoiceSearch({
   onResult,
   onError,
 }: UseVoiceSearchOptions = {}): UseVoiceSearchResult {
+  const errorLocale = lang.toLowerCase().startsWith('en') ? 'en' : 'id';
   const isSupported = useSyncExternalStore(
     subscribeNoop,
     checkSpeechSupport,
@@ -143,7 +144,7 @@ export function useVoiceSearch({
       speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 
     if (!SpeechRecognitionConstructor) {
-      const unsupportedMsg = getVoiceErrorMessage('not-supported');
+      const unsupportedMsg = getVoiceErrorMessage('not-supported', errorLocale);
       setErrorMessage(unsupportedMsg);
       onErrorRef.current?.(unsupportedMsg);
       return;
@@ -207,7 +208,7 @@ export function useVoiceSearch({
           return;
         }
 
-        const friendlyMsg = getVoiceErrorMessage(event.error);
+        const friendlyMsg = getVoiceErrorMessage(event.error, errorLocale);
         setErrorMessage(friendlyMsg);
         setIsListening(false);
         onErrorRef.current?.(friendlyMsg);
@@ -229,12 +230,12 @@ export function useVoiceSearch({
       recognition.start();
     } catch (err) {
       const friendlyMsg =
-        err instanceof Error ? err.message : getVoiceErrorMessage('unknown');
+        err instanceof Error ? err.message : getVoiceErrorMessage('unknown', errorLocale);
       setErrorMessage(friendlyMsg);
       setIsListening(false);
       onErrorRef.current?.(friendlyMsg);
     }
-  }, [lang]);
+  }, [lang, errorLocale]);
 
   // Bersihkan saat komponen unmount
   useEffect(() => {
