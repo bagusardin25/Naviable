@@ -115,8 +115,16 @@ function MapResizeController() {
     const observer = new ResizeObserver(handleResize);
     observer.observe(container);
     handleResize();
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('orientationchange', handleResize, { passive: true });
+    document.addEventListener('visibilitychange', handleResize, { passive: true });
+
     return () => {
       observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      document.removeEventListener('visibilitychange', handleResize);
       cancelAnimationFrame(frame);
     };
   }, [map]);
