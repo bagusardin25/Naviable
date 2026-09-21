@@ -20,10 +20,10 @@ on:
 jobs:
   secret-and-hygiene-scan:
     name: Secret Leaks & Git Hygiene Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify No Sensitive .env Files Are Tracked
         run: |
@@ -48,13 +48,13 @@ jobs:
 
   dependency-audit:
     name: NPM Dependency Vulnerability Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20
 
