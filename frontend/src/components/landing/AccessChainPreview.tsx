@@ -1,10 +1,18 @@
+'use client';
+
 import { DoorOpen, MoveUpRight, Bath, Check, TriangleAlert, CircleHelp, MapPin } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from '@/app/landing.module.css';
 
 export function AccessChainPreview() {
+  const { t } = useTranslation();
+
   return (
     <figure className={styles.preview} aria-labelledby="preview-caption">
-      <div className={styles.previewTop}><span><span className={styles.smallDot} /> CATATAN AKSES</span><span>SURABAYA / 01</span></div>
+      <div className={styles.previewTop}>
+        <span><span className={styles.smallDot} /> {t('landing.previewTag')}</span>
+        <span>{t('landing.previewLocation')}</span>
+      </div>
       <div className={styles.building} aria-hidden="true">
         <svg viewBox="0 0 480 230" fill="none">
           <path d="M38 203H449M55 215H420" stroke="currentColor" strokeOpacity=".14" />
@@ -20,15 +28,30 @@ export function AccessChainPreview() {
           <circle cx="80" cy="156" r="20" fill="#d1dcc8" /><path d="M80 170V203M80 182L91 172" stroke="#64745c" strokeWidth="3" strokeLinecap="round" />
           <path d="M231 37V18" stroke="var(--lp-purple, #6d45cc)" strokeWidth="2" /><circle cx="231" cy="14" r="5" fill="var(--lp-purple, #6d45cc)" />
         </svg>
-        <span className={styles.buildingTag}><MapPin size={14} /> Gedung Contoh</span>
+        <span className={styles.buildingTag}><MapPin size={14} /> {t('landing.previewSampleBuilding')}</span>
       </div>
-      <figcaption id="preview-caption"><strong>Satu tempat. Kondisi yang berbeda.</strong><span>Contoh membaca kondisi akses</span></figcaption>
+      <figcaption id="preview-caption">
+        <strong>{t('landing.previewCaptionBold')}</strong>
+        <span>{t('landing.previewCaptionSub')}</span>
+      </figcaption>
       <ol className={styles.previewRows}>
-        <li><span className={styles.facilityIcon}><DoorOpen size={20} aria-hidden="true" /></span><span><small>E1 / AKSES MASUK</small><strong>Pintu masuk</strong></span><span className={styles.good}><Check size={14} aria-hidden="true" /> Bisa digunakan</span></li>
-        <li><span className={styles.facilityIcon}><MoveUpRight size={20} aria-hidden="true" /></span><span><small>E2 / RAMP</small><strong>Ramp</strong></span><span className={styles.caution}><TriangleAlert size={14} aria-hidden="true" /> Terhalang</span></li>
-        <li><span className={styles.facilityIcon}><Bath size={20} aria-hidden="true" /></span><span><small>E3 / TOILET</small><strong>Toilet aksesibel</strong></span><span className={styles.unknown}><CircleHelp size={14} aria-hidden="true" /> Belum diketahui</span></li>
+        <li>
+          <span className={styles.facilityIcon}><DoorOpen size={20} aria-hidden="true" /></span>
+          <span><small>E1 / {t('elements.E1.sub')}</small><strong>{t('elements.E1.name')}</strong></span>
+          <span className={styles.good}><Check size={14} aria-hidden="true" /> {t('status.UTUH.label')}</span>
+        </li>
+        <li>
+          <span className={styles.facilityIcon}><MoveUpRight size={20} aria-hidden="true" /></span>
+          <span><small>E2 / {t('elements.E2.sub')}</small><strong>{t('elements.E2.name')}</strong></span>
+          <span className={styles.caution}><TriangleAlert size={14} aria-hidden="true" /> {t('status.TERHALANG.label')}</span>
+        </li>
+        <li>
+          <span className={styles.facilityIcon}><Bath size={20} aria-hidden="true" /></span>
+          <span><small>E3 / {t('elements.E3.sub')}</small><strong>{t('elements.E3.name')}</strong></span>
+          <span className={styles.unknown}><CircleHelp size={14} aria-hidden="true" /> {t('status.BELUM_DIKETAHUI.label')}</span>
+        </li>
       </ol>
-      <p className={styles.previewNote}><CircleHelp size={15} aria-hidden="true" /> Ilustrasi, bukan data lokasi nyata.</p>
+      <p className={styles.previewNote}><CircleHelp size={15} aria-hidden="true" /> {t('landing.previewIllustrationNote')}</p>
     </figure>
   );
 }

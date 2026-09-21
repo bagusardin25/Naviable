@@ -2,16 +2,20 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAccessibility } from '@/hooks/useAccessibility';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from '@/components/ui/Icon';
+import { getSpeechLanguage, selectVoiceForLocale } from '@/lib/voice-reader';
 
 const HOVER_DELAY_MS = 300;
 
 export function VoiceReaderManager() {
   const { settings, setVoiceMode } = useAccessibility();
+  const { t, locale } = useTranslation();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentText, setCurrentText] = useState<string>('');
 
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSpokenElementRef = useRef<HTMLElement | null>(null);
   const lastSpokenTextRef = useRef<string>('');
@@ -40,44 +44,56 @@ export function VoiceReaderManager() {
     const clean = text.trim();
     if (!clean) return;
 
-    // Cancel any ongoing speech to prevent queue build-up
+    // Cancel any ongoing speech to prevent queue build-up.
+    activeUtteranceRef.current = null;
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
-    // Prefer Indonesian voice
-    const indonesianVoice = voicesRef.current.find(
-      (v) => v.lang === 'id-ID' || v.lang.startsWith('id')
-    );
-    if (indonesianVoice) {
-      utterance.voice = indonesianVoice;
-      utterance.lang = 'id-ID';
-    } else {
-      utterance.lang = 'id-ID';
+    // Prefer voice according to active locale
+    const preferredVoice = selectVoiceForLocale(voicesRef.current, locale);
+    utterance.lang = getSpeechLanguage(locale);
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+      utterance.lang = preferredVoice.lang;
     }
 
+    activeUtteranceRef.current = utterance;
+
     utterance.onstart = () => {
+      if (activeUtteranceRef.current !== utterance) return;
       setIsSpeaking(true);
       setCurrentText(clean.length > 55 ? `${clean.slice(0, 55)}...` : clean);
     };
 
     utterance.onend = () => {
+      if (activeUtteranceRef.current !== utterance) return;
+      activeUtteranceRef.current = null;
       setIsSpeaking(false);
       setCurrentText('');
     };
 
     utterance.onerror = () => {
+      if (activeUtteranceRef.current !== utterance) return;
+      activeUtteranceRef.current = null;
       setIsSpeaking(false);
       setCurrentText('');
     };
 
-    window.speechSynthesis.speak(utterance);
-  }, []);
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      activeUtteranceRef.current = null;
+      setIsSpeaking(false);
+      setCurrentText('');
+    }
+  }, [locale]);
 
   const stopSpeaking = useCallback(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    activeUtteranceRef.current = null;
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setCurrentText('');
@@ -145,22 +161,22 @@ export function VoiceReaderManager() {
       element.closest('.marker, .custom-leaflet-pin')
     ) {
       const placeTitle = element.getAttribute('title') || element.getAttribute('aria-label');
-      if (placeTitle) return `${placeTitle}, penanda lokasi di peta`;
+      if (placeTitle) return `${placeTitle}, ${t('voiceReader.mapMarker')}`;
       const inner = element.innerText?.trim();
-      if (inner) return `${inner}, penanda lokasi di peta`;
-      return 'Penanda tempat di peta';
+      if (inner) return `${inner}, ${t('voiceReader.mapMarker')}`;
+      return t('voiceReader.mapMarker');
     }
 
     // 3. Alt text for meaningful images
     if (element.tagName.toLowerCase() === 'img') {
       const alt = element.getAttribute('alt');
-      if (alt && alt.trim()) return `${alt.trim()}, gambar`;
+      if (alt && alt.trim()) return `${alt.trim()}, ${t('voiceReader.image')}`;
       return null;
     }
     const innerImg = element.querySelector('img');
     if (innerImg && !element.innerText?.trim()) {
       const alt = innerImg.getAttribute('alt');
-      if (alt && alt.trim()) return `${alt.trim()}, gambar`;
+      if (alt && alt.trim()) return `${alt.trim()}, ${t('voiceReader.image')}`;
     }
 
     // 4. Form Controls & Inputs
@@ -178,20 +194,20 @@ export function VoiceReaderManager() {
       ''
     ).replace(/\s+/g, ' ');
 
-    if (tagName === 'button' || role === 'button') {
+    if (tagName === 'button' || role === 'button' || role === 'tab' || role === 'switch') {
       const isSwitch = role === 'switch' || element.hasAttribute('aria-checked');
       if (isSwitch) {
         const isChecked = element.getAttribute('aria-checked') === 'true';
-        const label = cleanText || 'Pengaturan';
-        return `${label}, ${isChecked ? 'aktif' : 'nonaktif'}`;
+        const label = cleanText || (locale === 'en' ? 'Setting' : 'Pengaturan');
+        return `${label}, ${isChecked ? t('voiceReader.active') : t('voiceReader.inactive')}`;
       }
-      if (!cleanText) return 'Tombol';
-      return `${cleanText}, tombol`;
+      if (!cleanText) return t('voiceReader.button');
+      return `${cleanText}, ${t('voiceReader.button')}`;
     }
 
     if (tagName === 'a' || role === 'link') {
-      if (!cleanText) return 'Tautan';
-      return `${cleanText}, tautan`;
+      if (!cleanText) return t('voiceReader.link');
+      return `${cleanText}, ${t('voiceReader.link')}`;
     }
 
     if (tagName === 'input') {
@@ -199,26 +215,26 @@ export function VoiceReaderManager() {
       const type = inputEl.type;
       const label = ariaLabel || title || inputEl.placeholder || '';
       if (type === 'checkbox' || type === 'radio') {
-        return `${label || 'Pilihan'}, ${inputEl.checked ? 'dicentang' : 'tidak dicentang'}`;
+        return `${label || (locale === 'en' ? 'Option' : 'Pilihan')}, ${inputEl.checked ? t('voiceReader.checked') : t('voiceReader.unchecked')}`;
       }
-      return `${label || 'Input'}, kolom teks`;
+      return label ? `${label}, ${t('voiceReader.input')}` : t('voiceReader.input');
     }
 
     if (tagName === 'textarea') {
       const textareaEl = element as HTMLTextAreaElement;
       const label = ariaLabel || title || textareaEl.placeholder || '';
-      return `${label || 'Input teks panjang'}, area teks`;
+      return label ? `${label}, ${t('voiceReader.textarea')}` : t('voiceReader.textarea');
     }
 
     if (tagName === 'select') {
       const label = ariaLabel || title || '';
-      return `${label || 'Pilihan formulir'}, pilihan`;
+      return label ? `${label}, ${t('voiceReader.select')}` : t('voiceReader.select');
     }
 
     // 5. Headings
     if (/^h[1-6]$/.test(tagName) || role === 'heading') {
       if (!cleanText) return null;
-      return `${cleanText}, judul`;
+      return `${cleanText}, ${t('voiceReader.heading')}`;
     }
 
     // 6. Regular text: paragraphs, list items, labels, generic span/div
@@ -227,12 +243,13 @@ export function VoiceReaderManager() {
     }
 
     return null;
-  }, []);
+  }, [locale, t]);
 
   // Main Event Delegation Effect
   useEffect(() => {
     if (!settings.voiceMode) {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        activeUtteranceRef.current = null;
         window.speechSynthesis.cancel();
       }
       if (hoverTimerRef.current) {
@@ -244,8 +261,11 @@ export function VoiceReaderManager() {
       return;
     }
 
-    // Initial greeting feedback
-    speak('Mode suara aktif.');
+    // Initial greeting feedback after listeners are ready; the timer is cleaned up
+    // when voice mode or locale changes.
+    const greetingTimer = window.setTimeout(() => {
+      speak(t('voiceReader.modeActive'));
+    }, 0);
 
     // 1. Pointer Enter with Debounce
     function handlePointerOver(e: PointerEvent) {
@@ -323,6 +343,7 @@ export function VoiceReaderManager() {
     document.addEventListener('focusin', handleFocusIn, { capture: true });
 
     return () => {
+      window.clearTimeout(greetingTimer);
       document.removeEventListener('pointerover', handlePointerOver, { capture: true });
       document.removeEventListener('pointerout', handlePointerOut, { capture: true });
       document.removeEventListener('focusin', handleFocusIn, { capture: true });
@@ -335,10 +356,11 @@ export function VoiceReaderManager() {
       lastSpokenTextRef.current = '';
 
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        activeUtteranceRef.current = null;
         window.speechSynthesis.cancel();
       }
     };
-  }, [settings.voiceMode, speak, getReadableElement, getReadableText]);
+  }, [settings.voiceMode, speak, getReadableElement, getReadableText, t]);
 
   if (!settings.voiceMode) return null;
 
@@ -346,7 +368,7 @@ export function VoiceReaderManager() {
     <div
       className="voice-reader-bar"
       role="region"
-      aria-label="Kontrol Pembaca Suara"
+      aria-label={t('voiceReader.regionAria')}
       style={{
         position: 'fixed',
         bottom: '16px',
@@ -377,7 +399,7 @@ export function VoiceReaderManager() {
       >
         <Icon name="volume" size={16} />
         <span style={{ whiteSpace: 'nowrap' }}>
-          {isSpeaking ? currentText || 'Sedang membaca...' : 'Mode Suara Aktif'}
+          {isSpeaking ? currentText || t('voiceReader.readingStatus') : t('voiceReader.modeActive')}
         </span>
       </span>
 
@@ -395,9 +417,9 @@ export function VoiceReaderManager() {
             cursor: 'pointer',
             fontWeight: 700,
           }}
-          aria-label="Hentikan pembacaan suara saat ini"
+          aria-label={t('voiceReader.stopSpeech')}
         >
-          Hentikan
+          {t('voiceReader.stopSpeech')}
         </button>
       )}
 
@@ -414,8 +436,8 @@ export function VoiceReaderManager() {
           alignItems: 'center',
           justifyContent: 'center',
         }}
-        title="Matikan Mode Suara"
-        aria-label="Matikan Mode Suara"
+        title={t('voiceReader.turnOffVoiceMode')}
+        aria-label={t('voiceReader.turnOffVoiceMode')}
       >
         <Icon name="close" size={14} />
       </button>

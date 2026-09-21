@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { Clock, CheckCircle2, RotateCcw, XCircle, ArrowRight, Eye, RefreshCw } from 'lucide-react';
 import { fetchReviewerStats, fetchReviewerReports } from '@/lib/api';
 import type { ReviewerStats, ReviewerAuditItem } from '@/types';
-import { REVIEW_STATUS_META } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from './reviewer.module.css';
 
 export default function ReviewerDashboardPage() {
+  const { t, formatDate } = useTranslation();
   const [stats, setStats] = useState<ReviewerStats | null>(null);
   const [pendingReports, setPendingReports] = useState<ReviewerAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,14 +50,29 @@ export default function ReviewerDashboardPage() {
     };
   }, []);
 
+  function getStatusLabel(status: string) {
+    switch (status) {
+      case 'APPROVED':
+      case 'PUBLISHED':
+        return t('reviewer.filterApproved');
+      case 'NEEDS_REVISION':
+        return t('reviewer.filterRevision');
+      case 'REJECTED':
+        return t('reviewer.filterRejected');
+      case 'SUBMITTED':
+      default:
+        return t('reviewer.filterAwaiting');
+    }
+  }
+
   return (
     <div>
       <div className={styles.pageHeader}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <h1 className={styles.pageTitle}>Dashboard Reviewer</h1>
+            <h1 className={styles.pageTitle}>{t('reviewer.pageTitle')}</h1>
             <p className={styles.pageSubtitle}>
-              Pemeriksaan bukti foto dan validasi laporan kondisi aksesibilitas masyarakat Surabaya.
+              {t('reviewer.pageSubtitle')}
             </p>
           </div>
           <button
@@ -64,10 +80,10 @@ export default function ReviewerDashboardPage() {
             className={styles.secondaryButton}
             onClick={handleRefresh}
             disabled={loading}
-            aria-label="Segarkan data dashboard"
+            aria-label={t('reviewer.refreshBtn')}
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-            <span>Segarkan</span>
+            <span>{t('reviewer.refreshBtn')}</span>
           </button>
         </div>
       </div>
@@ -76,38 +92,38 @@ export default function ReviewerDashboardPage() {
       <section className={styles.statsGrid} aria-label="Statistik Review Laporan">
         <div className={styles.statCard}>
           <div className={styles.statCardHeader}>
-            <span>Menunggu Review</span>
+            <span>{t('reviewer.statAwaiting')}</span>
             <Clock size={18} color="var(--orange)" aria-hidden="true" />
           </div>
           <div className={styles.statCardValue}>{stats?.submitted ?? (loading ? '…' : 0)}</div>
-          <div className={styles.statCardSubtext}>Laporan warga baru masuk</div>
+          <div className={styles.statCardSubtext}>{t('reviewer.statAwaitingSub')}</div>
         </div>
 
         <div className={styles.statCard}>
           <div className={styles.statCardHeader}>
-            <span>Disetujui Hari Ini</span>
+            <span>{t('reviewer.statApprovedToday')}</span>
             <CheckCircle2 size={18} color="var(--green)" aria-hidden="true" />
           </div>
           <div className={styles.statCardValue}>{stats?.approvedToday ?? (loading ? '…' : 0)}</div>
-          <div className={styles.statCardSubtext}>Bukti telah diperiksa & dipublikasikan</div>
+          <div className={styles.statCardSubtext}>{t('reviewer.statApprovedTodaySub')}</div>
         </div>
 
         <div className={styles.statCard}>
           <div className={styles.statCardHeader}>
-            <span>Perlu Revisi</span>
+            <span>{t('reviewer.statNeedsRevision')}</span>
             <RotateCcw size={18} color="#a16207" aria-hidden="true" />
           </div>
           <div className={styles.statCardValue}>{stats?.needsRevision ?? (loading ? '…' : 0)}</div>
-          <div className={styles.statCardSubtext}>Menunggu konfirmasi ulang pelapor</div>
+          <div className={styles.statCardSubtext}>{t('reviewer.statNeedsRevisionSub')}</div>
         </div>
 
         <div className={styles.statCard}>
           <div className={styles.statCardHeader}>
-            <span>Ditolak</span>
+            <span>{t('reviewer.statRejected')}</span>
             <XCircle size={18} color="var(--red)" aria-hidden="true" />
           </div>
           <div className={styles.statCardValue}>{stats?.rejected ?? (loading ? '…' : 0)}</div>
-          <div className={styles.statCardSubtext}>Foto tidak relevan / tidak sesuai</div>
+          <div className={styles.statCardSubtext}>{t('reviewer.statRejectedSub')}</div>
         </div>
       </section>
 
@@ -116,38 +132,37 @@ export default function ReviewerDashboardPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div>
             <h2 id="queue-heading" style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 4px', color: 'var(--ink)' }}>
-              Laporan Menunggu Tindakan
+              {t('reviewer.queueHeading')}
             </h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--muted)', margin: 0 }}>
-              Prioritas laporan masuk yang belum diperiksa oleh tim.
+              {t('reviewer.queueSub')}
             </p>
           </div>
           <Link href="/reviewer/reports" className={styles.actionButton}>
-            <span>Lihat Semua</span>
+            <span>{t('common.seeAll')}</span>
             <ArrowRight size={15} aria-hidden="true" />
           </Link>
         </div>
 
         <div className={styles.tableContainer}>
           {loading ? (
-            <div className={styles.emptyState}>Memuat antrean laporan…</div>
+            <div className={styles.emptyState}>{t('reviewer.loadingQueue')}</div>
           ) : pendingReports.length === 0 ? (
-            <div className={styles.emptyState}>Belum ada laporan yang menunggu review.</div>
+            <div className={styles.emptyState}>{t('reviewer.noPendingReports')}</div>
           ) : (
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th scope="col">Tempat</th>
-                  <th scope="col">Pelapor</th>
-                  <th scope="col">Elemen Akses</th>
-                  <th scope="col">Tanggal Laporan</th>
-                  <th scope="col">Status</th>
-                  <th scope="col" style={{ textAlign: 'right' }}>Aksi</th>
+                  <th scope="col">{t('reviewer.tablePlace')}</th>
+                  <th scope="col">{t('reviewer.tableReporter')}</th>
+                  <th scope="col">{t('reviewer.tableElements')}</th>
+                  <th scope="col">{t('reviewer.tableDate')}</th>
+                  <th scope="col">{t('reviewer.tableStatus')}</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>{t('reviewer.tableAction')}</th>
                 </tr>
               </thead>
               <tbody>
                 {pendingReports.map(report => {
-                  const meta = REVIEW_STATUS_META[report.reviewStatus] ?? REVIEW_STATUS_META.SUBMITTED;
                   return (
                     <tr key={report.id}>
                       <td>
@@ -161,7 +176,7 @@ export default function ReviewerDashboardPage() {
                         {report.elements.map(e => e.element.replace('_', ' ')).join(', ')}
                       </td>
                       <td style={{ color: 'var(--muted)', fontSize: '12.5px' }}>
-                        {new Date(report.createdAt).toLocaleDateString('id-ID', {
+                        {formatDate(report.createdAt, {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',
@@ -169,13 +184,13 @@ export default function ReviewerDashboardPage() {
                       </td>
                       <td>
                         <span className={`${styles.badge} ${styles.badgeSubmitted}`}>
-                          {meta.label}
+                          {getStatusLabel(report.reviewStatus)}
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <Link href={`/reviewer/reports/${report.id}`} className={styles.actionButton}>
                           <Eye size={14} aria-hidden="true" />
-                          <span>Periksa</span>
+                          <span>{t('reviewer.inspectBtn')}</span>
                         </Link>
                       </td>
                     </tr>

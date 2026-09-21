@@ -1,6 +1,7 @@
 import React from 'react';
 import { AccessibilityStatus, STATUS_META } from '@/types';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type HumanLockSelectorProps = {
   currentStatus: AccessibilityStatus;
@@ -19,15 +20,18 @@ export function HumanLockSelector({
   currentStatus,
   onSelectStatus,
 }: HumanLockSelectorProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="manual-lock">
-      <span className="eyebrow">3. Tentukan kondisi akhir (Wajib)</span>
-      <p>Pilih kondisi yang paling sesuai dengan apa yang Anda lihat langsung di lokasi.</p>
+      <span className="eyebrow">{t('reports.humanLockEyebrow')}</span>
+      <p>{t('reports.humanLockPrompt')}</p>
 
-      <div className="status-choice" role="radiogroup" aria-label="Pilih kondisi akses">
+      <div className="status-choice" role="radiogroup" aria-label={t('reports.humanLockAria')}>
         {STATUSES.map((s) => {
           const meta = STATUS_META[s];
           const isSelected = currentStatus === s;
+          const localizedLabel = t(`status.${s}.label`) || meta.label;
 
           return (
             <button
@@ -40,7 +44,7 @@ export function HumanLockSelector({
               onClick={() => onSelectStatus(s)}
             >
               <Icon name={meta.icon} size={14} />
-              <span>{meta.label}</span>
+              <span>{localizedLabel}</span>
             </button>
           );
         })}

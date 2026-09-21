@@ -1,8 +1,11 @@
+'use client';
+
 import React from 'react';
 import { Place, STATUS_META, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { extractStreetName } from '@/lib/streetSearch';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type PlaceCardProps = {
   place: Place;
@@ -12,10 +15,13 @@ type PlaceCardProps = {
 };
 
 export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas' }: PlaceCardProps) {
+  const { t, locale } = useTranslation();
   const meta = placeStatusMeta(place, activeNeed);
   const freshness = getEvidenceFreshness(place.updatedAt);
   const streetName = extractStreetName(place.address);
-  const statusDescription = `${meta.label}, kondisi: ${freshness.label}`;
+  const localizedStatus = t(`status.${meta.status}.label`, meta.label);
+  const localizedFreshness = t(`freshness.${freshness.level}`, freshness.label);
+  const statusDescription = `${localizedStatus}, ${locale === 'en' ? 'condition' : 'kondisi'}: ${localizedFreshness}`;
 
   const freshnessIcon =
     freshness.level === 'fresh'
@@ -32,7 +38,7 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
       type="button"
       className={`place-card ${isSelected ? 'active' : ''}`}
       onClick={onSelect}
-      aria-label={`Pilih ${place.name}: ${statusDescription}`}
+      aria-label={`${locale === 'en' ? 'Select' : 'Pilih'} ${place.name}: ${statusDescription}`}
     >
       <div className="place-card-header">
         <strong className="place-card-title">{place.name}</strong>
@@ -46,18 +52,18 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
         </span>
       </div>
       <div className="place-card-badges">
-        <StatusBadge status={meta.status} size="sm" label={meta.label} />
-        <span className={`freshness-badge ${freshness.badgeClass}`} title={`Pembaruan: ${freshness.label}`}>
+        <StatusBadge status={meta.status} size="sm" label={localizedStatus} />
+        <span className={`freshness-badge ${freshness.badgeClass}`} title={`${locale === 'en' ? 'Update' : 'Pembaruan'}: ${localizedFreshness}`}>
           <Icon name={freshnessIcon} size={11} />
-          <span>{freshness.label}</span>
+          <span>{localizedFreshness}</span>
         </span>
         {place.needsGeocoding ? (
-          <span className="badge-needs-geocoding" title="Belum memiliki koordinat peta presisi">
-            Belum ada titik peta
+          <span className="badge-needs-geocoding" title={locale === 'en' ? 'No precise coordinates' : 'Belum memiliki koordinat peta presisi'}>
+            {t('places.needsGeocodingBadge')}
           </span>
         ) : (
           <span className="badge-presurvey">
-            {place.reportCount ? `${place.reportCount} laporan warga` : 'Belum diverifikasi'}
+            {place.reportCount ? `${place.reportCount} ${t('places.citizenReportsCount')}` : t('freshness.notReviewed')}
           </span>
         )}
       </div>
@@ -67,30 +73,47 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
       {place.bottlenecks && place.bottlenecks.length > 0 && (
         <div className="place-bottleneck-warning">
           <Icon name="warning" size={14} className="flex-shrink-0" />
-          <span>Perhatian: {place.bottlenecks.length} titik akses perlu diperhatikan</span>
+          <span>
+            {locale === 'en'
+              ? `Attention: ${place.bottlenecks.length} access bottlenecks observed`
+              : `Perhatian: ${place.bottlenecks.length} titik akses perlu diperhatikan`}
+          </span>
         </div>
       )}
 
       <div className="place-card-footer-meta">
-        <span className="badge-evidence" title={`Sumber: ${place.evidenceLevelLabel}`}>
-          {place.sourceName || 'Data publik'}
+        <span className="badge-evidence" title={`${locale === 'en' ? 'Source' : 'Sumber'}: ${place.evidenceLevelLabel}`}>
+          {place.sourceName || (locale === 'en' ? 'Open data' : 'Data publik')}
         </span>
         <span className="place-features-count">
-          {place.features && place.features.length > 0 ? `${place.features.length} fasilitas tercatat` : '0 fasilitas awal'}
+          {place.features && place.features.length > 0
+            ? `${place.features.length} ${t('places.recordedFeatures')}`
+            : locale === 'en'
+            ? '0 initial features'
+            : '0 fasilitas awal'}
         </span>
       </div>
 
-      <div className="chain-mini" aria-label="8 titik kondisi akses">
-        {place.elements.map((e) => (
-          <i
-            key={e.code}
-            className={`chain-cell cell-${e.status.toLowerCase()}`}
-            title={`${e.code} ${e.label}: ${STATUS_META[e.status].label} (${e.lockedBy === 'kontributor' ? 'Diverifikasi warga' : e.isPreSurveyEvidence ? 'Informasi awal' : 'Belum diverifikasi'})`}
-            aria-label={`${e.code} ${e.label}: ${STATUS_META[e.status].label}`}
-          >
-            {e.code.replace('E', '')}
-          </i>
-        ))}
+      <div className="chain-mini" aria-label={locale === 'en' ? '8 access chain points' : '8 titik kondisi akses'}>
+        {place.elements.map((e) => {
+          const elemStatusLabel = t(`status.${e.status}.label`, STATUS_META[e.status].label);
+          const elemEvidenceLabel =
+            e.lockedBy === 'kontributor'
+              ? locale === 'en' ? 'Verified by citizen' : 'Diverifikasi warga'
+              : e.isPreSurveyEvidence
+              ? locale === 'en' ? 'Baseline info' : 'Informasi awal'
+              : locale === 'en' ? 'Not yet verified' : 'Belum diverifikasi';
+          return (
+            <i
+              key={e.code}
+              className={`chain-cell cell-${e.status.toLowerCase()}`}
+              title={`${e.code} ${e.label}: ${elemStatusLabel} (${elemEvidenceLabel})`}
+              aria-label={`${e.code} ${e.label}: ${elemStatusLabel}`}
+            >
+              {e.code.replace('E', '')}
+            </i>
+          );
+        })}
       </div>
     </button>
   );

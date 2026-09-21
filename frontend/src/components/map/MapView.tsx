@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Place, AccessibilityNeed, placeStatusMeta } from '@/types';
 import { MapLegend } from './MapLegend';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
   ssr: false,
@@ -35,6 +36,7 @@ export function MapView({
   onClearExternalPreview,
   activeNeed = 'Mobilitas',
 }: MapViewProps) {
+  const { t } = useTranslation();
   const [mapMode, setMapMode] = useState<'osm' | 'canvas'>('osm');
   const [optionsOpen, setOptionsOpen] = useState(false);
 
@@ -51,7 +53,7 @@ export function MapView({
           onClick={() => setOptionsOpen(open => !open)}
         >
           <Icon name={optionsOpen ? 'close' : 'info'} size={16} />
-          <span>{optionsOpen ? 'Tutup legenda' : 'Legenda'}</span>
+          <span>{optionsOpen ? t('map.closeLegend') : t('map.legendTitle')}</span>
         </button>
         <div id="map-display-options" className="map-display-options">
           <MapLegend />
@@ -61,18 +63,18 @@ export function MapView({
               className={mapMode === 'osm' ? 'active' : ''}
               aria-pressed={mapMode === 'osm'}
               onClick={() => setMapMode('osm')}
-              title="Tampilan Peta Jalan Riil"
+              title={t('map.modeStreetTitle')}
             >
-              Peta Jalan
+              {t('map.streetMap')}
             </button>
             <button
               type="button"
               className={mapMode === 'canvas' ? 'active' : ''}
               aria-pressed={mapMode === 'canvas'}
               onClick={() => setMapMode('canvas')}
-              title="Tampilan Skematik Cepat"
+              title={t('map.modeSchematicTitle')}
             >
-              Skematik
+              {t('map.schematic')}
             </button>
           </div>
         </div>
@@ -91,7 +93,7 @@ export function MapView({
           />
         </div>
       ) : (
-        <div className="map-canvas" aria-label="Kanvas skematik kota Surabaya">
+        <div className="map-canvas" aria-label={t('map.canvasAria')}>
           <div className="river river-a" />
           <div className="river river-b" />
           {Array.from({ length: 7 }).map((_, i) => (
@@ -106,6 +108,8 @@ export function MapView({
           <span className="map-label label-c">Jl. Basuki Rahmat</span>
           {geocodedPlaces.map((p) => {
             const meta = placeStatusMeta(p, activeNeed);
+            const localizedStatus = t(`status.${meta.status}.label`, meta.label);
+            const localizedNeed = t(`needs.${activeNeed}`, activeNeed);
             return (
               <button
                 key={p.id}
@@ -115,7 +119,7 @@ export function MapView({
                 }`}
                 style={{ left: `${p.x}%`, top: `${p.y}%` }}
                 onClick={() => onSelectPlace(p)}
-                aria-label={`${p.name}. Kebutuhan ${activeNeed}: ${meta.label}. ${p.chainSummary}`}
+                aria-label={`${p.name}. ${localizedNeed}: ${localizedStatus}. ${p.chainSummary}`}
                 type="button"
               >
                 <span>{meta.symbol}</span>

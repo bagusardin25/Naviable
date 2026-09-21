@@ -36,6 +36,7 @@
 .nav a { min-height: 44px; display: inline-flex; align-items: center; }
 .nav a:hover, .footer a:hover { color: var(--lp-purple); }
 .signIn { gap: 3px; padding-left: 24px; border-left: 1px solid var(--lp-line); }
+.headerActions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .page .headerCta { display: inline-flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 8px; color: white; background: var(--lp-purple); font-size: .84em; font-weight: 600; min-height: 44px; }
 .menuButton { display: none; background: var(--lp-paper); border: 1px solid var(--lp-purple); color: var(--lp-purple); border-radius: 7px; width: 44px; height: 44px; align-items: center; justify-content: center; }
 .hero { max-width: 1280px; margin: auto; padding: 76px 40px 80px; display: grid; grid-template-columns: 1.04fr 1fr; gap: 65px; align-items: center; }
@@ -329,34 +330,6 @@
   scroll-behavior: auto !important;
 }
 
-/* Landing Page Highlight Interactive Elements */
-:global(html.highlight-links) .page a:not(:where([aria-label*="beranda"])),
-:global(html.highlight-interactive) .page a:not(:where([aria-label*="beranda"])),
-:global(html[data-a11y-highlight-links="true"]) .page a:not(:where([aria-label*="beranda"])),
-:global(html[data-a11y-highlight-interactive="true"]) .page a:not(:where([aria-label*="beranda"])) {
-  text-decoration: underline !important;
-  text-underline-offset: 4px !important;
-  text-decoration-thickness: 2.5px !important;
-  text-decoration-color: var(--lp-purple) !important;
-}
-
-:global(html.highlight-links) .page button:not(:disabled),
-:global(html.highlight-links) .page [role="button"]:not(:disabled),
-:global(html.highlight-interactive) .page button:not(:disabled),
-:global(html.highlight-interactive) .page [role="button"]:not(:disabled),
-:global(html.highlight-interactive) .page .primary,
-:global(html.highlight-interactive) .page .headerCta,
-:global(html.highlight-links) .page .primary,
-:global(html.highlight-links) .page .headerCta,
-:global(html[data-a11y-highlight-links="true"]) .page button:not(:disabled),
-:global(html[data-a11y-highlight-links="true"]) .page .primary,
-:global(html[data-a11y-highlight-links="true"]) .page .headerCta,
-:global(html[data-a11y-highlight-interactive="true"]) .page button:not(:disabled),
-:global(html[data-a11y-highlight-interactive="true"]) .page .primary,
-:global(html[data-a11y-highlight-interactive="true"]) .page .headerCta {
-  outline: 2.5px solid var(--lp-purple) !important;
-  outline-offset: 3px !important;
-}
 @media (prefers-reduced-motion: reduce) { .page *, .page *::before, .page *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 @media (max-width: 1100px) { .headerInner { gap: 20px; } .nav { gap: 15px; } .signIn { padding-left: 15px; } .hero { gap: 30px; } .heroActions { gap: 15px; } .contribution { margin-inline: 40px; padding: 45px; gap: 40px; } .trust { gap: 45px; } }
 @media (max-width: 900px) { .headerInner { padding: 14px 24px; min-height: 76px; flex-wrap: wrap; } .headerCta { margin-left: auto; } .menuButton { display: flex; } .nav { display: none; order: 4; flex-basis: 100%; margin: 0; border-top: 1px solid var(--lp-line); padding-top: 12px; } .nav[data-open='true'] { display: grid; grid-template-columns: 1fr 1fr; } .signIn { padding-left: 0; border: 0; } .hero { padding: 55px 24px; gap: 28px; } .hero h1 { font-size: 2.8em; } .heroVisual { padding: 18px 12px 12px; } .previewTop { padding: 12px; } .previewRows, .preview figcaption { padding-inline: 12px; } .previewRows li { grid-template-columns: 25px 1fr; } .previewRows li > span:last-child { grid-column: 2; justify-self: start; } .building > svg { height: 140px; } .previewNote { padding-inline: 12px; } .problemInner { grid-template-columns: 1fr 1fr; padding: 32px 24px; gap: 20px; } .sectionNumber { grid-column: 1/-1; } .section { padding: 65px 24px; } .page h2 { font-size: 2em; } .sectionHeader { gap: 25px; align-items: start; } .sectionHeader > p { max-width: 260px; } .elements li { padding: 22px 17px; } .elements p { font-size: .73em; } .steps { gap: 24px; } .contribution { margin-inline: 24px; padding: 35px; gap: 30px; grid-template-columns: 1.2fr 1fr; } .faq { gap: 30px; } .footer { padding-inline: 24px; } .footerTop { grid-template-columns: 1fr 1fr; gap: 25px; } }
@@ -382,4 +355,10 @@
   .hero .textLink { font-size: .85em; }
   .heroFootnote { font-size: .75em; }
   .hero h1 { font-size: 2.7em; }
+}
+@media (max-width: 480px) {
+  .headerInner { flex-wrap: nowrap; padding-inline: 16px; }
+  .headerActions { margin-left: auto; gap: 8px; }
+  .headerActions .headerCta { display: none; }
+  .nav { position: absolute; top: 100%; left: 0; right: 0; padding: 12px 20px 18px; background: var(--lp-paper); border-bottom: 1px solid var(--lp-line); }
 }

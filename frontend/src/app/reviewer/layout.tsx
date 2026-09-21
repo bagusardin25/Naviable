@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { ReviewerSidebar } from '@/components/reviewer/ReviewerSidebar';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { useTranslation } from '@/hooks/useTranslation';
 import styles from './reviewer.module.css';
 
 export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -18,16 +21,19 @@ export default function ReviewerLayout({ children }: { children: React.ReactNode
             type="button"
             className={styles.mobileMenuToggle}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
+            aria-label={mobileMenuOpen ? t('common.close') : 'Buka menu'}
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <div className={styles.topBarTitle}>
-            Panel Verifikasi Data Aksesibilitas
+            {t('reviewer.panelTitle')}
           </div>
-          <div className={styles.topBarStatus}>
-            <span className={styles.topBarStatusDot} aria-hidden="true" />
-            <span>Sesi Terverifikasi</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className={styles.topBarStatus}>
+              <span className={styles.topBarStatusDot} aria-hidden="true" />
+              <span>{t('reviewer.sessionVerified')}</span>
+            </div>
+            <LanguageSwitcher size="sm" />
           </div>
         </header>
 

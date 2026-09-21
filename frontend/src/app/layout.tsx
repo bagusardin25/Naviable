@@ -30,6 +30,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import { LanguageProvider } from '@/providers/LanguageProvider';
 import { AccessibilityProvider } from '@/providers/AccessibilityProvider';
 import { AccessibilityWidget } from '@/components/accessibility/AccessibilityWidget';
 import { ReadingGuideOverlay } from '@/components/accessibility/ReadingGuideOverlay';
@@ -43,12 +44,14 @@ export default function RootLayout({
   return (
     <html lang="id" className={`min-h-full antialiased ${inter.variable}`}>
       <body className="min-h-full flex flex-col font-sans">
-        <AccessibilityProvider>
-          {children}
-          <ReadingGuideOverlay />
-          <VoiceReaderManager />
-          <AccessibilityWidget />
-        </AccessibilityProvider>
+        <LanguageProvider>
+          <AccessibilityProvider>
+            {children}
+            <ReadingGuideOverlay />
+            <VoiceReaderManager />
+            <AccessibilityWidget />
+          </AccessibilityProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

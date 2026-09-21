@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { Place, placeStatusMeta } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export interface SelectedMapLocation {
   lat: number;
@@ -270,14 +271,19 @@ function MapClickHandler({
   return null;
 }
 
-function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import('@/types').AccessibilityNeed = 'Mobilitas') {
+function createMarkerIcon(
+  place: Place,
+  isSelected: boolean,
+  activeNeed: import('@/types').AccessibilityNeed = 'Mobilitas',
+  markerTitle = place.name
+) {
   const meta = placeStatusMeta(place, activeNeed);
   const isSelectedClass = isSelected ? 'selected' : '';
   const statusClass = meta.status.toLowerCase();
   const marker = document.createElement('div');
   marker.className = `marker marker-${statusClass} ${isSelectedClass}`;
   marker.setAttribute('data-status', meta.status);
-  marker.title = `${place.name} — Kebutuhan ${activeNeed}: ${meta.label}`;
+  marker.title = markerTitle;
   const symbol = document.createElement('span');
   symbol.setAttribute('aria-hidden', 'true');
   symbol.textContent = meta.symbol;
@@ -302,6 +308,7 @@ export default function LeafletMap({
   onClearExternalPreview,
   activeNeed = 'Mobilitas',
 }: LeafletMapProps) {
+  const { t } = useTranslation();
   const [selectedLocation, setSelectedLocation] = useState<SelectedMapLocation | null>(null);
 
   useEffect(() => {
@@ -348,7 +355,7 @@ export default function LeafletMap({
       scrollWheelZoom={true}
       className="leaflet-map-container"
       style={{ width: '100%', height: '100%' }}
-      aria-label="Peta interaktif aksesibilitas Surabaya"
+      aria-label={t('map.interactiveMapAria')}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors (ODbL)'
@@ -362,14 +369,19 @@ export default function LeafletMap({
 
       {validPlaces.map((place) => {
         const isSelected = selectedPlace?.id === place.id;
-        const icon = createMarkerIcon(place, isSelected, activeNeed);
         const meta = placeStatusMeta(place, activeNeed);
+        const markerTitle = t('map.markerTitle', {
+          name: place.name,
+          need: t(`needs.${activeNeed}`, activeNeed),
+          status: t(`status.${meta.status}.label`, meta.label),
+        });
+        const icon = createMarkerIcon(place, isSelected, activeNeed, markerTitle);
 
         return (
           <Marker
             key={place.id}
             position={[place.lat, place.lng]}
-            title={`${place.name} — Kebutuhan ${activeNeed}: ${meta.label}`}
+            title={markerTitle}
             icon={icon}
             eventHandlers={{
               click: (e) => {
@@ -388,7 +400,9 @@ export default function LeafletMap({
 
                 <div className="popup-badge-row">
                   <StatusBadge status={meta.status} size="sm" />
-                  <span className="badge-presurvey">{place.reportCount ? `${place.reportCount} laporan warga` : 'Data awal'}</span>
+                  <span className="badge-presurvey">
+                    {place.reportCount ? t('map.citizenReports', { count: place.reportCount }) : t('map.initialData')}
+                  </span>
                 </div>
 
                 {place.address && (
@@ -400,7 +414,7 @@ export default function LeafletMap({
                 {place.features && place.features.length > 0 && (
                   <div>
                     <span style={{ fontSize: '10px', fontWeight: 700, color: '#334155' }}>
-                      Catatan fasilitas:
+                      {t('map.facilityNotes')}
                     </span>
                     <ul className="popup-features">
                       {place.features.slice(0, 3).map((feat, idx) => (
@@ -412,7 +426,7 @@ export default function LeafletMap({
 
                 <div className="popup-disclaimer" style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                   <Icon name="info" size={14} className="flex-shrink-0" style={{ marginTop: '1px' }} />
-                  <span>Data awal bersumber dari {place.sourceName || 'OpenStreetMap'}. Belum diverifikasi langsung oleh warga.</span>
+                  <span>{t('map.sourceDisclaimer', { source: place.sourceName || 'OpenStreetMap' })}</span>
                 </div>
 
                 <button
@@ -421,7 +435,7 @@ export default function LeafletMap({
                   style={{ marginTop: '8px' }}
                   onClick={() => onSelectPlace(place)}
                 >
-                  Lihat kondisi akses →
+                  {t('map.viewAccessCondition')}
                 </button>
               </div>
             </Popup>
@@ -459,7 +473,7 @@ export default function LeafletMap({
                   <Icon name="map-pin-plus" size={16} />
                 </div>
                 <h4 className="add-place-title">
-                  {selectedLocation.name || 'Tambahkan tempat'}
+                  {selectedLocation.name || t('map.addPlaceTitle')}
                 </h4>
                 <button
                   type="button"
@@ -469,8 +483,8 @@ export default function LeafletMap({
                     setSelectedLocation(null);
                     onClearExternalPreview?.();
                   }}
-                  title="Tutup popup"
-                  aria-label="Tutup popup"
+                  title={t('map.closePopup')}
+                  aria-label={t('map.closePopup')}
                 >
                   <Icon name="close" size={14} />
                 </button>
@@ -482,8 +496,8 @@ export default function LeafletMap({
               )}
               <p className="add-place-desc">
                 {selectedLocation.name
-                  ? 'Tempat ini belum terdata di Naviable. Jadilah orang pertama yang mendata aksesibilitasnya!'
-                  : 'Tambahkan informasi kondisi akses di lokasi ini.'}
+                  ? t('map.unmappedPlaceDesc')
+                  : t('map.addPlaceDesc')}
               </p>
               <div className="add-place-coords">
                 <Icon name="map-pin" size={13} className="text-muted flex-shrink-0" />
@@ -496,13 +510,13 @@ export default function LeafletMap({
                 <div className="popup-nearby-warning" role="alert">
                   <div className="nearby-warning-title">
                     <Icon name="info" size={14} />
-                    <span>Tempat terdaftar di dekat sini:</span>
+                    <span>{t('map.nearbyPlacesTitle')}</span>
                   </div>
                   <span className="nearby-place-name">
                     {nearbyPlaces[0].place.name} (±{nearbyPlaces[0].distance}m)
                   </span>
                   <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'inherit' }}>
-                    Lokasi ini mungkin sudah memiliki data. Periksa tempat ini sebelum menambahkan tempat baru.
+                    {t('map.nearbyPlaceWarning')}
                   </p>
                   <div className="popup-btn-row">
                     <button
@@ -516,7 +530,7 @@ export default function LeafletMap({
                         onSelectPlace(target);
                       }}
                     >
-                      Lihat Tempat
+                      {t('map.viewPlace')}
                     </button>
                     <button
                       type="button"
@@ -526,7 +540,7 @@ export default function LeafletMap({
                         onAddPlaceAtLocation?.(selectedLocation);
                       }}
                     >
-                      Tetap Tambahkan
+                      {t('map.addAnyway')}
                     </button>
                   </div>
                 </div>
@@ -541,7 +555,7 @@ export default function LeafletMap({
                       onClearExternalPreview?.();
                     }}
                   >
-                    Batal
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="button"
@@ -551,7 +565,7 @@ export default function LeafletMap({
                       onAddPlaceAtLocation?.(selectedLocation);
                     }}
                   >
-                    {selectedLocation.name ? '➕ Tambah ke Naviable' : 'Tambahkan Tempat'}
+                    {selectedLocation.name ? t('map.addToNaviable') : t('map.addPlaceTitle')}
                   </button>
                 </div>
               )}

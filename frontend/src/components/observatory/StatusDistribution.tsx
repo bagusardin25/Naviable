@@ -1,5 +1,6 @@
 import React from 'react';
 import { Place, ChainElementCode, CHAIN_ELEMENT_MAP } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type StatusDistributionProps = {
   places: Place[];
@@ -8,12 +9,14 @@ type StatusDistributionProps = {
 const OBSERVED_CODES: ChainElementCode[] = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'];
 
 export function StatusDistribution({ places }: StatusDistributionProps) {
+  const { t } = useTranslation();
+
   return (
-    <section className="card" aria-label="Hambatan akses yang sering dilaporkan">
+    <section className="card" aria-label={t('observatory.barAria')}>
       <div className="card-title-row">
         <div>
-          <span className="eyebrow">Sorotan Akses</span>
-          <h2>Akses yang Paling Sering Terkendala</h2>
+          <span className="eyebrow">{t('observatory.barEyebrow')}</span>
+          <h2>{t('observatory.barTitle')}</h2>
         </div>
       </div>
 
@@ -29,7 +32,7 @@ export function StatusDistribution({ places }: StatusDistributionProps) {
                   e.status === 'TIDAK_ADA')
             ).length;
 
-          const label = CHAIN_ELEMENT_MAP[code]?.label ?? code;
+          const label = t(`elements.${code}.name`) || CHAIN_ELEMENT_MAP[code]?.label || code;
           const percentage = places.length ? Math.round((brokenOccurrences / places.length) * 100) : 0;
 
           return (
@@ -44,7 +47,7 @@ export function StatusDistribution({ places }: StatusDistributionProps) {
                 aria-valuenow={brokenOccurrences}
                 aria-valuemin={0}
                 aria-valuemax={places.length}
-                aria-label={`${code} ${label}: ${brokenOccurrences} lokasi`}
+                aria-label={`${code} ${label}: ${brokenOccurrences}`}
               >
                 <i style={{ width: `${percentage}%` }} />
               </div>

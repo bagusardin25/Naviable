@@ -6,6 +6,8 @@ import { googleSignInOptions } from '@/lib/auth/google';
 import { loginHref } from '@/lib/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '@/app/login/login-icons';
+import { useTranslation } from '@/hooks/useTranslation';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 const authConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -24,8 +26,9 @@ export function AuthModal({
   isOpen,
   onClose,
   onSuccess,
-  actionDescription = 'menambahkan lokasi baru',
+  actionDescription,
 }: AuthModalProps) {
+  const { t } = useTranslation();
   const modalRef = useRef<HTMLElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -40,6 +43,8 @@ export function AuthModal({
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<'google' | 'email' | null>(null);
   const busy = pending !== null;
+
+  const resolvedActionDescription = actionDescription || t('auth.actionContribute');
 
   // Accessibility focus management
   useEffect(() => {
@@ -89,7 +94,7 @@ export function AuthModal({
     if (busy) return;
     setMessage('');
     if (!authConfigured) {
-      setMessage('Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.');
+      setMessage(t('auth.supabaseNotConfigured'));
       return;
     }
     setPending('google');
@@ -99,7 +104,7 @@ export function AuthModal({
       );
       if (error) throw error;
     } catch (err: unknown) {
-      const errMessage = err instanceof Error ? err.message : 'Tidak dapat terhubung ke Google. Silakan coba lagi.';
+      const errMessage = err instanceof Error ? err.message : t('auth.googleConnectFailed');
       setMessage(errMessage);
       setPending(null);
     }
@@ -114,19 +119,19 @@ export function AuthModal({
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError('Masukkan alamat email yang valid (contoh: relawan@naviable.org).');
+      setEmailError(t('auth.emailInvalidError'));
       emailRef.current?.focus();
       return;
     }
 
     if (!password || password.length < 6) {
-      setPasswordError('Kata sandi minimal terdiri dari 6 karakter.');
+      setPasswordError(t('auth.passwordLengthError'));
       passwordRef.current?.focus();
       return;
     }
 
     if (!authConfigured) {
-      setMessage('Supabase Auth belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola Naviable.');
+      setMessage(t('auth.supabaseNotConfigured'));
       return;
     }
 
@@ -142,14 +147,14 @@ export function AuthModal({
         });
         if (error) throw error;
         if (data.session) {
-          setMessage('Pendaftaran berhasil! Menyiapkan kontribusi Anda…');
+          setMessage(t('auth.signUpSuccess'));
           onSuccess?.();
           onClose();
         } else {
-          setMessage(`Jika alamat ini dapat didaftarkan, tautan konfirmasi dikirim ke ${trimmedEmail}. Periksa kotak masuk dan spam; jika sudah memiliki akun, pilih Masuk.`);
+          setMessage(t('auth.signUpVerificationSent', { email: trimmedEmail }));
         }
       } catch (err: unknown) {
-        const errMessage = err instanceof Error ? err.message : 'Gagal mendaftarkan akun.';
+        const errMessage = err instanceof Error ? err.message : t('auth.signUpFailed');
         setMessage(errMessage);
       } finally {
         setPending(null);
@@ -166,12 +171,12 @@ export function AuthModal({
       });
       if (error) throw error;
       if (data.session) {
-        setMessage('Berhasil masuk! Melanjutkan aksi Anda…');
+        setMessage(t('auth.signInSuccess'));
         onSuccess?.();
         onClose();
       }
     } catch {
-      setPasswordError('Email atau kata sandi salah. Silakan periksa kembali.');
+      setPasswordError(t('auth.credentialsInvalidError'));
       passwordRef.current?.focus();
     } finally {
       setPending(null);
@@ -192,21 +197,23 @@ export function AuthModal({
       >
         <div className="modal-header">
           <div>
-            <span className="eyebrow">Kontribusi Naviable</span>
-            <h2 id="auth-modal-title">Masuk atau Daftar</h2>
+            <span className="eyebrow">{t('reports.citizenContribution')}</span>
+            <h2 id="auth-modal-title">{t('auth.modalTitle')}</h2>
             <p>
-              Masuk untuk {actionDescription}. Data tersimpan aman dan Anda tidak perlu keluar dari
-              peta.
+              {t('auth.modalActionDesc', { action: resolvedActionDescription })}
             </p>
           </div>
-          <button
-            id="auth-modal-close-btn"
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup jendela masuk"
-          >
-            <Icon name="close" />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LanguageSwitcher size="sm" />
+            <button
+              id="auth-modal-close-btn"
+              type="button"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
+              <Icon name="close" />
+            </button>
+          </div>
         </div>
 
         <div className="auth-modal-content">
@@ -221,17 +228,17 @@ export function AuthModal({
               >
                 <GoogleIcon />
                 <span>
-                  {pending === 'google' ? 'Menghubungkan Google…' : 'Lanjut dengan Google'}
+                  {pending === 'google' ? t('auth.googleConnecting') : t('auth.googleContinue')}
                 </span>
               </button>
             </div>
 
             <div className="auth-divider">
-              <span>atau gunakan email</span>
+              <span>{t('auth.orWithEmail')}</span>
             </div>
 
             {/* Auth Mode Switcher Tabs */}
-            <div className="auth-tabs" role="tablist" aria-label="Opsi Masuk atau Daftar">
+            <div className="auth-tabs" role="tablist" aria-label={t('auth.modalTitle')}>
               <button
                 type="button"
                 role="tab"
@@ -244,7 +251,7 @@ export function AuthModal({
                   setMessage('');
                 }}
               >
-                Masuk
+                {t('auth.tabSignIn')}
               </button>
               <button
                 type="button"
@@ -258,13 +265,13 @@ export function AuthModal({
                   setMessage('');
                 }}
               >
-                Daftar
+                {t('auth.tabSignUp')}
               </button>
             </div>
 
             {/* Email Field */}
             <div className="auth-field">
-              <label htmlFor="auth-modal-email">Alamat Email</label>
+              <label htmlFor="auth-modal-email">{t('auth.emailLabel')}</label>
               <div className="auth-input-wrapper">
                 <span className="auth-input-icon" aria-hidden="true">
                   <MailIcon />
@@ -276,7 +283,7 @@ export function AuthModal({
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  placeholder="nama@domain.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   required
                   disabled={busy}
@@ -297,7 +304,7 @@ export function AuthModal({
             </div>
 
             <div className="auth-field" style={{ marginTop: '12px' }}>
-              <label htmlFor="auth-modal-password">Kata Sandi</label>
+              <label htmlFor="auth-modal-password">{t('auth.passwordLabel')}</label>
               <div className="auth-input-wrapper">
                 <span className="auth-input-icon" aria-hidden="true">
                   <LockIcon />
@@ -308,7 +315,7 @@ export function AuthModal({
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
-                  placeholder={authMode === 'signup' ? 'Minimal 6 karakter' : 'Masukkan kata sandi'}
+                  placeholder={authMode === 'signup' ? t('auth.passwordPlaceholderSignUp') : t('auth.passwordPlaceholderSignIn')}
                   value={password}
                   required
                   disabled={busy}
@@ -324,7 +331,7 @@ export function AuthModal({
                   type="button"
                   className="auth-toggle-pwd"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -349,11 +356,11 @@ export function AuthModal({
               <span>
                 {pending === 'email'
                   ? authMode === 'signup'
-                    ? 'Mendaftarkan…'
-                    : 'Masuk ke Akun…'
+                    ? t('auth.submittingSignUp')
+                    : t('auth.submittingSignIn')
                   : authMode === 'signup'
-                  ? 'Daftar Akun Baru'
-                  : 'Masuk Sekarang'}
+                  ? t('auth.submitSignUp')
+                  : t('auth.submitSignIn')}
               </span>
             </button>
 
@@ -363,12 +370,12 @@ export function AuthModal({
               onClick={onClose}
               style={{ marginTop: '4px' }}
             >
-              <span>Lanjut Mengisi Formulir (Nanti Saja)</span>
+              <span>{t('auth.continueDraftLater')}</span>
             </button>
           </form>
 
           <p className="auth-legal-note">
-            Dengan masuk, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi Naviable untuk data ruang publik inklusif.
+            {t('auth.legalNote')}
           </p>
         </div>
       </section>

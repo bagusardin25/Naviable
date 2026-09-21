@@ -6,6 +6,7 @@ import { fetchJourney } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { buildGoogleMapsRouteUrl, buildGoogleMapsPlaceUrl, TravelMode } from '@/lib/externalMaps';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type JourneyPlannerProps = {
   places: Place[];
@@ -20,6 +21,7 @@ export function JourneyPlanner({
   onSelectPlace,
   onClose,
 }: JourneyPlannerProps) {
+  const { t } = useTranslation();
   // Only places with coordinates are eligible for journey origin/destination
   const geocodedPlaces = places.filter((p) => !p.needsGeocoding && p.lat !== null && p.lng !== null);
 
@@ -36,11 +38,11 @@ export function JourneyPlanner({
   async function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!originId || !destinationId) {
-      setError('Pilih lokasi asal dan tujuan terlebih dahulu.');
+      setError(t('journey.selectBothPrompt'));
       return;
     }
     if (originId === destinationId) {
-      setError('Lokasi asal dan tujuan harus berbeda.');
+      setError(t('journey.originMustDiffer'));
       return;
     }
 
@@ -50,7 +52,7 @@ export function JourneyPlanner({
       const res = await fetchJourney(originId, destinationId, profile.toLowerCase());
       setJourney(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat rantai perjalanan');
+      setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -58,23 +60,26 @@ export function JourneyPlanner({
 
   function getElementLabel(elementKey: string): string {
     const code = elementKey.split('_')[0] as ChainElementCode;
-    return CHAIN_ELEMENT_MAP[code]?.label ?? elementKey;
+    if (code && CHAIN_ELEMENT_MAP[code]) {
+      return t(`elements.${code}.name`) || CHAIN_ELEMENT_MAP[code].label;
+    }
+    return elementKey;
   }
 
   return (
-    <div className="journey-planner-panel" role="region" aria-label="Petunjuk rute akses">
+    <div className="journey-planner-panel" role="region" aria-label={t('journey.panelAria')}>
       <div className="journey-planner-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Icon name="route" />
           <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b' }}>
-            Petunjuk Rute Akses
+            {t('journey.title')}
           </h2>
         </div>
         <button
           type="button"
           className="drawer-close"
           onClick={onClose}
-          aria-label="Tutup petunjuk rute"
+          aria-label={t('journey.closeAria')}
           style={{ position: 'static' }}
         >
           <Icon name="close" />
@@ -95,9 +100,7 @@ export function JourneyPlanner({
           lineHeight: 1.45,
         }}
       >
-        <strong>Catatan:</strong> Fitur ini merangkum titik akses penting di rute yang kamu tuju,{' '}
-        <strong>bukan navigasi belokan jalan raya (GPS)</strong>.
-        Kondisi trotoar penghubung masih terus diverifikasi bersama warga.
+        <strong>{t('journey.disclaimerNote')}</strong> {t('journey.disclaimerBold')}
       </div>
 
       <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -107,7 +110,7 @@ export function JourneyPlanner({
             style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
             <Icon name="location" size={13} />
-            <span>Titik Awal</span>
+            <span>{t('journey.originLabel')}</span>
           </label>
           <select
             id="journey-origin-select"
@@ -116,7 +119,7 @@ export function JourneyPlanner({
             value={originId}
             onChange={(e) => setOriginId(e.target.value)}
           >
-            <option value="" disabled>Pilih lokasi keberangkatan…</option>
+            <option value="" disabled>{t('journey.originPlaceholder')}</option>
             {geocodedPlaces.map((p) => (
               <option key={p.id} value={String(p.id)}>
                 {p.name} ({p.district})
@@ -131,7 +134,7 @@ export function JourneyPlanner({
             style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}
           >
             <Icon name="compass" size={13} />
-            <span>Titik Tujuan</span>
+            <span>{t('journey.destLabel')}</span>
           </label>
           <select
             id="journey-dest-select"
@@ -140,7 +143,7 @@ export function JourneyPlanner({
             value={destinationId}
             onChange={(e) => setDestinationId(e.target.value)}
           >
-            <option value="" disabled>Pilih tempat tujuan…</option>
+            <option value="" disabled>{t('journey.destPlaceholder')}</option>
             {geocodedPlaces.map((p) => (
               <option key={p.id} value={String(p.id)}>
                 {p.name} ({p.district})
@@ -154,7 +157,7 @@ export function JourneyPlanner({
             htmlFor="journey-profile-select"
             style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: '4px' }}
           >
-            Profil Aksesibilitas
+            {t('journey.profileLabel')}
           </label>
           <select
             id="journey-profile-select"
@@ -163,10 +166,10 @@ export function JourneyPlanner({
             value={profile}
             onChange={(e) => setProfile(e.target.value as AccessibilityNeed)}
           >
-            <option value="Mobilitas">Kursi Roda / Motorik</option>
-            <option value="Visual">Tunanetra / Gangguan Penglihatan</option>
-            <option value="Auditori">Tunarungu / Gangguan Pendengaran</option>
-            <option value="Sensorik">Sensitivitas Sensorik</option>
+            <option value="Mobilitas">{t('needs.Mobilitas')}</option>
+            <option value="Visual">{t('needs.Visual')}</option>
+            <option value="Auditori">{t('needs.Auditori')}</option>
+            <option value="Sensorik">{t('needs.Sensorik')}</option>
           </select>
         </div>
 
@@ -176,7 +179,7 @@ export function JourneyPlanner({
           style={{ marginTop: '6px', justifyContent: 'center' }}
           disabled={loading || !originId || !destinationId}
         >
-          {loading ? 'Memeriksa rute…' : 'Cek Rute Akses'}
+          {loading ? t('journey.calculatingRoute') : t('journey.searchRouteBtn')}
         </button>
 
         {error && (
@@ -201,17 +204,17 @@ export function JourneyPlanner({
               {journey.hasBottlenecks ? (
                 <>
                   <Icon name="warning" size={15} />
-                  <span>Perhatian: Ditemukan {journey.bottleneckCount} titik yang dilaporkan bermasalah di rute ini.</span>
+                  <span>{t('journey.bottlenecksAlert', { count: journey.bottleneckCount })}</span>
                 </>
               ) : (
                 <>
                   <Icon name="check-circle" size={15} />
-                  <span>Semua titik yang tercatat di rute ini dilaporkan bisa digunakan.</span>
+                  <span>{t('journey.allPointsUsable')}</span>
                 </>
               )}
             </strong>
             <span style={{ fontSize: '11px', color: journey.hasBottlenecks ? 'var(--notice-error-ink)' : 'var(--notice-success-ink)', display: 'block', marginTop: '2px', opacity: 0.9 }}>
-              Dicek untuk kebutuhan: <strong>{profile}</strong>.
+              {t('journey.checkedForNeed', { need: t(`needs.${profile}`) || profile })}
             </span>
           </div>
 
@@ -229,21 +232,23 @@ export function JourneyPlanner({
                   })
                 : null;
 
+            const transitInfo = waypoints.length > 0 ? t('journey.transitPointsSuffix', { count: waypoints.length }) : '';
+
             return googleMapsRouteUrl ? (
-              <div className="google-maps-card" role="region" aria-label="Navigasi langsung Google Maps">
+              <div className="google-maps-card" role="region" aria-label={t('journey.directNavigationTitle')}>
                 <div className="google-maps-card-header">
                   <span className="google-maps-card-title">
                     <Icon name="navigation" size={15} />
-                    <span>Navigasi Langsung (Google Maps)</span>
+                    <span>{t('journey.directNavigationTitle')}</span>
                   </span>
-                  <div className="google-maps-mode-pills" role="group" aria-label="Pilih moda perjalanan">
+                  <div className="google-maps-mode-pills" role="group" aria-label={t('journey.travelModeAria')}>
                     <button
                       type="button"
                       className={`google-maps-mode-btn ${travelMode === 'walking' ? 'active' : ''}`}
                       onClick={() => setTravelMode('walking')}
                       aria-pressed={travelMode === 'walking'}
                     >
-                      Jalan Kaki
+                      {t('journey.walkingMode')}
                     </button>
                     <button
                       type="button"
@@ -251,24 +256,29 @@ export function JourneyPlanner({
                       onClick={() => setTravelMode('transit')}
                       aria-pressed={travelMode === 'transit'}
                     >
-                      Angkutan Umum
+                      {t('journey.transitMode')}
                     </button>
                   </div>
                 </div>
                 <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--muted)', lineHeight: 1.45 }}>
-                  Buka navigasi belokan jalan raya (turn-by-turn) di Google Maps dari{' '}
-                  <strong>{originPoint?.name}</strong> menuju <strong>{destPoint?.name}</strong>
-                  {waypoints.length > 0 ? ` melalui ${waypoints.length} titik transit.` : '.'}
+                  {t('journey.turnByTurnDesc', {
+                    origin: originPoint?.name,
+                    destination: destPoint?.name,
+                    transitInfo,
+                  })}
                 </p>
                 <a
                   href={googleMapsRouteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="google-maps-btn"
-                  aria-label={`Buka panduan rute ${originPoint?.name} ke ${destPoint?.name} di Google Maps (membuka tab baru)`}
+                  aria-label={t('journey.openInGoogleMapsAria', {
+                    origin: originPoint?.name,
+                    destination: destPoint?.name,
+                  })}
                 >
                   <Icon name="navigation" size={14} />
-                  <span>Buka Rute di Google Maps</span>
+                  <span>{t('journey.openInGoogleMaps')}</span>
                   <Icon name="external-link" size={13} />
                 </a>
               </div>
@@ -280,7 +290,11 @@ export function JourneyPlanner({
               const fullPlace = places.find((p) => String(p.id) === String(pt.id));
               const isOrigin = idx === 0;
               const isDestination = idx === journey.points.length - 1;
-              const stepLabel = isOrigin ? '1. Titik Awal' : isDestination ? `${journey.points.length}. Titik Tujuan` : `${idx + 1}. Titik Transit`;
+              const stepLabel = isOrigin
+                ? t('journey.stepOrigin', { num: 1 })
+                : isDestination
+                ? t('journey.stepDest', { num: journey.points.length })
+                : t('journey.stepTransit', { num: idx + 1 });
               const pointNavUrl =
                 pt.lat !== null && pt.lng !== null
                   ? buildGoogleMapsPlaceUrl({ destination: pt, travelMode })
@@ -314,7 +328,7 @@ export function JourneyPlanner({
 
                   {pt.bottlenecks && pt.bottlenecks.length > 0 && (
                     <div style={{ margin: '6px 0', fontSize: '11px', color: 'var(--notice-error-ink)', background: 'var(--notice-error-bg)', border: '1px solid var(--notice-error-border)', padding: '4px 8px', borderRadius: '4px' }}>
-                      <strong>Akses bermasalah:</strong>{' '}
+                      <strong>{t('journey.problematicAccess')}</strong>{' '}
                       {pt.bottlenecks.map(getElementLabel).join(', ')}
                     </div>
                   )}
@@ -331,7 +345,7 @@ export function JourneyPlanner({
                         style={{ fontSize: '11px', padding: '6px 10px', flex: '1 1 auto', justifyContent: 'center' }}
                         onClick={() => onSelectPlace(fullPlace)}
                       >
-                        Lihat detail tempat ↗
+                        {t('journey.viewPlaceDetails')}
                       </button>
                     )}
                     {pointNavUrl && (
@@ -341,10 +355,10 @@ export function JourneyPlanner({
                         rel="noopener noreferrer"
                         className="google-maps-btn-secondary"
                         style={{ fontSize: '11px', padding: '6px 10px', flex: '1 1 auto', justifyContent: 'center' }}
-                        aria-label={`Buka arah ke ${pt.name} di Google Maps (membuka tab baru)`}
+                        aria-label={t('journey.navigateHereAria', { name: pt.name })}
                       >
                         <Icon name="navigation" size={12} />
-                        <span>Arahkan ke sini</span>
+                        <span>{t('journey.navigateHere')}</span>
                         <Icon name="external-link" size={11} />
                       </a>
                     )}

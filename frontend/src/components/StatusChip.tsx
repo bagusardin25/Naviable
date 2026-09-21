@@ -1,8 +1,12 @@
+'use client';
+
 import { STATUS_STYLE, type ElementStatus } from "@/lib/types";
 import { Icon } from "@/components/ui/Icon";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /** Accessible status chip: color + icon + text label (not color alone). */
 export function StatusChip({ status }: { status: ElementStatus }) {
+  const { t } = useTranslation();
   const s = STATUS_STYLE[status];
   const iconName =
     status === "UTUH"
@@ -15,6 +19,8 @@ export function StatusChip({ status }: { status: ElementStatus }) {
       ? "x-circle"
       : "help-circle";
 
+  const label = t(`status.${status}.label`, s.label);
+
   return (
     <span
       className="status-chip inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
@@ -22,7 +28,7 @@ export function StatusChip({ status }: { status: ElementStatus }) {
       data-status={status}
     >
       <Icon name={iconName} size={12} />
-      <span>{s.label}</span>
+      <span>{label}</span>
     </span>
   );
 }
