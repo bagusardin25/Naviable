@@ -7,6 +7,7 @@ import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { loginReturnGoogleSignInOptions, reviewerGoogleSignInOptions } from "@/lib/auth/google";
 import { isReviewerUser } from "@/lib/auth/session";
+import { AuthModeSwitch, type AuthMode } from "@/components/auth/AuthModeSwitch";
 import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from "./login-icons";
 import styles from "./login.module.css";
 
@@ -18,7 +19,7 @@ const authConfigured = Boolean(
 // by role — while a plain visit with an existing session does not.
 const AUTH_RETURN_KEY = "naviable:auth-return";
 
-type AuthMode = "signin" | "signup" | "reviewer";
+type LoginMode = AuthMode | "reviewer";
 
 export function LoginForm() {
   const auth = useAuth();
@@ -35,12 +36,12 @@ export function LoginForm() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const postLoginRef = useRef<string | null>(null);
 
-  const initialMode: AuthMode =
+  const initialMode: LoginMode =
     searchParams.get("mode") === "reviewer" || searchParams.get("role") === "reviewer" || destination.startsWith("/reviewer")
       ? "reviewer"
       : "signin";
 
-  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
+  const [authMode, setAuthMode] = useState<LoginMode>(initialMode);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +58,7 @@ export function LoginForm() {
   const [reviewerPending, setReviewerPending] = useState(false);
 
   const busy = pending !== null || reviewerPending;
+  const messageIsError = Boolean(message && !message.startsWith("Jika alamat"));
 
   // Exchange the live Supabase token for the reviewer session cookie, then enter
   // the dashboard. Throws if the account lacks the server-managed REVIEWER role.
@@ -287,128 +289,134 @@ export function LoginForm() {
 
   if (authMode === "reviewer") {
     return (
-      <div className={styles.form}>
-        <button
-          type="button"
-          className={styles.textButton}
-          onClick={() => {
-            setAuthMode("signin");
-            setReviewerError("");
-          }}
-          style={{ alignSelf: "flex-start", marginBottom: "8px", fontSize: "13px" }}
-        >
-          ← Kembali ke Masuk Pengguna Umum
-        </button>
-
-        <header style={{ marginBottom: "16px" }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--ink)", margin: "0 0 4px" }}>
-            Masuk ke Dashboard Admin
-          </h2>
-          <p style={{ fontSize: "0.875rem", color: "var(--muted)", margin: 0 }}>
-            Gunakan akun Google yang telah diberi hak admin/reviewer Naviable.
-          </p>
+      <div className={styles.loginShell}>
+        <header className={styles.heading}>
+          <p className={styles.modeKicker}>Portal reviewer</p>
+          <h1 id="login-heading">Masuk sebagai reviewer</h1>
+          <p>Verifikasi laporan aksesibilitas dengan akun yang telah diberi hak reviewer Naviable.</p>
         </header>
 
-        <div className={styles.socialButtons}>
+        <div className={styles.form}>
           <button
-            className={`${styles.button} ${styles.google}`}
             type="button"
-            onClick={signInReviewerWithGoogle}
-            disabled={busy}
+            className={styles.modeReturn}
+            onClick={() => {
+              setAuthMode("signin");
+              setReviewerError("");
+            }}
           >
-            <GoogleIcon />
-            <span>{reviewerPending ? "Memeriksa akun…" : "Masuk admin dengan Google"}</span>
+            Masuk sebagai pengguna umum
           </button>
-        </div>
 
-        <div className={styles.divider}>
-          <span>atau masuk dengan email</span>
-        </div>
-
-        <form onSubmit={submitReviewerLogin} noValidate aria-busy={busy}>
-          {/* Username Field */}
-          <div className={styles.field}>
-            <label htmlFor="reviewer-username">Username</label>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputIcon} aria-hidden="true">
-                <MailIcon />
-              </span>
-              <input
-                id="reviewer-username"
-                name="reviewer-username"
-                type="text"
-                autoComplete="username"
-                placeholder="reviewer@organisasi.org"
-                value={reviewerUsername}
-                required
-                disabled={busy}
-                onChange={(e) => {
-                  setReviewerUsername(e.target.value);
-                  setReviewerError("");
-                }}
-              />
-            </div>
+          <div className={styles.socialButtons}>
+            <button
+              className={`${styles.button} ${styles.google}`}
+              type="button"
+              onClick={signInReviewerWithGoogle}
+              disabled={busy}
+            >
+              <GoogleIcon />
+              <span>{reviewerPending ? "Memeriksa akun…" : "Lanjut sebagai reviewer dengan Google"}</span>
+            </button>
           </div>
 
-          {/* Password Field */}
-          <div className={styles.field} style={{ marginTop: "16px" }}>
-            <label htmlFor="reviewer-password">Password</label>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputIcon} aria-hidden="true">
-                <LockIcon />
-              </span>
-              <input
-                ref={reviewerPasswordRef}
-                id="reviewer-password"
-                name="reviewer-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="Masukkan kata sandi"
-                value={reviewerPassword}
-                required
-                disabled={busy}
-                onChange={(e) => {
-                  setReviewerPassword(e.target.value);
-                  setReviewerError("");
-                }}
-              />
-              <button
-                type="button"
-                className={styles.toggleVisibility}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
+          <div className={styles.divider}>
+            <span>atau gunakan email reviewer</span>
           </div>
 
-          {reviewerError && (
-            <p className={styles.fieldError} role="alert" style={{ marginTop: "12px" }}>
-              {reviewerError}
-            </p>
-          )}
+          <form onSubmit={submitReviewerLogin} noValidate aria-busy={busy}>
+            <div className={styles.field}>
+              <label htmlFor="reviewer-username">Email reviewer</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon} aria-hidden="true">
+                  <MailIcon />
+                </span>
+                <input
+                  id="reviewer-username"
+                  name="reviewer-username"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="username"
+                  placeholder="reviewer@organisasi.org"
+                  value={reviewerUsername}
+                  required
+                  disabled={busy}
+                  onChange={(event) => {
+                    setReviewerUsername(event.target.value);
+                    setReviewerError("");
+                  }}
+                />
+              </div>
+            </div>
 
-          <button
-            className={`${styles.button} ${styles.loginButton}`}
-            type="submit"
-            disabled={busy}
-            style={{ marginTop: "20px" }}
-          >
-            <LoginIcon />
-            <span>{reviewerPending ? "Memeriksa…" : "Masuk dengan email"}</span>
-          </button>
-        </form>
+            <div className={`${styles.field} ${styles.fieldSpaced}`}>
+              <label htmlFor="reviewer-password">Kata Sandi</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon} aria-hidden="true">
+                  <LockIcon />
+                </span>
+                <input
+                  ref={reviewerPasswordRef}
+                  id="reviewer-password"
+                  name="reviewer-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="Masukkan kata sandi"
+                  value={reviewerPassword}
+                  required
+                  disabled={busy}
+                  onChange={(event) => {
+                    setReviewerPassword(event.target.value);
+                    setReviewerError("");
+                  }}
+                />
+                <button
+                  type="button"
+                  className={styles.toggleVisibility}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+            </div>
+
+            {reviewerError && (
+              <p className={`${styles.fieldError} ${styles.formMessage}`} role="alert">
+                {reviewerError}
+              </p>
+            )}
+
+            <button className={`${styles.button} ${styles.loginButton}`} type="submit" disabled={busy}>
+              <LoginIcon />
+              <span>{reviewerPending ? "Memeriksa…" : "Masuk sebagai reviewer"}</span>
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className={styles.loginShell}>
+      <header className={styles.heading}>
+        <p className={styles.modeKicker}>
+          {authMode === "signup" ? "Bergabung dengan komunitas" : "Akun kontribusi Naviable"}
+        </p>
+        <h1 id="login-heading">
+          {authMode === "signup" ? "Mulai berkontribusi" : "Selamat datang kembali"}
+        </h1>
+        <p>
+          {authMode === "signup"
+            ? "Buat akun untuk menambahkan lokasi, mengirim koreksi, dan menulis review."
+            : "Masuk untuk berbagi temuan aksesibilitas. Peta tetap dapat dijelajahi tanpa akun."}
+        </p>
+      </header>
+
       <form className={styles.form} onSubmit={submit} noValidate aria-busy={busy}>
 
-        {auth.error && <p className={styles.status} role="alert">{auth.error}</p>}
+        {auth.error && <p className={`${styles.status} ${styles.statusError}`} role="alert">{auth.error}</p>}
         {auth.profile && !auth.error && (
           <div className={styles.status}>
             <p>Sesi aktif: {auth.profile.displayName} ({auth.profile.email}).</p>
@@ -455,47 +463,22 @@ export function LoginForm() {
           </button>
         </div>
 
-        {message && pending === null && (
-          <p className={styles.status} role="alert" style={{ margin: "12px 0", color: "#b42318", background: "#fef3f2", border: "1px solid #fee4e2" }}>
-            {message}
-          </p>
-        )}
-
         <div className={styles.divider}>
           <span>atau masuk dengan email</span>
         </div>
 
-        {/* Email/password mode switcher */}
-        <div className={styles.modeTabs} role="tablist" aria-label="Pilihan Masuk atau Daftar">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={authMode === "signin"}
-            className={`${styles.tabBtn} ${authMode === "signin" ? styles.tabActive : ""}`}
-            onClick={() => {
-              setAuthMode("signin");
-              setEmailError("");
-              setPasswordError("");
-              setMessage("");
-            }}
-          >
-            Masuk
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={authMode === "signup"}
-            className={`${styles.tabBtn} ${authMode === "signup" ? styles.tabActive : ""}`}
-            onClick={() => {
-              setAuthMode("signup");
-              setEmailError("");
-              setPasswordError("");
-              setMessage("");
-            }}
-          >
-            Daftar Akun
-          </button>
-        </div>
+        <AuthModeSwitch
+          mode={authMode}
+          className={styles.modeTabs}
+          buttonClassName={styles.tabBtn}
+          activeClassName={styles.tabActive}
+          onChange={(mode) => {
+            setAuthMode(mode);
+            setEmailError("");
+            setPasswordError("");
+            setMessage("");
+          }}
+        />
 
         {/* Email Field */}
         <div className={styles.field}>
@@ -531,7 +514,7 @@ export function LoginForm() {
           )}
         </div>
 
-        <div className={styles.field} style={{ marginTop: "16px" }}>
+        <div className={`${styles.field} ${styles.fieldSpaced}`}>
           <label htmlFor="auth-password">Kata Sandi</label>
           <div className={styles.inputWrapper}>
             <span className={styles.inputIcon} aria-hidden="true">
@@ -560,7 +543,7 @@ export function LoginForm() {
               className={styles.toggleVisibility}
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-              tabIndex={-1}
+              aria-pressed={showPassword}
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
@@ -573,7 +556,7 @@ export function LoginForm() {
         </div>
 
         {message && (
-          <p className={styles.status} role="status">
+          <p className={`${styles.status} ${messageIsError ? styles.statusError : ""}`} role={messageIsError ? "alert" : "status"}>
             {message}
           </p>
         )}
@@ -592,14 +575,8 @@ export function LoginForm() {
           </span>
         </button>
 
-        {/* Guest destination */}
-        <button
-          className={`${styles.button} ${styles.google}`}
-          type="button"
-          onClick={() => router.push(guestDestination)}
-          style={{ marginTop: "8px" }}
-        >
-          <span>Lanjut tanpa akun (Mode Tamu) →</span>
+        <button className={styles.guestLink} type="button" onClick={() => router.push(guestDestination)}>
+          Lanjut menjelajahi peta tanpa akun <span aria-hidden="true">→</span>
         </button>
 
       </form>
@@ -628,6 +605,6 @@ export function LoginForm() {
           Tutup
         </button>
       </dialog>
-    </>
+    </div>
   );
 }

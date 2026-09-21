@@ -5,6 +5,7 @@ import { supabaseBrowser } from '@/lib/supabase';
 import { googleSignInOptions } from '@/lib/auth/google';
 import { loginHref } from '@/lib/navigation';
 import { Icon } from '@/components/ui/Icon';
+import { AuthModeSwitch, type AuthMode } from '@/components/auth/AuthModeSwitch';
 import { GoogleIcon, LoginIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '@/app/login/login-icons';
 
 const authConfigured = Boolean(
@@ -17,8 +18,6 @@ export type AuthModalProps = {
   onSuccess?: () => void;
   actionDescription?: string;
 };
-
-type AuthMode = 'signin' | 'signup';
 
 export function AuthModal({
   isOpen,
@@ -231,36 +230,19 @@ export function AuthModal({
             </div>
 
             {/* Auth Mode Switcher Tabs */}
-            <div className="auth-tabs" role="tablist" aria-label="Opsi Masuk atau Daftar">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authMode === 'signin'}
-                className={`auth-tab-btn ${authMode === 'signin' ? 'is-active' : ''}`}
-                onClick={() => {
-                  setAuthMode('signin');
-                  setEmailError('');
-                  setPasswordError('');
-                  setMessage('');
-                }}
-              >
-                Masuk
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authMode === 'signup'}
-                className={`auth-tab-btn ${authMode === 'signup' ? 'is-active' : ''}`}
-                onClick={() => {
-                  setAuthMode('signup');
-                  setEmailError('');
-                  setPasswordError('');
-                  setMessage('');
-                }}
-              >
-                Daftar
-              </button>
-            </div>
+            <AuthModeSwitch
+              mode={authMode}
+              className="auth-tabs"
+              buttonClassName="auth-tab-btn"
+              activeClassName="is-active"
+              signupLabel="Daftar"
+              onChange={(mode) => {
+                setAuthMode(mode);
+                setEmailError('');
+                setPasswordError('');
+                setMessage('');
+              }}
+            />
 
             {/* Email Field */}
             <div className="auth-field">
@@ -325,7 +307,6 @@ export function AuthModal({
                   className="auth-toggle-pwd"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
-                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
