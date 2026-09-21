@@ -4305,6 +4305,122 @@ html.reduce-motion .a11y-widget-label,
   margin-top: 2px;
 }
 
+/* Accessibility Widget Text Scale Stepper */
+.a11y-text-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.a11y-stepper-btn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-secondary);
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.a11y-stepper-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+.a11y-stepper-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+  border-color: var(--border);
+}
+
+.a11y-stepper-value-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 60px;
+}
+
+.a11y-stepper-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  letter-spacing: -0.2px;
+}
+
+.a11y-feature-card.active .a11y-stepper-value {
+  color: var(--purple);
+}
+
+.dark .a11y-feature-card.active .a11y-stepper-value {
+  color: #c4b5fd;
+}
+
+.a11y-stepper-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.a11y-stepper-bar {
+  height: 100%;
+  background: var(--purple);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.dark .a11y-stepper-bar {
+  background: #a78bfa;
+}
+
+html.contrast-mode .a11y-stepper-btn,
+html[data-a11y-contrast="true"] .a11y-stepper-btn,
+html[data-a11y-high-contrast="true"] .a11y-stepper-btn {
+  border: 2px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+}
+
+html.contrast-mode .a11y-stepper-btn:disabled,
+html[data-a11y-contrast="true"] .a11y-stepper-btn:disabled,
+html[data-a11y-high-contrast="true"] .a11y-stepper-btn:disabled {
+  border-color: #64748b;
+  color: #64748b;
+  opacity: 0.4;
+}
+
+html.contrast-mode .a11y-stepper-value,
+html[data-a11y-contrast="true"] .a11y-stepper-value,
+html[data-a11y-high-contrast="true"] .a11y-stepper-value {
+  color: #ffffff !important;
+}
+
+html.contrast-mode .a11y-stepper-track,
+html[data-a11y-contrast="true"] .a11y-stepper-track,
+html[data-a11y-high-contrast="true"] .a11y-stepper-track {
+  background: #334155;
+}
+
+html.contrast-mode .a11y-stepper-bar,
+html[data-a11y-contrast="true"] .a11y-stepper-bar,
+html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
+  background: #fde047;
+}
+
 .a11y-section-separated {
   border-top: 1px solid var(--line);
   padding-top: 14px;

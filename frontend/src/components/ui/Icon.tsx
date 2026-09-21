@@ -14,6 +14,9 @@ import {
   MapPin,
   MapPinPlus,
   Plus,
+  Minus,
+  ZoomIn,
+  ZoomOut,
   ChevronRight,
   ShieldCheck,
   Image as LucideImage,
@@ -59,6 +62,9 @@ export type IconName =
   | 'dashboard'
   | 'user'
   | 'plus'
+  | 'minus'
+  | 'zoom-in'
+  | 'zoom-out'
   | 'map-pin'
   | 'map-pin-plus'
   | 'search'
@@ -127,6 +133,9 @@ const iconMap: Record<string, LucideIcon> = {
   'map-pin': MapPin,
   'map-pin-plus': MapPinPlus,
   plus: Plus,
+  minus: Minus,
+  'zoom-in': ZoomIn,
+  'zoom-out': ZoomOut,
   chevron: ChevronRight,
   shield: ShieldCheck,
   photo: LucideImage,

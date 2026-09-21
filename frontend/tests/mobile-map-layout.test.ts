@@ -97,3 +97,44 @@ test('7. LeafletMap: MapResizeController includes resize, orientation, visibilit
   assert.match(leafletMapSource, /window\.removeEventListener\('orientationchange', handleResize\)/);
   assert.match(leafletMapSource, /document\.removeEventListener\('visibilitychange', handleResize\)/);
 });
+
+test('8. Text Scale Stepper UI: uses zoom-out and zoom-in icons, no emoji, boundary-disabled', () => {
+  const widgetSource = source('src/components/accessibility/AccessibilityWidget.tsx');
+  const iconSource = source('src/components/ui/Icon.tsx');
+
+  // Uses ZoomOut and ZoomIn icons from lucide-react
+  assert.match(iconSource, /'zoom-out':\s*ZoomOut/);
+  assert.match(iconSource, /'zoom-in':\s*ZoomIn/);
+  assert.match(widgetSource, /<Icon\s+name="zoom-out"\s+size=\{17\}/);
+  assert.match(widgetSource, /<Icon\s+name="zoom-in"\s+size=\{17\}/);
+
+  // Boundary conditions
+  assert.match(widgetSource, /disabled=\{settings\.textScale\s*<=\s*100\}/);
+  assert.match(widgetSource, /disabled=\{settings\.textScale\s*>=\s*200\}/);
+
+  // Step 10%
+  assert.match(widgetSource, /setTextScale\(Math\.max\(100,\s*settings\.textScale\s*-\s*10\)\)/);
+  assert.match(widgetSource, /setTextScale\(Math\.min\(200,\s*settings\.textScale\s*\+\s*10\)\)/);
+
+  // Progress bar indicator
+  assert.match(widgetSource, /className="a11y-stepper-track"/);
+});
+
+test('9. Text Scale Localization: tooltip/aria-label matches required ID and EN strings', () => {
+  const idLocale = source('src/locales/id.ts');
+  const enLocale = source('src/locales/en.ts');
+
+  assert.match(idLocale, /decreaseTextSize:\s*'Perkecil teks'/);
+  assert.match(idLocale, /increaseTextSize:\s*'Perbesar teks'/);
+
+  assert.match(enLocale, /decreaseTextSize:\s*'Decrease text size'/);
+  assert.match(enLocale, /increaseTextSize:\s*'Increase text size'/);
+});
+
+test('10. Single State Architecture: textScale is the primary state driving typography scaling', () => {
+  const providerSource = source('src/providers/AccessibilityProvider.tsx');
+
+  assert.match(providerSource, /root\.style\.setProperty\('--a11y-text-scale'/);
+  assert.match(providerSource, /root\.setAttribute\('data-a11y-text-scale'/);
+  assert.match(providerSource, /textScale:\s*clamped/);
+});
