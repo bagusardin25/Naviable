@@ -18,6 +18,7 @@ type LeafletMapProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  onFocusPlace?: (place: Place) => void;
   onAddPlaceAtLocation?: (location: SelectedMapLocation) => void;
   externalPreview?: SelectedMapLocation | null;
   onClearExternalPreview?: () => void;
@@ -288,8 +289,12 @@ function createMarkerIcon(place: Place, isSelected: boolean, activeNeed: import(
     className: 'custom-leaflet-pin',
     html: marker,
     iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -22],
+    // The circle+label stack is translate(-50%,-50%)'d onto the icon-box origin,
+    // so the circle renders ~22px left of and ~37px above the box center. Anchor
+    // at [0,-15] so the circle sits centered on the geographic point in BOTH axes
+    // (like the "add" pin's tip), then open the popup just above the circle.
+    iconAnchor: [0, -15],
+    popupAnchor: [0, -36],
   });
 }
 
@@ -297,6 +302,7 @@ export default function LeafletMap({
   places,
   selectedPlace,
   onSelectPlace,
+  onFocusPlace,
   onAddPlaceAtLocation,
   externalPreview,
   onClearExternalPreview,
@@ -375,7 +381,8 @@ export default function LeafletMap({
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
                 setSelectedLocation(null);
-                onSelectPlace(place);
+                // Focus only: open the map popup, not the detail drawer.
+                (onFocusPlace ?? onSelectPlace)(place);
               },
             }}
           >

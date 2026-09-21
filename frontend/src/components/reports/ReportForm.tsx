@@ -81,7 +81,7 @@ export function ReportForm({
   const [coordinatesConfirmed, setCoordinatesConfirmed] = useState<boolean>(hasMapCoordinates);
   const [reporterName, setReporterName] = useState<string>(draft?.reporterName ?? '');
   const [elementCode, setElementCode] = useState<ChainElementCode>(
-    draft?.elementCode && CHAIN_ELEMENT_MAP[draft.elementCode] ? draft.elementCode : 'E5'
+    draft?.elementCode && CHAIN_ELEMENT_MAP[draft.elementCode] ? draft.elementCode : 'E1'
   );
   const [status, setStatus] = useState<AccessibilityStatus>(draft?.status && STATUS_META[draft.status] ? draft.status : 'BELUM_DIKETAHUI');
   const [note, setNote] = useState<string>(draft?.note ?? '');
@@ -321,11 +321,11 @@ export function ReportForm({
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
           <h2>1. Informasi & Foto Lokasi</h2>
           {adding ? <>
-            <label htmlFor="new-place-name">Nama lokasi<input id="new-place-name" value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
+            <label htmlFor="new-place-name">Nama lokasi<input type="text" id="new-place-name" placeholder="Contoh: Puskesmas Gubeng" value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
             {similarPlaces.length > 0 && <div className="flow-notice"><p>Nama serupa sudah ada. Jika ini lokasi yang sama, buka detailnya untuk melaporkan perubahan:</p>{similarPlaces.map(p => <p key={p.id}><Link href={placeHref(String(p.id))}>{p.name} — {p.address}</Link></p>)}</div>}
-            <label htmlFor="new-place-category">Kategori<input id="new-place-category" list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
+            <label htmlFor="new-place-category">Kategori<input type="text" id="new-place-category" placeholder="Pilih atau ketik, mis. health, mall, transport" list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
             <datalist id="place-categories">{Array.from(new Set(places.map(p => p.category))).map(category => <option key={category} value={category} />)}</datalist>
-            <label htmlFor="new-place-address">Alamat lengkap<input id="new-place-address" value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
+            <label htmlFor="new-place-address">Alamat lengkap<input type="text" id="new-place-address" placeholder="Nama jalan, nomor, kelurahan" value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
             {hasMapCoordinates && (
               <div
                 style={{

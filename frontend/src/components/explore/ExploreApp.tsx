@@ -69,13 +69,8 @@ export default function ExploreApp() {
       }, 0);
       return () => clearTimeout(timer);
     }
-    if (screen === 'add' && auth.ready && !auth.user && authModalShownFor !== 'add') {
-      const timer = setTimeout(() => {
-        setAuthModalShownFor('add');
-        setShowAuthModal(true);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
+    // Adding a place intentionally does NOT force the login modal: contributors
+    // fill the draft first and are prompted to sign in only when they publish.
   }, [screen, auth.ready, auth.user, authModalShownFor, router, searchParams]);
 
   function handleAddPlaceAtLocation(location: {
@@ -95,12 +90,8 @@ export default function ExploreApp() {
     if (location.address) params.set('address', location.address);
     const targetUrl = `/jelajah?${params.toString()}`;
 
-    if (!auth.user) {
-      router.push(targetUrl);
-      setShowAuthModal(true);
-    } else {
-      router.push(targetUrl);
-    }
+    // Navigate to the prefilled draft form; sign-in is requested only at publish.
+    router.push(targetUrl);
   }
 
   const setScreen = useCallback((next: Screen) => {
@@ -112,15 +103,15 @@ export default function ExploreApp() {
       setShowAuthModal(true);
       return;
     }
-    if (next === 'add' && !auth.user) {
-      setShowAuthModal(true);
-    }
     if (next !== screen) {
       router.push(screenHref(next, searchParams.toString()));
     }
   }, [auth.user, screen, router, searchParams]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  // Detail drawer is a separate concern: clicking a map marker only focuses it
+  // (pan + map popup); the drawer opens on an explicit "Lihat kondisi akses" / list / search.
+  const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState('');
   const [reload, setReload] = useState(0);
@@ -169,6 +160,7 @@ export default function ExploreApp() {
   function handleViewExternalPlace(ext: ExternalPlaceResult) {
     setExternalPreview(ext);
     setSelectedPlace(null);
+    setDetailPlace(null);
     setScreen('map');
     setMobileTab('map');
     const announceMsg = `Menampilkan titik lokasi "${ext.name}" pada peta.`;
@@ -187,6 +179,7 @@ export default function ExploreApp() {
 
   function handleSelectLocalPlace(place: Place) {
     setSelectedPlace(place);
+    setDetailPlace(place);
     setExternalPreview(null);
     setScreen('map');
     setMobileTab('map');
@@ -200,6 +193,7 @@ export default function ExploreApp() {
       if (!active) return;
       setPlaces(next);
       setSelectedPlace(current => current ? next.find(p => p.id === current.id) ?? null : null);
+      setDetailPlace(current => current ? next.find(p => p.id === current.id) ?? null : null);
       setApiError('');
     }).catch(error => {
       if (active) setApiError(error instanceof Error ? error.message : 'Gagal memuat data API');
@@ -278,6 +272,7 @@ export default function ExploreApp() {
       if (match && match.isSpecificMatch) {
         // Otomatis arahkan dan pilih tempat yang cocok (shallow copy agar map pan controller selalu trigger)
         setSelectedPlace({ ...match.place });
+        setDetailPlace({ ...match.place });
         setScreen('map');
         setMobileTab('map');
         setSearchQuery(match.place.name);
@@ -300,8 +295,17 @@ export default function ExploreApp() {
     [places, setScreen]
   );
 
+  // Opens the detail drawer (used by list, journey, search, and the popup CTA).
   function handleSelectPlace(place: Place) {
     setSelectedPlace(place);
+    setDetailPlace(place);
+  }
+
+  // Map-marker click: focus the place (pan + native map popup) WITHOUT opening
+  // the detail drawer. The popup's "Lihat kondisi akses" is what opens the drawer.
+  function handleFocusPlace(place: Place) {
+    setSelectedPlace(place);
+    setDetailPlace(null);
   }
 
   function handleCorrectPlace(place: Place) {
@@ -312,6 +316,7 @@ export default function ExploreApp() {
   function handleSubmitReport(updated: Place) {
     setPlaces(current => current.map(p => p.id === updated.id ? updated : p));
     setSelectedPlace(updated);
+    setDetailPlace(updated);
     setReload(value => value + 1);
     setScreen('map');
   }
@@ -571,6 +576,7 @@ export default function ExploreApp() {
                   places={filteredPlaces}
                   selectedPlace={selectedPlace}
                   onSelectPlace={handleSelectPlace}
+                  onFocusPlace={handleFocusPlace}
                   onAddPlaceAtLocation={handleAddPlaceAtLocation}
                   externalPreview={externalPreview}
                   onClearExternalPreview={() => setExternalPreview(null)}
@@ -591,17 +597,17 @@ export default function ExploreApp() {
                 onViewExternalPlace={handleViewExternalPlace}
               />
 
-              {selectedPlace && (
+              {detailPlace && (
                 <div
                   className="drawer-backdrop"
-                  onClick={() => setSelectedPlace(null)}
+                  onClick={() => setDetailPlace(null)}
                   aria-hidden="true"
                 />
               )}
 
               <PlaceDetailDrawer
-                place={selectedPlace}
-                onClose={() => setSelectedPlace(null)}
+                place={detailPlace}
+                onClose={() => setDetailPlace(null)}
                 onCorrectPlace={handleCorrectPlace}
                 onWriteReview={() => {
                   if (!auth.user) {

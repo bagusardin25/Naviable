@@ -20,6 +20,7 @@ type MapViewProps = {
   places: Place[];
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
+  onFocusPlace?: (place: Place) => void;
   onAddPlaceAtLocation?: (location: { lat: number; lng: number; name?: string; address?: string }) => void;
   externalPreview?: { lat: number; lng: number; name?: string; address?: string } | null;
   onClearExternalPreview?: () => void;
@@ -30,6 +31,7 @@ export function MapView({
   places,
   selectedPlace,
   onSelectPlace,
+  onFocusPlace,
   onAddPlaceAtLocation,
   externalPreview,
   onClearExternalPreview,
@@ -84,6 +86,7 @@ export function MapView({
             places={places}
             selectedPlace={selectedPlace}
             onSelectPlace={onSelectPlace}
+            onFocusPlace={onFocusPlace}
             onAddPlaceAtLocation={onAddPlaceAtLocation}
             externalPreview={externalPreview}
             onClearExternalPreview={onClearExternalPreview}
