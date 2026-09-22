@@ -598,33 +598,6 @@ export function detectConditionChanges(
   return changes;
 }
 
-export type JourneyPoint = {
-  id: string;
-  name: string;
-  category: string;
-  lat: number | null;
-  lng: number | null;
-  overall: AccessibilityStatus;
-  score: number | null;
-  summary: string;
-  bottlenecks?: string[];
-  coverage?: { known: number; total: number };
-  address?: string | null;
-  kecamatan?: string | null;
-  kelurahan?: string | null;
-  role?: 'origin' | 'transit' | 'destination';
-};
-
-export type JourneyResponse = {
-  points: JourneyPoint[];
-  profile: string;
-  hasBottlenecks: boolean;
-  bottleneckCount: number;
-  geometry: null;
-  routing: false;
-  disclaimer: string;
-};
-
 export const EVIDENCE_LEVEL_LABELS: Record<string, string> = {
   community_reported: 'Laporan komunitas (OpenStreetMap)',
   official_documentation: 'Dokumentasi resmi pengelola',

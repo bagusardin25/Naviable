@@ -1,4 +1,4 @@
-import type { AccessibilityStatus, Place, JourneyResponse, PhotoIntegrityResult } from '@/types';
+import type { AccessibilityStatus, Place, PhotoIntegrityResult } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
 import { adaptSeedRecords, loadSeedPlaces } from './places/seedAdapter';
 import { supabaseBrowser } from './supabase';
@@ -142,23 +142,6 @@ export async function fetchHealth() {
 }
 export async function fetchContributions() {
   return request<{ mode: string; total: number; reports: ContributionReport[] }>('/api/me', { headers: await headers() });
-}
-
-export async function fetchJourney(from: string, to: string, profile = 'mobilitas'): Promise<JourneyResponse> {
-  const query = new URLSearchParams({ from, to, profile });
-  try {
-    return await request<JourneyResponse>(`/api/journey?${query}`);
-  } catch {
-    return {
-      points: [],
-      profile,
-      hasBottlenecks: false,
-      bottleneckCount: 0,
-      geometry: null,
-      routing: false,
-      disclaimer: 'Pratinjau transit antarmuka offline (menunggu server)',
-    };
-  }
 }
 
 export function exportEvidenceCsvUrl(filters?: {

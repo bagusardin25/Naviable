@@ -2312,71 +2312,7 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
 .dark .auth-prompt-banner p {
   color: #e9d5ff;
 }
-/* Journey Planner UI */
-.journey-planner-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-}
-.journey-planner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-/* Google Maps External Navigation UI */
-.google-maps-card {
-  background: var(--surface-secondary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.google-maps-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.google-maps-card-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.google-maps-mode-pills {
-  display: flex;
-  gap: 4px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 2px;
-  border-radius: 8px;
-}
-.google-maps-mode-btn {
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all .15s ease;
-}
-.google-maps-mode-btn.active {
-  background: var(--purple);
-  color: #fff;
-}
+/* Google Maps directions button (place detail) */
 .google-maps-btn {
   display: inline-flex;
   align-items: center;
@@ -2402,43 +2338,6 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
 .google-maps-btn:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 2px;
-}
-.google-maps-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: var(--surface);
-  color: #1a73e8;
-  border: 1px solid rgba(26, 115, 232, 0.35);
-  padding: 5px 10px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all .15s ease;
-}
-.google-maps-btn-secondary:hover {
-  background: rgba(26, 115, 232, 0.08);
-  border-color: #1a73e8;
-}
-.dark .google-maps-card {
-  background: var(--surface-secondary);
-  border-color: var(--border);
-}
-.dark .google-maps-mode-pills {
-  background: var(--surface);
-  border-color: var(--border);
-}
-.dark .google-maps-btn-secondary {
-  background: var(--surface);
-  color: #93c5fd;
-  border-color: rgba(147, 197, 253, 0.3);
-}
-.dark .google-maps-btn-secondary:hover {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: #93c5fd;
 }
 
 /* Street Corridors Bar & Quick Filter Chips */
@@ -2521,7 +2420,6 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
 .dark .mobile-view-tabs { background: var(--surface-secondary); }
 .dark .mobile-view-btn { color: var(--muted); }
 .dark .mobile-view-btn.active { background: var(--surface); color: var(--purple); }
-.dark .journey-planner-panel { background: var(--surface); border-color: var(--border); }
 .dark .map-panel { background: #0c1220; }
 .dark .map-controls-overlay { background: rgba(19, 27, 46, 0.94); border-color: var(--border); color: var(--ink); }
 .dark .map-mode-toggle { background: #0b0f19; }

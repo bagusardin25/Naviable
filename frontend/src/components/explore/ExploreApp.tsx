@@ -30,7 +30,6 @@ import { DashboardStats } from '@/components/observatory/DashboardStats';
 import { StatusDistribution } from '@/components/observatory/StatusDistribution';
 import { DistrictSnapshot } from '@/components/observatory/DistrictSnapshot';
 import { DataQualityCard } from '@/components/observatory/DataQualityCard';
-import { JourneyPlanner } from '@/components/journey/JourneyPlanner';
 import { ContributorProfile } from '@/components/profile/ContributorProfile';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Icon } from '@/components/ui/Icon';
@@ -125,7 +124,6 @@ export default function ExploreApp() {
   const [need, setNeed] = useState<AccessibilityNeed>('Mobilitas');
   const [statusFilter, setStatusFilter] = useState<ProfileStatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [showJourney, setShowJourney] = useState(false);
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -433,22 +431,6 @@ export default function ExploreApp() {
                       <Icon name="filter" size={15} />
                       <span>{mobileFiltersOpen ? t('map.closeFilter') : t('map.filterButton')}{additionalFilterCount > 0 ? ` (${additionalFilterCount})` : ''}</span>
                     </button>
-                    <button
-                      id="btn-toggle-journey"
-                      type="button"
-                      className={`status-pill-btn ${showJourney ? 'active' : ''}`}
-                      style={
-                        showJourney
-                          ? { background: 'var(--purple)', color: 'var(--bg)', borderColor: 'var(--purple-700)' }
-                          : { borderColor: 'var(--border)', color: 'var(--ink)', background: 'var(--surface)' }
-                      }
-                      onClick={() => setShowJourney(!showJourney)}
-                      title={t('map.routeGuidanceTitle')}
-                    >
-                      <Icon name="compass" size={14} />
-                      <span>{t('map.routeGuidance')}</span>
-                    </button>
-
                     <select
                       id="category-filter-select"
                       className="filter-select map-category-filter"
@@ -514,15 +496,6 @@ export default function ExploreApp() {
                       })}
                     </div>
                   </div>
-                )}
-
-                {showJourney && (
-                  <JourneyPlanner
-                    places={places}
-                    currentNeed={need}
-                    onSelectPlace={handleSelectPlace}
-                    onClose={() => setShowJourney(false)}
-                  />
                 )}
 
                 {/* Status Filter Bar evaluated dynamically for active need profile */}
