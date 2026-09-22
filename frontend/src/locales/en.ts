@@ -381,6 +381,7 @@ export const en: TranslationDictionary = {
     licenseOpen: 'Open',
     evidenceTypeLabel: 'Evidence type:',
     retrievedLabel: 'Retrieved:',
+    sourceVerificationSection: 'Source & verification',
     openOriginalSource: 'Open original source ↗',
     citizenCorrectionHistory: 'Citizen update history ({total})',
     historySectionAria: 'Update history, {total} reports',

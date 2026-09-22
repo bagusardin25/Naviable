@@ -341,6 +341,7 @@ export interface TranslationDictionary {
     licenseOpen: string;
     evidenceTypeLabel: string;
     retrievedLabel: string;
+    sourceVerificationSection: string;
     openOriginalSource: string;
     citizenCorrectionHistory: string;
     historySectionAria: string;

@@ -237,37 +237,49 @@ export function PlaceDetailDrawer({
         </div>
       )}
 
-      <div className="evidence-meta" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
-        <div>
-          <span style={{ color: '#64748b' }}>{t('places.sourceLabel')}</span>{' '}
-          <strong>{place.sourceName || t('places.publicData')}</strong>
-        </div>
-        <div>
-          <span style={{ color: '#64748b' }}>{t('places.licenseLabel')}</span>{' '}
-          <strong>{place.sourceLicense || t('places.licenseOpen')}</strong>
-        </div>
-        <div>
-          <span style={{ color: 'var(--text-secondary, #64748b)' }}>{t('places.evidenceTypeLabel')}</span>{' '}
-          <span>{place.evidenceLevelLabel}</span>
-        </div>
-        <div>
-          <span style={{ color: 'var(--text-secondary, #64748b)' }}>{t('places.retrievedLabel')}</span>{' '}
-          <span>{place.retrievedAt || '2026-09-13'}</span>
-        </div>
-      </div>
+      <details className="evidence-disclosure">
+        <summary className="evidence-disclosure-summary">
+          <span className="evidence-disclosure-label">
+            <Icon name="shield" size={14} />
+            <span>{t('places.sourceVerificationSection')}</span>
+          </span>
+          <Icon name="chevron" size={15} className="evidence-disclosure-chevron" />
+        </summary>
 
-      {place.sourceUrl && (
-        <div style={{ margin: '8px 0', fontSize: '12px' }}>
-          <a
-            href={place.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: 'var(--purple, #6d45cc)', textDecoration: 'underline', wordBreak: 'break-all' }}
-          >
-            {t('places.openOriginalSource')}
-          </a>
+        <div className="evidence-disclosure-body">
+          <div className="evidence-meta" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
+            <div>
+              <span style={{ color: '#64748b' }}>{t('places.sourceLabel')}</span>{' '}
+              <strong>{place.sourceName || t('places.publicData')}</strong>
+            </div>
+            <div>
+              <span style={{ color: '#64748b' }}>{t('places.licenseLabel')}</span>{' '}
+              <strong>{place.sourceLicense || t('places.licenseOpen')}</strong>
+            </div>
+            <div>
+              <span style={{ color: 'var(--text-secondary, #64748b)' }}>{t('places.evidenceTypeLabel')}</span>{' '}
+              <span>{place.evidenceLevelLabel}</span>
+            </div>
+            <div>
+              <span style={{ color: 'var(--text-secondary, #64748b)' }}>{t('places.retrievedLabel')}</span>{' '}
+              <span>{place.retrievedAt || '2026-09-13'}</span>
+            </div>
+          </div>
+
+          {place.sourceUrl && (
+            <div style={{ margin: '10px 0 0', fontSize: '12px' }}>
+              <a
+                href={place.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--purple, #6d45cc)', textDecoration: 'underline', wordBreak: 'break-all' }}
+              >
+                {t('places.openOriginalSource')}
+              </a>
+            </div>
+          )}
         </div>
-      )}
+      </details>
 
       <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '16px 0 8px', color: 'var(--ink, #1e293b)' }}>
         {t('places.accessConditionsTitle')}

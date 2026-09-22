@@ -381,6 +381,7 @@ export const id: TranslationDictionary = {
     licenseOpen: 'Terbuka',
     evidenceTypeLabel: 'Jenis bukti:',
     retrievedLabel: 'Diambil:',
+    sourceVerificationSection: 'Sumber & verifikasi',
     openOriginalSource: 'Buka sumber asli ↗',
     citizenCorrectionHistory: 'Riwayat pembaruan warga ({total})',
     historySectionAria: 'Riwayat pembaruan, {total} laporan',

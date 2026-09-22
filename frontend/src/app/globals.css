@@ -1557,6 +1557,38 @@ body.reduce-motion .voice-bar {
 .detail-summary { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
 .evidence-meta { margin: 16px 0; display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .evidence-meta span { display: flex; align-items: center; gap: 5px; }
+
+/* Collapsible "Sumber & verifikasi" provenance section (progressive disclosure) */
+.evidence-disclosure {
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+.evidence-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.evidence-disclosure-summary::-webkit-details-marker { display: none; }
+.evidence-disclosure-summary:hover { background: var(--surface-hover); }
+.evidence-disclosure-label { display: inline-flex; align-items: center; gap: 7px; }
+.evidence-disclosure-label svg { color: var(--purple); }
+.evidence-disclosure-chevron { color: var(--muted); flex-shrink: 0; transition: transform .18s ease; }
+.evidence-disclosure[open] .evidence-disclosure-chevron { transform: rotate(90deg); }
+.evidence-disclosure[open] .evidence-disclosure-summary { border-bottom: 1px solid var(--line); }
+.evidence-disclosure-body { padding: 12px; }
+.evidence-disclosure .evidence-meta { margin: 0; padding-bottom: 0; border-bottom: none; }
 .element-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .element-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px; min-height: 116px; background: var(--surface-secondary); display: flex; flex-direction: column; }
 .element-header { display: flex; gap: 7px; align-items: flex-start; min-height: 32px; }
