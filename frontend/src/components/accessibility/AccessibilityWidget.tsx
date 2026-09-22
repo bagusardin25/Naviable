@@ -305,112 +305,47 @@ export function AccessibilityWidget() {
                     {t('a11yWidget.textSizeCardDesc')}
                   </span>
 
-                  {/* Stepper + Slider Control */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      width: '100%',
-                      marginTop: '10px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        gap: '8px',
+                  {/* Stepper Control: [ Zoom Out ] 120% [ Zoom In ] */}
+                  <div className="a11y-text-stepper" role="group" aria-label={t('a11yWidget.textSizeAria')}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTextScale(Math.max(100, settings.textScale - 10));
                       }}
+                      disabled={settings.textScale <= 100}
+                      aria-label={t('a11yWidget.decreaseTextSize')}
+                      title={t('a11yWidget.decreaseTextSize')}
+                      className="a11y-stepper-btn"
                     >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTextScale(Math.max(100, settings.textScale - 10));
-                        }}
-                        disabled={settings.textScale <= 100}
-                        aria-label={t('a11yWidget.decreaseTextSize')}
-                        title={t('a11yWidget.decreaseTextSize')}
-                        style={{
-                          width: '34px',
-                          height: '34px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border)',
-                          background: 'var(--surface-secondary)',
-                          color: 'var(--ink)',
-                          fontSize: '18px',
-                          fontWeight: 700,
-                          cursor: settings.textScale <= 100 ? 'not-allowed' : 'pointer',
-                          opacity: settings.textScale <= 100 ? 0.4 : 1,
-                        }}
-                      >
-                        -
-                      </button>
+                      <Icon name="zoom-out" size={17} />
+                    </button>
 
-                      <span
-                        style={{
-                          fontSize: '14px',
-                          fontWeight: 750,
-                          color: settings.textScale > 100 ? 'var(--purple)' : 'var(--ink)',
-                          minWidth: '54px',
-                          textAlign: 'center',
-                        }}
-                        aria-live="polite"
-                      >
+                    <div className="a11y-stepper-value-wrap">
+                      <span className="a11y-stepper-value" aria-live="polite">
                         {settings.textScale}%
                       </span>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTextScale(Math.min(200, settings.textScale + 10));
-                        }}
-                        disabled={settings.textScale >= 200}
-                        aria-label={t('a11yWidget.increaseTextSize')}
-                        title={t('a11yWidget.increaseTextSize')}
-                        style={{
-                          width: '34px',
-                          height: '34px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border)',
-                          background: 'var(--surface-secondary)',
-                          color: 'var(--ink)',
-                          fontSize: '18px',
-                          fontWeight: 700,
-                          cursor: settings.textScale >= 200 ? 'not-allowed' : 'pointer',
-                          opacity: settings.textScale >= 200 ? 0.4 : 1,
-                        }}
-                      >
-                        +
-                      </button>
                     </div>
 
-                    <input
-                      type="range"
-                      min="100"
-                      max="200"
-                      step="10"
-                      value={settings.textScale}
-                      onChange={(e) => setTextScale(Number(e.target.value))}
-                      aria-label={t('a11yWidget.textSizeAria')}
-                      aria-valuemin={100}
-                      aria-valuemax={200}
-                      aria-valuenow={settings.textScale}
-                      aria-valuetext={`${settings.textScale}%`}
-                      style={{
-                        width: '100%',
-                        accentColor: 'var(--purple)',
-                        cursor: 'pointer',
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTextScale(Math.min(200, settings.textScale + 10));
                       }}
+                      disabled={settings.textScale >= 200}
+                      aria-label={t('a11yWidget.increaseTextSize')}
+                      title={t('a11yWidget.increaseTextSize')}
+                      className="a11y-stepper-btn"
+                    >
+                      <Icon name="zoom-in" size={17} />
+                    </button>
+                  </div>
+
+                  <div className="a11y-stepper-track" aria-hidden="true">
+                    <div
+                      className="a11y-stepper-bar"
+                      style={{ width: `${((settings.textScale - 100) / 100) * 100}%` }}
                     />
                   </div>
                 </div>
