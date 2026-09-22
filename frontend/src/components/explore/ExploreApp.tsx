@@ -7,6 +7,7 @@ import { fetchExternalPlaces, type ExternalPlaceResult } from '@/lib/externalGeo
 import { useRouter, useSearchParams } from 'next/navigation';
 import { parseScreen, screenHref } from '@/lib/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useContributionUpdates } from '@/hooks/useContributionUpdates';
 import {
   Place,
   Screen,
@@ -41,6 +42,9 @@ export default function ExploreApp() {
   const searchParams = useSearchParams();
   const screen = parseScreen(searchParams.get('screen'));
   const auth = useAuth();
+  // "Admin has responded to your contribution" indicator; recomputes on screen change so
+  // visiting the profile (which marks updates seen) clears the badge.
+  const { unseen: contributionUnseen, refresh: refreshContributionUpdates } = useContributionUpdates(Boolean(auth.user), screen);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
   const latParam = searchParams.get('lat');
@@ -343,6 +347,7 @@ export default function ExploreApp() {
         onSelectScreen={setScreen}
         authReady={auth.ready}
         userProfile={auth.profile}
+        contributionUpdates={contributionUnseen}
       />
 
       <section id="main-content" className="workspace">
@@ -669,7 +674,7 @@ export default function ExploreApp() {
         )}
 
         {screen === 'profile' && auth.profile && (
-          <ContributorProfile userProfile={auth.profile} onSignedOut={() => setScreen('map')} />
+          <ContributorProfile userProfile={auth.profile} onSignedOut={() => setScreen('map')} onReviewsSeen={refreshContributionUpdates} />
         )}
       </section>
 

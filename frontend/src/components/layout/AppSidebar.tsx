@@ -13,12 +13,14 @@ type AppSidebarProps = {
   onSelectScreen: (screen: Screen) => void;
   authReady: boolean;
   userProfile: AuthUserProfile | null;
+  contributionUpdates?: number;
 };
 
-export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfile }: AppSidebarProps) {
+export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfile, contributionUpdates = 0 }: AppSidebarProps) {
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const signedIn = Boolean(userProfile);
+  const updates = signedIn ? contributionUpdates : 0;
 
   return (
     <aside className="sidebar">
@@ -86,13 +88,39 @@ export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfi
           type="button"
           className={currentScreen === 'profile' ? 'active' : ''}
           onClick={() => onSelectScreen('profile')}
-          aria-label={userProfile ? `${t('nav.myContributions')} — ${userProfile.displayName}` : t('nav.signIn')}
+          aria-label={`${userProfile ? `${t('nav.myContributions')} — ${userProfile.displayName}` : t('nav.signIn')}${updates > 0 ? t('nav.contributionUpdatesAria', { count: updates }) : ''}`}
           title={userProfile?.displayName}
           aria-current={currentScreen === 'profile' ? 'page' : undefined}
+          style={{ position: 'relative' }}
         >
           <Icon name="user" />
           <span className="nav-label-full">{signedIn ? t('nav.myContributions') : t('nav.signIn')}</span>
           <span className="nav-label-mobile">{userProfile?.shortName ?? (signedIn ? t('nav.myContributions') : t('nav.signIn'))}</span>
+          {updates > 0 && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                top: '6px',
+                right: '10px',
+                minWidth: '16px',
+                height: '16px',
+                padding: '0 4px',
+                borderRadius: '999px',
+                background: '#dc2626',
+                color: '#fff',
+                fontSize: '10px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+                boxShadow: '0 0 0 2px var(--surface, #fff)',
+              }}
+            >
+              {updates > 9 ? '9+' : updates}
+            </span>
+          )}
         </button>
       </nav>
 

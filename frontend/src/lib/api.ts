@@ -24,6 +24,14 @@ export type ApiAnalysis = {
 };
 export type { PhotoIntegrityResult } from '@/types';
 export type ApiReport = { id: string; placeId: string; reporterName: string; createdAt: string; photoUrl: string; elements: { element: string; status: AccessibilityStatus; note?: string }[]; photoIntegrity?: PhotoIntegrityResult };
+export type ReviewStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'NEEDS_REVISION' | 'APPROVED' | 'REJECTED' | 'PUBLISHED';
+// A contributor's own report, including the review outcome shown back to them in their profile.
+export type ContributionReport = ApiReport & {
+  reviewStatus?: ReviewStatus;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  reviewChecklist?: Record<string, boolean> | null;
+};
 
 // WORKAROUND: Construct absolute media URL dynamically using backend API_URL
 // so Next.js Image component works across both local dev (http://127.0.0.1:4000)
@@ -133,7 +141,7 @@ export async function fetchHealth() {
   }
 }
 export async function fetchContributions() {
-  return request<{ mode: string; total: number; reports: ApiReport[] }>('/api/me', { headers: await headers() });
+  return request<{ mode: string; total: number; reports: ContributionReport[] }>('/api/me', { headers: await headers() });
 }
 
 export async function fetchJourney(from: string, to: string, profile = 'mobilitas'): Promise<JourneyResponse> {

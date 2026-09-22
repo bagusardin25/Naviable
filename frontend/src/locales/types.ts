@@ -516,6 +516,15 @@ export interface TranslationDictionary {
     reportsCountPill: string;
     noReportsYet: string;
     conditionPrefix: string;
+    statusPending: string;
+    statusApproved: string;
+    statusNeedsRevision: string;
+    statusRejected: string;
+    statusDraft: string;
+    reviewerNoteLabel: string;
+    checklistIssuesLabel: string;
+    newUpdatesBanner: string;
+    newTag: string;
   };
   auth: {
     signInPageTitle: string;
