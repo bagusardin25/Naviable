@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -21,7 +21,8 @@ export function LandingShell({ children }: { children: ReactNode }) {
       }}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand} aria-label={t('landing.navHome')}>
-            <Image src="/logo-only-light-3.png" alt="" width={36} height={36} />NaviAble<span className={styles.brandDot}>.</span>
+            <BrandLogo size={36} priority />
+            <span>NaviAble</span>
           </Link>
           <nav id="landing-navigation" aria-label={t('landing.navHome')} className={styles.nav} data-open={menuOpen}>
             <a href="#cara-kerja" onClick={() => setMenuOpen(false)}>{t('landing.howItWorks')}</a>
@@ -43,7 +44,8 @@ export function LandingShell({ children }: { children: ReactNode }) {
         <div className={styles.footerTop}>
           <div>
             <Link className={styles.brand} href="/" aria-label={t('landing.navHome')}>
-              <Image src="/logo-only-light-3.png" alt="" width={32} height={32} />NaviAble<span className={styles.brandDot}>.</span>
+              <BrandLogo size={32} />
+              <span>NaviAble</span>
             </Link>
             <p>{t('landing.footerBrandDesc')}</p>
           </div>

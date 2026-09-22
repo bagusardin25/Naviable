@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { Screen } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,32 +18,13 @@ type AppSidebarProps = {
 
 export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfile, contributionUpdates = 0 }: AppSidebarProps) {
   const { t } = useTranslation();
-  const [imgError, setImgError] = useState(false);
   const signedIn = Boolean(userProfile);
   const updates = signedIn ? contributionUpdates : 0;
 
   return (
     <aside className="sidebar">
       <Link href="/" className="brand" aria-label={t('nav.backToHome')}>
-        {!imgError ? (
-          <Image
-            src="/logo-only-light-3.png"
-            alt="NaviAble Logo"
-            width={40}
-            height={40}
-            className="brand-mark"
-            priority
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <svg className="brand-svg-fallback" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 4C14 4 9 9 9 15C9 24 20 36 20 36C20 36 31 24 31 15C31 9 26 4 20 4Z" fill="#6b46c1" />
-            <path d="M20 4C26 4 31 9 31 15C31 19 28 24 20 36V20H31" fill="#0d9488" />
-            <path d="M9 15C9 24 20 36 20 36V20H9" fill="#f1b80c" />
-            <path d="M20 20H31C28 26 20 36 20 36V20" fill="#ec4899" />
-            <ellipse cx="20" cy="22" rx="17" ry="5" stroke="#e2e8f0" strokeWidth="2" fill="none" />
-          </svg>
-        )}
+        <BrandLogo size={40} className="brand-mark" priority />
         <span>NaviAble</span>
       </Link>
 

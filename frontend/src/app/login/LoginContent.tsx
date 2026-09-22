@@ -3,6 +3,7 @@
 import React, { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { LoginForm } from './login-form';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -16,14 +17,7 @@ export function LoginContent({ robotoClass = '', interVar = '' }: { robotoClass?
       <section className={styles.brandPanel} aria-label={t('auth.loginBrandPanelAria')}>
         <div className={styles.brandContent}>
           <Link href="/" className={styles.wordmark} aria-label={`NaviAble — ${t('nav.backToHome')}`}>
-            <Image
-              src="/logo-only-light-3.png"
-              alt="NaviAble Logo"
-              width={48}
-              height={48}
-              style={{ objectFit: 'contain' }}
-              priority
-            />
+            <BrandLogo size={48} priority />
             <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
           </Link>
 
