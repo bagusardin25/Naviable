@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import '@fontsource/opendyslexic/400.css';
 import '@fontsource/opendyslexic/400-italic.css';
 import '@fontsource/opendyslexic/700.css';
@@ -7,10 +7,11 @@ import '@fontsource/opendyslexic/700-italic.css';
 import './globals.css';
 import './auth.css';
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-poppins',
 });
 
 export const metadata: Metadata = {
@@ -19,9 +20,9 @@ export const metadata: Metadata = {
   description:
     'Kenali informasi akses tempat di Surabaya, sumber datanya, dan bagian yang masih perlu diperiksa sebelum berangkat.',
   icons: {
-    icon: '/logo-only-light-3.png',
-    shortcut: '/logo-only-light-3.png',
-    apple: '/logo-only-light-3.png',
+    icon: '/branding/logo-light.png',
+    shortcut: '/branding/logo-light.png',
+    apple: '/branding/logo-light.png',
   },
 };
 
@@ -42,14 +43,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`min-h-full antialiased ${inter.variable}`}>
+    <html lang="id" className={`min-h-full antialiased ${poppins.variable}`}>
       <head>
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic.css"
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans">
+      <body className={`min-h-full flex flex-col font-sans ${poppins.className}`}>
         <LanguageProvider>
           <AccessibilityProvider>
             {children}

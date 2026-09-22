@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { Icon } from '@/components/ui/Icon';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
@@ -152,13 +152,7 @@ export function TopNavbar({
       </div>
 
       <Link href="/" className="topbar-mobile-brand" aria-label={t('nav.backToHome')} data-icon-only-link>
-        <Image
-          src="/logo-only-light-3.png"
-          alt="NaviAble"
-          width={30}
-          height={30}
-          className="topbar-mobile-logo"
-        />
+        <BrandLogo size={30} className="topbar-mobile-logo" />
       </Link>
 
       <div ref={searchContainerRef} className="search-container" onKeyDown={handleKeyDown}>

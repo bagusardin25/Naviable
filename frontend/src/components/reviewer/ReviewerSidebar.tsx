@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, ClipboardList, History, MapPin, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,7 +42,7 @@ export function ReviewerSidebar({ isOpen, onClose }: ReviewerSidebarProps) {
     <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`} aria-label={t('reviewer.panelTitle')}>
       <div className={styles.sidebarHeader}>
         <Link href="/" className={styles.sidebarBrand} onClick={onClose}>
-          <Image src="/logo-only-light-3.png" alt="NaviAble Logo" width={32} height={32} />
+          <BrandLogo size={32} />
           <span>NaviAble</span>
         </Link>
         <span className={styles.badgeReviewer}>{t('reviewer.badge')}</span>

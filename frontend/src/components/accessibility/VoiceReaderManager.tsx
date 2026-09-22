@@ -370,11 +370,6 @@ export function VoiceReaderManager() {
       role="region"
       aria-label={t('voiceReader.regionAria')}
       style={{
-        position: 'fixed',
-        bottom: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1060,
         background: 'var(--surface, #ffffff)',
         color: 'var(--ink, #15213a)',
         border: '1.5px solid var(--purple, #6d45cc)',
@@ -386,7 +381,6 @@ export function VoiceReaderManager() {
         gap: '10px',
         fontSize: '12px',
         fontWeight: 600,
-        maxWidth: '90vw',
       }}
     >
       <span
@@ -395,10 +389,18 @@ export function VoiceReaderManager() {
           alignItems: 'center',
           gap: '6px',
           color: isSpeaking ? 'var(--purple, #6d45cc)' : 'inherit',
+          minWidth: 0,
         }}
       >
         <Icon name="volume" size={16} />
-        <span style={{ whiteSpace: 'nowrap' }}>
+        <span
+          style={{
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: 'min(240px, 45vw)',
+          }}
+        >
           {isSpeaking ? currentText || t('voiceReader.readingStatus') : t('voiceReader.modeActive')}
         </span>
       </span>
