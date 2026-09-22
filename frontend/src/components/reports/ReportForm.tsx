@@ -332,11 +332,11 @@ export function ReportForm({
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
           <h2>{t('reports.step1Title')}</h2>
           {adding ? <>
-            <label htmlFor="new-place-name">{t('reports.placeNameLabel')}<input type="text" id="new-place-name" placeholder="Contoh: Puskesmas Gubeng" value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
+            <label htmlFor="new-place-name">{t('reports.placeNameLabel')}<input type="text" id="new-place-name" placeholder={t('reports.placeNamePlaceholder')} value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
             {similarPlaces.length > 0 && <div className="flow-notice"><p>{t('reports.similarPlacesFound')}</p>{similarPlaces.map(p => <p key={p.id}><Link href={placeHref(String(p.id))}>{p.name} — {p.address}</Link></p>)}</div>}
-            <label htmlFor="new-place-category">{t('reports.categoryLabel')}<input type="text" id="new-place-category" placeholder="Pilih atau ketik, mis. health, mall, transport" list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
+            <label htmlFor="new-place-category">{t('reports.categoryLabel')}<input type="text" id="new-place-category" placeholder={t('reports.categoryPlaceholder')} list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
             <datalist id="place-categories">{Array.from(new Set(places.map(p => p.category))).map(category => <option key={category} value={category} />)}</datalist>
-            <label htmlFor="new-place-address">{t('reports.fullAddressLabel')}<input type="text" id="new-place-address" placeholder="Nama jalan, nomor, kelurahan" value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
+            <label htmlFor="new-place-address">{t('reports.fullAddressLabel')}<input type="text" id="new-place-address" placeholder={t('reports.fullAddressPlaceholder')} value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
             {hasMapCoordinates && (
               <div
                 style={{
@@ -389,7 +389,7 @@ export function ReportForm({
           </> : <div className="flow-notice"><strong>{targetPlace?.name}</strong><p>{targetPlace?.address}</p><span>{t('reports.fixedLocationNotice')}</span></div>}
           <label htmlFor="reporter-name">
             {t('reports.reporterNameLabel')}
-            <input type="text" id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} placeholder="Contoh: Budi Santoso" required autoComplete="name" />
+            <input type="text" id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} placeholder={t('reports.reporterNamePlaceholder')} required autoComplete="name" />
           </label>
           {!adding && currentElement && (
             <div className="flow-notice" aria-live="polite">

@@ -2,19 +2,24 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Place, AccessibilityNeed, placeStatusMeta } from '@/types';
+import { Place, AccessibilityNeed } from '@/types';
 import { MapLegend } from './MapLegend';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
-  ssr: false,
-  loading: () => (
+function MapLoadingPlaceholder() {
+  const { t } = useTranslation();
+  return (
     <div className="map-loading-placeholder">
       <div className="map-spinner" />
-      <span>Memuat peta interaktif Surabaya...</span>
+      <span>{t('map.mapLoading')}</span>
     </div>
-  ),
+  );
+}
+
+const DynamicLeafletMap = dynamic(() => import('./LeafletMap'), {
+  ssr: false,
+  loading: () => <MapLoadingPlaceholder />,
 });
 
 type MapViewProps = {
@@ -39,10 +44,7 @@ export function MapView({
   activeNeed = 'Mobilitas',
 }: MapViewProps) {
   const { t } = useTranslation();
-  const [mapMode, setMapMode] = useState<'osm' | 'canvas'>('osm');
   const [optionsOpen, setOptionsOpen] = useState(false);
-
-  const geocodedPlaces = places.filter((p) => !p.needsGeocoding);
 
   return (
     <div className="map-view-wrapper">
@@ -59,79 +61,21 @@ export function MapView({
         </button>
         <div id="map-display-options" className="map-display-options">
           <MapLegend />
-          <div className="map-mode-toggle">
-            <button
-              type="button"
-              className={mapMode === 'osm' ? 'active' : ''}
-              aria-pressed={mapMode === 'osm'}
-              onClick={() => setMapMode('osm')}
-              title={t('map.modeStreetTitle')}
-            >
-              {t('map.streetMap')}
-            </button>
-            <button
-              type="button"
-              className={mapMode === 'canvas' ? 'active' : ''}
-              aria-pressed={mapMode === 'canvas'}
-              onClick={() => setMapMode('canvas')}
-              title={t('map.modeSchematicTitle')}
-            >
-              {t('map.schematic')}
-            </button>
-          </div>
         </div>
       </div>
 
-      {mapMode === 'osm' ? (
-        <div className="map-leaflet-wrapper">
-          <DynamicLeafletMap
-            places={places}
-            selectedPlace={selectedPlace}
-            onSelectPlace={onSelectPlace}
-            onFocusPlace={onFocusPlace}
-            onAddPlaceAtLocation={onAddPlaceAtLocation}
-            externalPreview={externalPreview}
-            onClearExternalPreview={onClearExternalPreview}
-            activeNeed={activeNeed}
-          />
-        </div>
-      ) : (
-        <div className="map-canvas" aria-label={t('map.canvasAria')}>
-          <div className="river river-a" />
-          <div className="river river-b" />
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={`v${i}`} className="road vertical" style={{ left: `${10 + i * 14}%` }} />
-          ))}
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={`h${i}`} className="road horizontal" style={{ top: `${14 + i * 15}%` }} />
-          ))}
-          <div className="artery" />
-          <span className="map-label label-a">Jl. Raya Darmo</span>
-          <span className="map-label label-b">Jl. Wonokromo</span>
-          <span className="map-label label-c">Jl. Basuki Rahmat</span>
-          {geocodedPlaces.map((p) => {
-            const meta = placeStatusMeta(p, activeNeed);
-            const localizedStatus = t(`status.${meta.status}.label`, meta.label);
-            const localizedNeed = t(`needs.${activeNeed}`, activeNeed);
-            return (
-              <button
-                key={p.id}
-                id={`marker-place-${p.id}`}
-                className={`marker marker-${meta.status.toLowerCase()} ${
-                  selectedPlace?.id === p.id ? 'selected' : ''
-                }`}
-                style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                onClick={() => onSelectPlace(p)}
-                aria-label={`${p.name}. ${localizedNeed}: ${localizedStatus}. ${p.chainSummary}`}
-                type="button"
-              >
-                <span>{meta.symbol}</span>
-                <b>{p.name}</b>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div className="map-leaflet-wrapper">
+        <DynamicLeafletMap
+          places={places}
+          selectedPlace={selectedPlace}
+          onSelectPlace={onSelectPlace}
+          onFocusPlace={onFocusPlace}
+          onAddPlaceAtLocation={onAddPlaceAtLocation}
+          externalPreview={externalPreview}
+          onClearExternalPreview={onClearExternalPreview}
+          activeNeed={activeNeed}
+        />
+      </div>
     </div>
   );
 }

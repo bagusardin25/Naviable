@@ -432,6 +432,18 @@ export interface TranslationDictionary {
     missingConfirm: string;
     integrityBlockedHint: string;
     belumDiketahuiHint: string;
+    placeNamePlaceholder: string;
+    categoryPlaceholder: string;
+    fullAddressPlaceholder: string;
+    reporterNamePlaceholder: string;
+    integrityAiTrusted: string;
+    integritySuspicious: string;
+    integrityUncertain: string;
+    integrityNotChecked: string;
+    integrityCheckTitle: string;
+    integrityDefaultSignals: string;
+    visualAnalysisLabel: string;
+    attemptsLabel: string;
   };
   observatory: {
     pageEyebrow: string;

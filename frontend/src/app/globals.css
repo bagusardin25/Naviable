@@ -804,10 +804,10 @@ body.reduce-motion .voice-bar {
 .legend-item.legend-belum_diketahui svg { color: var(--status-unknown-ink); }
 
 /* On desktop the "Kondisi" filter pills already double as the status legend, so
-   hide the in-map status legend there (it stays on mobile). The Peta Jalan /
-   Skematik toggle in the same overlay is unaffected. */
+   hide the in-map status legend and overlay there (it stays on mobile). */
 @media (min-width: 901px) {
-  .map-legend-inline { display: none; }
+  .map-legend-inline,
+  .map-controls-overlay { display: none; }
 }
 
 /* Map View & Leaflet */
@@ -4868,4 +4868,22 @@ html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
   flex-direction: column;
   gap: 6px;
 }
+
+/* Voice Reader Floating Bar */
+.voice-reader-bar {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1060;
+  max-width: min(calc(100vw - 24px), 480px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .voice-reader-bar {
+    bottom: calc(var(--mobile-bottom-nav-height) + 12px);
+  }
+}
+
 

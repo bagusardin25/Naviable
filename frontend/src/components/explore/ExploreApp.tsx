@@ -36,7 +36,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ExploreApp() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const screen = parseScreen(searchParams.get('screen'));
@@ -207,9 +207,13 @@ export default function ExploreApp() {
 
   // Leaving the map (e.g. opening another sidebar page) closes the detail card,
   // so it doesn't linger or reappear when the user returns to the map.
-  useEffect(() => {
-    if (screen !== 'map') setDetailPlace(null);
-  }, [screen]);
+  const [prevScreen, setPrevScreen] = useState(screen);
+  if (prevScreen !== screen) {
+    setPrevScreen(screen);
+    if (screen !== 'map') {
+      setDetailPlace(null);
+    }
+  }
 
   // Dynamic unique categories
   const availableCategories = useMemo(() => {
@@ -268,9 +272,15 @@ export default function ExploreApp() {
   const liveAnnouncement = customAnnouncement
     ? customAnnouncement
     : !loading
-    ? `Menampilkan ${filteredPlaces.length} tempat untuk kebutuhan ${need}${
-        statusFilter !== 'all' ? `, kondisi ${statusFilter}` : ''
-      }.`
+    ? locale === 'en'
+      ? `Showing ${filteredPlaces.length} places for ${t(`needs.${need}`, need)} needs${
+          statusFilter !== 'all' ? `, status ${t(`status.${statusFilter}.label`, statusFilter)}` : ''
+        }.`
+      : `Menampilkan ${filteredPlaces.length} tempat untuk kebutuhan ${need}${
+          statusFilter !== 'all' ? `, kondisi ${statusFilter}` : ''
+        }.`
+    : locale === 'en'
+    ? 'Loading places data from server…'
     : 'Memuat data tempat dari server…';
 
   const handleSearchSubmit = useCallback(
