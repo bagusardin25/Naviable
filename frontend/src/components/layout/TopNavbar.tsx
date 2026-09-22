@@ -16,6 +16,7 @@ type TopNavbarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onSearchSubmit?: (query: string, source: 'voice' | 'text') => void;
+  onSearchFocus?: () => void;
   onOpenAccessibility?: () => void;
   localPlaces?: Place[];
   externalPlaces?: ExternalPlaceResult[];
@@ -28,6 +29,7 @@ export function TopNavbar({
   searchQuery,
   onSearchChange,
   onSearchSubmit,
+  onSearchFocus,
   onOpenAccessibility,
   localPlaces = [],
   externalPlaces = [],
@@ -171,6 +173,7 @@ export function TopNavbar({
               setIsDropdownOpen(true);
             }}
             onFocus={() => {
+              onSearchFocus?.();
               if (searchQuery.trim().length >= 2) setIsDropdownOpen(true);
             }}
             onKeyDown={handleInputKeyDown}

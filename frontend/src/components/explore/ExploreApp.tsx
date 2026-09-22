@@ -207,6 +207,12 @@ export default function ExploreApp() {
     return () => { active = false; };
   }, [need, reload]);
 
+  // Leaving the map (e.g. opening another sidebar page) closes the detail card,
+  // so it doesn't linger or reappear when the user returns to the map.
+  useEffect(() => {
+    if (screen !== 'map') setDetailPlace(null);
+  }, [screen]);
+
   // Dynamic unique categories
   const availableCategories = useMemo(() => {
     const cats = Array.from(new Set(places.map((p) => p.category))).sort();
@@ -301,7 +307,16 @@ export default function ExploreApp() {
     [places, setScreen]
   );
 
-  // Opens the detail drawer (used by list, journey, search, and the popup CTA).
+  // Typing in the search box closes the open detail card, so it doesn't
+  // obscure the map/list while the user looks for something else. A specific
+  // search match reopens the card via handleSearchSubmit (which sets the query
+  // directly, not through this handler).
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    setDetailPlace(null);
+  }, []);
+
+  // Opens the detail drawer (used by list, search, and the popup CTA).
   function handleSelectPlace(place: Place) {
     setSelectedPlace(place);
     setDetailPlace(place);
@@ -353,8 +368,9 @@ export default function ExploreApp() {
       <section id="main-content" className="workspace">
         <TopNavbar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
+          onSearchFocus={() => setDetailPlace(null)}
           onOpenAccessibility={toggleWidget}
           localPlaces={places}
           externalPlaces={externalPlaces}

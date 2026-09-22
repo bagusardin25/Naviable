@@ -687,6 +687,9 @@ body.reduce-motion .voice-bar {
 .map-panel {
   min-height: calc(100vh - var(--navbar-height));
   position: relative;
+  /* Contain Leaflet's internal pane z-indexes (200–700) in their own stacking
+     context so they can't paint over the search dropdown / navbar overlays. */
+  isolation: isolate;
   overflow: hidden;
   background: var(--bg);
   display: flex;
