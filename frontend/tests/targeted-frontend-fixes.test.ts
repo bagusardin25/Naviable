@@ -65,3 +65,26 @@ test('highlight links targets every href without treating regular buttons as lin
   assert.match(highlightSection, /text-underline-offset:\s*3px/);
   assert.equal(/button:not|\[role="button"\]/.test(highlightSection), false);
 });
+
+test('landing renders compact language switcher and login page omits it', () => {
+  const landingShell = source('src/components/landing/LandingShell.tsx');
+  const loginContent = source('src/app/login/LoginContent.tsx');
+  const loginPage = source('src/app/login/page.tsx');
+
+  assert.match(landingShell, /<LanguageSwitcher\b[^>]*size="sm"/);
+  assert.equal(loginContent.includes('<LanguageSwitcher'), false);
+  assert.equal(loginContent.includes('LanguageSwitcher'), false);
+  assert.equal(loginPage.includes('LanguageSwitcher'), false);
+});
+
+test('poppins font is applied globally from root layout', () => {
+  const layout = source('src/app/layout.tsx');
+  const globals = source('src/app/globals.css');
+  const loginPage = source('src/app/login/page.tsx');
+
+  assert.match(layout, /import\s*\{\s*Poppins\s*\}\s*from\s*['"]next\/font\/google['"]/);
+  assert.match(layout, /poppins\.variable/);
+  assert.match(layout, /poppins\.className/);
+  assert.match(globals, /--font-sans:\s*var\(--font-poppins\)/);
+  assert.equal(loginPage.includes("next/font/google"), false);
+});

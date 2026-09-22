@@ -53,7 +53,7 @@
   align-items: center;
   gap: 12px;
   color: var(--ink);
-  font-family: var(--font-login-heading), sans-serif;
+  font-family: var(--font-login-heading, var(--font-sans)), sans-serif;
   font-size: clamp(30px, 2.5vw, 38px);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -103,7 +103,7 @@
 
 .brandStory h2 {
   margin: 10px 0 0;
-  font-family: var(--font-login-heading), sans-serif;
+  font-family: var(--font-login-heading, var(--font-sans)), sans-serif;
   font-size: clamp(28px, 2.7vw, 40px);
   font-weight: 800;
   letter-spacing: -0.035em;
@@ -241,7 +241,7 @@
 
 .heading h1 {
   margin: 8px 0 0;
-  font-family: var(--font-login-heading), sans-serif;
+  font-family: var(--font-login-heading, var(--font-sans)), sans-serif;
   font-size: clamp(32px, 3vw, 40px);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -603,7 +603,7 @@
 
 .policyDialog h2 {
   margin: 0 0 10px;
-  font-family: var(--font-login-heading), sans-serif;
+  font-family: var(--font-login-heading, var(--font-sans)), sans-serif;
   font-size: 24px;
   font-weight: 800;
 }

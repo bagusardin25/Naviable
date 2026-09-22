@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import '@fontsource/opendyslexic/400.css';
 import '@fontsource/opendyslexic/400-italic.css';
 import '@fontsource/opendyslexic/700.css';
@@ -7,10 +7,11 @@ import '@fontsource/opendyslexic/700-italic.css';
 import './globals.css';
 import './auth.css';
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-poppins',
 });
 
 export const metadata: Metadata = {
@@ -42,8 +43,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`min-h-full antialiased ${inter.variable}`}>
-      <body className="min-h-full flex flex-col font-sans">
+    <html lang="id" className={`min-h-full antialiased ${poppins.variable}`}>
+      <body className={`min-h-full flex flex-col font-sans ${poppins.className}`}>
         <LanguageProvider>
           <AccessibilityProvider>
             {children}

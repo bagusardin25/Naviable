@@ -30,7 +30,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
             <Link href="/login" className={styles.signIn}>{t('nav.signIn')} <Icon name="chevron" size={15} /></Link>
           </nav>
           <div className={styles.headerActions}>
-            <LanguageSwitcher variant="header" />
+            <LanguageSwitcher variant="header" size="sm" />
             <Link href="/jelajah" prefetch={false} className={styles.headerCta}>{t('landing.exploreMap')} <Icon name="chevron" size={17} /></Link>
             <button ref={menuTrigger} type="button" className={styles.menuButton} aria-expanded={menuOpen} aria-controls="landing-navigation" aria-label={menuOpen ? (t('common.close')) : 'Menu'} onClick={() => setMenuOpen(!menuOpen)}>
               <Icon name={menuOpen ? 'close' : 'list'} />
