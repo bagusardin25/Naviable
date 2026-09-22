@@ -45,7 +45,7 @@ test('2. BrandLogo component renders both light and dark logo variants for zero-
   );
 });
 
-test('3. Theme-aware CSS rules handle dark and light modes reliably', () => {
+test('3. Theme-aware CSS rules handle dark, light, and high-contrast modes reliably', () => {
   const css = source('src/app/globals.css');
 
   assert.ok(
@@ -72,10 +72,22 @@ test('3. Theme-aware CSS rules handle dark and light modes reliably', () => {
     /\[data-a11y-dark='true'\] \.brand-logo-wrap \.brand-logo-dark/,
     'globals.css must show dark logo under [data-a11y-dark="true"]'
   );
+
+  // High contrast mode selectors
   assert.match(
     css,
-    /\.dark \.brand-logo-wrap \.brand-logo-light/,
-    'globals.css must hide light logo under .dark'
+    /html\.contrast-mode \.brand-logo-wrap \.brand-logo-dark/,
+    'globals.css must show dark logo under html.contrast-mode'
+  );
+  assert.match(
+    css,
+    /html\[data-a11y-contrast='true'\] \.brand-logo-wrap \.brand-logo-dark/,
+    'globals.css must show dark logo under data-a11y-contrast="true"'
+  );
+  assert.match(
+    css,
+    /html\.contrast-mode \.sidebar \.brand-mark/,
+    'globals.css must style brand-mark in high contrast mode'
   );
 });
 
@@ -109,7 +121,34 @@ test('4. Landing Page brand font and layout match Dashboard baseline', () => {
   );
 });
 
-test('5. All main components use BrandLogo component', () => {
+test('5. Sign In page branding matches Dashboard and Landing Page standard', () => {
+  const loginContent = source('src/app/login/LoginContent.tsx');
+  const loginCss = source('src/app/login/login.module.css');
+
+  // Verify LoginContent renders BrandLogo size 40 and standard <span>NaviAble</span>
+  assert.match(loginContent, /<BrandLogo\s+size=\{40\}\s+priority\s*\/>/);
+  assert.ok(
+    loginContent.includes('<span>NaviAble</span>'),
+    'LoginContent must render <span>NaviAble</span> matching Dashboard'
+  );
+  assert.equal(
+    loginContent.includes('brandAccent'),
+    false,
+    'LoginContent must not have custom brandAccent split'
+  );
+
+  // Verify login.module.css typography matches Dashboard brand
+  assert.match(loginCss, /\.brand\s*\{[^}]*font-size:\s*22px/);
+  assert.match(loginCss, /\.brand\s*\{[^}]*font-weight:\s*700/);
+  assert.match(loginCss, /\.brand\s*\{[^}]*letter-spacing:\s*-0\.4px/);
+  assert.match(loginCss, /\.brand\s*\{[^}]*gap:\s*12px/);
+
+  // Verify dark and contrast theme styles exist in login.module.css
+  assert.ok(loginCss.includes(':global(html.dark) .page'));
+  assert.ok(loginCss.includes(':global(html.contrast-mode) .page'));
+});
+
+test('6. All main components use BrandLogo component', () => {
   const appSidebar = source('src/components/layout/AppSidebar.tsx');
   const topNavbar = source('src/components/layout/TopNavbar.tsx');
   const loginContent = source('src/app/login/LoginContent.tsx');
@@ -117,6 +156,32 @@ test('5. All main components use BrandLogo component', () => {
 
   assert.match(appSidebar, /<BrandLogo\s+size=\{40\}\s+className="brand-mark"/);
   assert.match(topNavbar, /<BrandLogo\s+size=\{30\}\s+className="topbar-mobile-logo"/);
-  assert.match(loginContent, /<BrandLogo\s+size=\{48\}/);
+  assert.match(loginContent, /<BrandLogo\s+size=\{40\}/);
   assert.match(reviewerSidebar, /<BrandLogo\s+size=\{32\}/);
+});
+
+test('7. Mobile stacking order safeguards bottom navigation above drawer backdrop', () => {
+  const css = source('src/app/globals.css');
+  const mobileSection = css.slice(css.indexOf('@media (max-width: 900px)'));
+
+  // Mobile sidebar (bottom nav) must have z-index 1001 to sit above drawer (1000) and backdrop (999)
+  assert.match(
+    mobileSection,
+    /\.sidebar\s*\{[^}]*z-index:\s*1001;/,
+    'Mobile sidebar must have z-index 1001'
+  );
+
+  // Mobile nav buttons must have ellipsis safeguards
+  assert.match(
+    mobileSection,
+    /\.nav-label-mobile\s*\{[^}]*text-overflow:\s*ellipsis;/
+  );
+});
+
+test('8. Mobile login accessibility button is anchored cleanly without obscuring forms', () => {
+  const css = source('src/app/globals.css');
+  assert.match(
+    css,
+    /\.widget-page-login\.widget-pos-right\s*\{[^}]*position:\s*fixed;[^}]*top:\s*16px;[^}]*right:\s*16px;/
+  );
 });

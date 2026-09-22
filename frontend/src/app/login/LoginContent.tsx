@@ -16,9 +16,9 @@ export function LoginContent({ robotoClass = '', interVar = '' }: { robotoClass?
     <main className={`${styles.page} ${robotoClass} ${interVar}`.trim()} lang={locale}>
       <section className={styles.brandPanel} aria-label={t('auth.loginBrandPanelAria')}>
         <div className={styles.brandContent}>
-          <Link href="/" className={styles.wordmark} aria-label={`NaviAble — ${t('nav.backToHome')}`}>
-            <BrandLogo size={48} priority />
-            <span aria-hidden="true">Navi<span className={styles.brandAccent}>able</span></span>
+          <Link href="/" className={styles.brand} aria-label={`NaviAble — ${t('nav.backToHome')}`}>
+            <BrandLogo size={40} priority />
+            <span>NaviAble</span>
           </Link>
 
           <p className={styles.tagline}>

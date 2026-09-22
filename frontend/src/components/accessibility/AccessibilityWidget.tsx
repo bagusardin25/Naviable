@@ -94,6 +94,23 @@ export function AccessibilityWidget() {
     }
   }, [closeWidget, isJelajahPage]);
 
+  // Auto-focus close button when panel opens for keyboard & screen reader accessibility
+  useEffect(() => {
+    if (!isWidgetOpen) return;
+    const timer = setTimeout(() => {
+      const closeBtn = panelRef.current?.querySelector<HTMLElement>('.a11y-panel-close-btn');
+      if (closeBtn) {
+        closeBtn.focus();
+      } else {
+        const first = panelRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        first?.focus();
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [isWidgetOpen]);
+
   // Focus trap & Escape key
   useEffect(() => {
     if (!isWidgetOpen) return;

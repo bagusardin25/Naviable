@@ -48,26 +48,21 @@
   width: min(100%, 520px);
 }
 
-.wordmark {
+.brand {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  color: var(--ink);
-  font-family: var(--font-login-heading, var(--font-sans)), sans-serif;
-  font-size: clamp(30px, 2.5vw, 38px);
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
   line-height: 1;
+  color: var(--ink);
   text-decoration: none;
+  flex-shrink: 0;
 }
 
-.wordmark img {
-  width: 48px;
-  height: 48px;
-}
-
-.brandAccent {
-  color: var(--purple);
+.brand:hover {
+  opacity: 0.92;
 }
 
 .brandStory {
@@ -675,13 +670,8 @@
     margin-inline: auto;
   }
 
-  .wordmark {
-    font-size: 28px;
-  }
-
-  .wordmark img {
-    width: 42px;
-    height: 42px;
+  .brand {
+    font-size: 22px;
   }
 
   .brandStory {
@@ -729,14 +719,9 @@
     gap: 16px;
   }
 
-  .wordmark {
+  .brand {
     gap: 8px;
-    font-size: 25px;
-  }
-
-  .wordmark img {
-    width: 38px;
-    height: 38px;
+    font-size: 19px;
   }
 
   .brandStory {
@@ -879,3 +864,79 @@
     border-color: #4c596c;
   }
 }
+
+/* Dark Mode & High Contrast Mode Theme Integration */
+:global(html.dark) .page,
+:global(html[data-a11y-dark='true']) .page {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:global(html.dark) .brandPanel,
+:global(html[data-a11y-dark='true']) .brandPanel {
+  background: var(--surface-secondary);
+  border-right-color: var(--border);
+  border-bottom-color: var(--border);
+}
+
+:global(html.dark) .formPanel,
+:global(html[data-a11y-dark='true']) .formPanel {
+  background: var(--bg);
+}
+
+:global(html.dark) .google,
+:global(html[data-a11y-dark='true']) .google {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+:global(html.dark) .modeTabs,
+:global(html[data-a11y-dark='true']) .modeTabs {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+:global(html.dark) .field input,
+:global(html[data-a11y-dark='true']) .field input {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-ink);
+}
+
+:global(html.contrast-mode) .page,
+:global(html[data-a11y-contrast='true']) .page,
+:global(html[data-a11y-high-contrast='true']) .page {
+  background: #000000;
+  color: #ffffff;
+}
+
+:global(html.contrast-mode) .brandPanel,
+:global(html[data-a11y-contrast='true']) .brandPanel,
+:global(html[data-a11y-high-contrast='true']) .brandPanel {
+  background: #000000;
+  border-color: #ffffff;
+}
+
+:global(html.contrast-mode) .formPanel,
+:global(html[data-a11y-contrast='true']) .formPanel,
+:global(html[data-a11y-high-contrast='true']) .formPanel {
+  background: #000000;
+}
+
+:global(html.contrast-mode) .google,
+:global(html[data-a11y-contrast='true']) .google,
+:global(html[data-a11y-high-contrast='true']) .google {
+  background: #000000;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+}
+
+:global(html.contrast-mode) .field input,
+:global(html[data-a11y-contrast='true']) .field input,
+:global(html[data-a11y-high-contrast='true']) .field input {
+  background: #000000;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+}
+

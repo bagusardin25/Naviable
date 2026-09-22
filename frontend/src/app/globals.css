@@ -259,15 +259,21 @@ button { cursor: pointer; }
   display: block !important;
 }
 
-/* Dark theme active */
+/* Dark theme & High Contrast active */
 .dark .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced),
 [data-theme='dark'] .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced),
-[data-a11y-dark='true'] .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced) {
+[data-a11y-dark='true'] .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced),
+html.contrast-mode .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced),
+html[data-a11y-contrast='true'] .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced),
+html[data-a11y-high-contrast='true'] .brand-logo-wrap .brand-logo-dark:not(.brand-logo-forced) {
   display: block !important;
 }
 .dark .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced),
 [data-theme='dark'] .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced),
-[data-a11y-dark='true'] .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced) {
+[data-a11y-dark='true'] .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced),
+html.contrast-mode .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced),
+html[data-a11y-contrast='true'] .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced),
+html[data-a11y-high-contrast='true'] .brand-logo-wrap .brand-logo-light:not(.brand-logo-forced) {
   display: none !important;
 }
 
@@ -278,6 +284,13 @@ button { cursor: pointer; }
 [data-a11y-dark='true'] .sidebar .brand-mark {
   background: #131b2e;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+html.contrast-mode .sidebar .brand-mark,
+html[data-a11y-contrast='true'] .sidebar .brand-mark,
+html[data-a11y-high-contrast='true'] .sidebar .brand-mark {
+  background: #000000;
+  border: 2px solid #ffffff;
+  box-shadow: none;
 }
 .brand-svg-fallback { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
 .sidebar nav { display: grid; gap: 6px; padding: 18px 12px; }
@@ -3233,7 +3246,7 @@ html.dyslexia-mode,
     top: auto;
     display: grid;
     grid-template-columns: 1fr;
-    z-index: 40;
+    z-index: 1001;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: linear-gradient(90deg, #7449d1 0%, #6540c3 100%);
     box-shadow: 0 -4px 18px rgba(30, 20, 60, 0.12);
@@ -3260,6 +3273,7 @@ html.dyslexia-mode,
     color: rgba(255, 255, 255, 0.85);
     background: transparent;
     transition: all 0.15s ease;
+    min-width: 0;
   }
   .sidebar nav button.active {
     background: white;
@@ -3268,7 +3282,13 @@ html.dyslexia-mode,
   }
   .sidebar nav button svg { width: 20px; height: 20px; flex-shrink: 0; }
   .nav-label-full { display: none; }
-  .nav-label-mobile { display: inline; }
+  .nav-label-mobile {
+    display: inline;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .workspace {
     display: flex;
     flex-direction: column;
@@ -3447,9 +3467,19 @@ html.dyslexia-mode,
 }
 
 @media (max-width: 560px) {
-  .map-toolbar .need-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .map-toolbar .need-tabs button { padding: 7px 4px; font-size: 12px; }
-  .page-scroll { padding: 16px; }
+  .map-toolbar .need-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .map-toolbar .need-tabs button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    padding: 7px 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .page-scroll { padding: 16px 16px 32px; }
   .page-title h1 { font-size: 24px; }
   .metric-grid { grid-template-columns: 1fr; }
   .topbar { padding: 8px 10px; gap: 6px; }
@@ -4576,12 +4606,25 @@ html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
     min-height: 44px;
   }
 
-  /* Login has no bottom navigation. Keep the compact trigger out of the form fields. */
-  .widget-page-login.widget-pos-left,
-  .widget-page-login.widget-pos-right {
-    position: absolute;
-    top: 120px;
+  /* Login has no bottom navigation. Keep the compact trigger cleanly in the top corner out of form flow. */
+  .widget-page-login.widget-pos-left {
+    position: fixed;
+    top: 16px;
+    left: 16px;
     bottom: auto;
+    right: auto;
+  }
+
+  .widget-page-login.widget-pos-right {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    bottom: auto;
+    left: auto;
+  }
+
+  .widget-page-login .a11y-widget-panel {
+    inset: auto 12px calc(16px + env(safe-area-inset-bottom, 0px)) 12px;
   }
 
   .widget-page-login .a11y-widget-btn {
@@ -4971,7 +5014,8 @@ html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
 }
 
 @media (max-width: 900px) {
-  .voice-reader-bar {
+  /* On pages with bottom nav (inside .app-shell), position above mobile bottom nav */
+  body:has(.app-shell) .voice-reader-bar {
     bottom: calc(var(--mobile-bottom-nav-height) + 12px);
   }
 }
