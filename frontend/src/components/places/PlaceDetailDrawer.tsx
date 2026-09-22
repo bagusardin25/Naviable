@@ -108,7 +108,6 @@ export function PlaceDetailDrawer({
   const meta = placeStatusMeta(place, activeNeed);
   const freshness = getEvidenceFreshness(place.updatedAt);
   const conditionChanges = detectConditionChanges(historySettled ? history.reports : []);
-  const unknownElements = place.elements.filter((element) => element.status === 'BELUM_DIKETAHUI').length;
   const googleMapsPlaceUrl =
     !place.needsGeocoding && place.lat !== null && place.lng !== null
       ? buildGoogleMapsPlaceUrl({ destination: place, travelMode: 'walking' })
@@ -194,21 +193,7 @@ export function PlaceDetailDrawer({
         </div>
       )}
 
-      {place.reportCount ? (
-        <div className="presurvey-notice-box" role="note">
-          <span style={{ flexShrink: 0, marginTop: '2px' }}>
-            <Icon name="camera" size={18} />
-          </span>
-          <div>
-            <strong>{t('places.citizenReportsNoticeTitle')}</strong>
-            <div style={{ fontSize: '11.5px', marginTop: '3px', lineHeight: 1.5, opacity: 0.9 }}>
-              {place.reportCount} {t('places.citizenReportsCount')}
-              {place.coverage ? ` (${place.coverage.known} / ${place.coverage.total} ${t('places.confirmedAccessPoints')})` : ''}.
-              {unknownElements > 0 ? ` ${unknownElements} ${t('places.unconfirmedRemaining')}` : ` ${t('places.allConfirmedWithPhotos')}`}
-            </div>
-          </div>
-        </div>
-      ) : (
+      {!place.reportCount && (
         <div className="presurvey-notice-box" role="note">
           <span style={{ flexShrink: 0, marginTop: '2px' }}>
             <Icon name="info" size={18} />

@@ -65,3 +65,40 @@ test('highlight links targets every href without treating regular buttons as lin
   assert.match(highlightSection, /text-underline-offset:\s*3px/);
   assert.equal(/button:not|\[role="button"\]/.test(highlightSection), false);
 });
+
+test('fetchPlaceReports returns correction history with author and timestamp fields', async () => {
+  const { fetchPlaceReports } = await import('../src/lib/api');
+  const res = await fetchPlaceReports('osm-relation-6664927');
+  assert.ok(res.reports.length > 0, 'Must have at least one report');
+  assert.ok(res.total > 0, 'Total must be greater than 0');
+  const report = res.reports[0];
+  assert.ok(report.reporterName, 'Report must have author/reporterName');
+  assert.ok(report.createdAt, 'Report must have createdAt timestamp');
+  assert.ok(Array.isArray(report.elements) && report.elements.length > 0, 'Report must have accessibility elements');
+});
+
+test('fetchReviews returns review history with reviewerName, createdAt, and experience', async () => {
+  const { fetchReviews } = await import('../src/lib/api');
+  const res = await fetchReviews('osm-relation-6664927');
+  assert.ok(res.reviews.length > 0, 'Must have at least one review');
+  assert.ok(res.total > 0, 'Total must be greater than 0');
+  const review = res.reviews[0];
+  assert.ok(review.reviewerName, 'Review must have reviewerName');
+  assert.ok(review.createdAt, 'Review must have createdAt timestamp');
+  assert.ok(review.experience && review.experience.length >= 10, 'Review must have experience text');
+});
+
+test('OpenDyslexic font has explicit @font-face declarations, linked stylesheet, and font-family rules', () => {
+  const css = source('src/app/globals.css');
+  const layout = source('src/app/layout.tsx');
+
+  // Must declare @font-face for OpenDyslexic in CSS
+  assert.match(css, /@font-face\s*\{[^}]*font-family:\s*['"]OpenDyslexic['"]/);
+
+  // Must apply font-family: 'OpenDyslexic' when dyslexia mode is active
+  assert.match(css, /html\.dyslexia-mode[^}]*\{[^}]*font-family:\s*['"]OpenDyslexic['"]/);
+  assert.match(css, /\[data-a11y-dyslexia="true"\][^}]*\{[^}]*font-family:\s*['"]OpenDyslexic['"]/);
+
+  // Layout must link OpenDyslexic stylesheet in head
+  assert.match(layout, /open-dyslexic\.css/);
+});

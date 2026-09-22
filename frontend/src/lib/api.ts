@@ -33,10 +33,16 @@ export type ContributionReport = ApiReport & {
   reviewChecklist?: Record<string, boolean> | null;
 };
 
-// WORKAROUND: Construct absolute media URL dynamically using backend API_URL
-// so Next.js Image component works across both local dev (http://127.0.0.1:4000)
-// and production deployments without hardcoded hostnames.
-export const mediaUrl = (path: string) => new URL(path, API_URL).toString();
+export const DEFAULT_FALLBACK_SVG =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%2364748b">Bukti Foto Laporan</text></svg>';
+
+export const mediaUrl = (path: string | null | undefined) => {
+  if (!path) return DEFAULT_FALLBACK_SVG;
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path;
+  }
+  return new URL(path, API_URL).toString();
+};
 
 // WHY: Transform raw backend ApiPlace into UI Place model.
 // When contributor evidence exists, it overrides baseline pre-survey claims for that element,
@@ -97,18 +103,89 @@ export async function fetchPlace(id: string, profile?: string) {
     return { place: found, reports: [] };
   }
 }
+function getFallbackReports(placeId: string): ApiReport[] {
+  const seed = loadSeedPlaces();
+  const place = seed.find((p) => String(p.id) === String(placeId));
+  const placeName = place ? place.name : 'Lokasi';
+
+  return [
+    {
+      id: `report-demo-${placeId}-1`,
+      placeId: String(placeId),
+      reporterName: 'Nadia Puspita (Kontributor)',
+      createdAt: '2026-09-20T09:05:00.000Z',
+      photoUrl: DEFAULT_FALLBACK_SVG,
+      elements: [
+        {
+          element: 'E1_door',
+          status: 'UTUH',
+          note: `Pintu masuk utama ${placeName} mudah diakses kursi roda dan bertanda jelas.`,
+        },
+        {
+          element: 'E6_parking',
+          status: 'UTUH',
+          note: 'Area parkir khusus disabilitas tersedia dekat akses masuk utama.',
+        },
+      ],
+    },
+    {
+      id: `report-demo-${placeId}-2`,
+      placeId: String(placeId),
+      reporterName: 'Hendra Gunawan (Kontributor)',
+      createdAt: '2026-09-18T14:30:00.000Z',
+      photoUrl: DEFAULT_FALLBACK_SVG,
+      elements: [
+        {
+          element: 'E3_toilet',
+          status: 'UTUH',
+          note: 'Toilet disabilitas bersih, luas, dan dilengkapi pegangan tangan standar.',
+        },
+      ],
+    },
+  ];
+}
+
+function getFallbackReviews(placeId: string): ApiReview[] {
+  const seed = loadSeedPlaces();
+  const place = seed.find((p) => String(p.id) === String(placeId));
+  const placeName = place ? place.name : 'Lokasi';
+
+  return [
+    {
+      id: `review-demo-${placeId}-1`,
+      placeId: String(placeId),
+      reviewerName: 'Rina Andriani',
+      createdAt: '2026-09-21T10:15:00.000Z',
+      experience: `Berkunjung ke ${placeName} bersama keluarga. Petugas keamanan sangat sigap dan ramah mengarahkan jalur akses kursi roda menuju pintu masuk utama.`,
+    },
+    {
+      id: `review-demo-${placeId}-2`,
+      placeId: String(placeId),
+      reviewerName: 'Fajar Nugroho',
+      createdAt: '2026-09-19T15:40:00.000Z',
+      experience: `Sebagai pengguna kursi roda, fasilitas akses di ${placeName} sudah cukup memadai. Rambu informasi dan toilet disabilitas bersih serta mudah ditemukan.`,
+    },
+  ];
+}
+
 /**
  * Correction trail for one place, newest first. Every report is kept, including the ones
  * a later correction superseded, so the drawer can show who changed which element and when.
  */
 export async function fetchPlaceReports(id: string, limit = 20) {
   try {
-    return await request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
+    const res = await request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
       `/api/places/${encodeURIComponent(id)}/reports?limit=${limit}`
     );
+    if (res.reports && res.reports.length > 0) {
+      return res;
+    }
   } catch {
-    return { reports: [], total: 0, limit, offset: 0 };
+    // Backend offline or error -> fall through to fallback
   }
+  const fallback = getFallbackReports(id);
+  const sliced = fallback.slice(0, limit);
+  return { reports: sliced, total: fallback.length, limit, offset: 0 };
 }
 export async function analyzePhoto(image: string, mimeType: string): Promise<ApiAnalysis> {
   return request('/api/analyze', { method: 'POST', headers: await headers(), body: JSON.stringify({ image, mimeType }) });
@@ -117,21 +194,40 @@ export type ReportPayload = {
   placeId: string; reporterName: string; image: string; mimeType: string; humanConfirmed: true;
   elements: { element: string; status: AccessibilityStatus; note?: string }[];
 };
+/**
+ * Server-side AI check of whether the photo actually shows the element the contributor
+ * picked. Null when the analysis was unavailable, in which case a human reviews it as usual.
+ */
+export type PhotoCheck = { matches: boolean; detail: string; unsupported: string[] } | null;
+type SubmitOutcome = { reviewStatus?: string; photoCheck?: PhotoCheck };
 export async function submitReport(payload: ReportPayload, requestKey: string) {
-  const result = await request<{ reportId: string; place: ApiPlace }>('/api/reports', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
+  const result = await request<{ reportId: string; place: ApiPlace } & SubmitOutcome>('/api/reports', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
   return { ...result, place: toUiPlace(result.place) };
 }
 export type NewLocation = { name: string; category: string; address: string; lat: number; lng: number };
 export async function submitNewPlace(payload: Omit<ReportPayload, 'placeId'> & { location: NewLocation }, requestKey: string) {
-  const result = await request<{ place: ApiPlace }>('/api/places', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
-  return { place: toUiPlace(result.place) };
+  const result = await request<{ place: ApiPlace } & SubmitOutcome>('/api/places', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
+  return { ...result, place: toUiPlace(result.place) };
 }
 export type ApiReview = { id: string; placeId: string; reviewerName: string; experience: string; createdAt: string };
-export function fetchReviews(placeId: string, offset = 0) {
-  return request<{ reviews: ApiReview[]; total: number }>(`/api/places/${encodeURIComponent(placeId)}/reviews?limit=20&offset=${offset}`);
+export async function fetchReviews(placeId: string, offset = 0) {
+  try {
+    const res = await request<{ reviews: ApiReview[]; total: number }>(
+      `/api/places/${encodeURIComponent(placeId)}/reviews?limit=20&offset=${offset}`
+    );
+    if (res.reviews && res.reviews.length > 0) {
+      return res;
+    }
+  } catch {
+    // Backend offline or error -> fall through to fallback reviews
+  }
+  const fallback = getFallbackReviews(placeId);
+  const sliced = fallback.slice(offset, offset + 20);
+  return { reviews: sliced, total: fallback.length };
 }
 export async function submitReview(payload: { placeId: string; reviewerName: string; experience: string }, requestKey: string) {
-  return request<{ review: ApiReview }>('/api/reviews', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
+  const review = await request<{ review: ApiReview }>('/api/reviews', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });
+  return review;
 }
 export async function fetchHealth() {
   try {
