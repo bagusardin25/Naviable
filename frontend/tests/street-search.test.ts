@@ -191,3 +191,55 @@ test('matchesPlaceQuery matches conversational tempat wisata to museum and park 
   assert.equal(matchPark.matched, true);
 });
 
+test('matchesPlaceQuery correctly discriminates specific place names like Tunjungan and excludes unrelated places', () => {
+  const tunjunganPlaza = {
+    id: 'osm-relation-6664927',
+    name: 'Tunjungan Plaza',
+    category: 'Pusat Perbelanjaan',
+    rawCategory: 'mall',
+    district: 'Tegalsari',
+    address: 'Jl. Jenderal Basuki Rachmat No. 8-12',
+    elements: [],
+  } as unknown as Place;
+
+  const carrefour = {
+    id: 'osm-node-659961942',
+    name: 'Carrefour',
+    category: 'Supermarket',
+    rawCategory: 'supermarket',
+    district: 'Bubutan',
+    address: 'Jl. Bubutan',
+    elements: [],
+  } as unknown as Place;
+
+  const pakuwonCityMall = {
+    id: 'osm-way-307282859',
+    name: 'Pakuwon City Mall',
+    category: 'Pusat Perbelanjaan',
+    rawCategory: 'mall',
+    district: 'Mulyorejo',
+    address: 'Jl. Kejawan Putih Tambak',
+    elements: [],
+  } as unknown as Place;
+
+  const pasarWonokitri = {
+    id: 'osm-way-451857622',
+    name: 'Pasar Wonokitri',
+    category: 'Pasar',
+    rawCategory: 'marketplace',
+    district: 'Sawahan',
+    address: 'Jalan Brawijaya, Surabaya',
+    elements: [],
+  } as unknown as Place;
+
+  for (const query of ['Tunjungan', 'tunjungan', 'Tunjungan Plaza']) {
+    // Matching place must match
+    assert.equal(matchesPlaceQuery(tunjunganPlaza, query).matched, true, `Tunjungan Plaza should match "${query}"`);
+
+    // Non-matching places must NOT match
+    assert.equal(matchesPlaceQuery(carrefour, query).matched, false, `Carrefour must NOT match "${query}"`);
+    assert.equal(matchesPlaceQuery(pakuwonCityMall, query).matched, false, `Pakuwon City Mall must NOT match "${query}"`);
+    assert.equal(matchesPlaceQuery(pasarWonokitri, query).matched, false, `Pasar Wonokitri must NOT match "${query}"`);
+  }
+});
+

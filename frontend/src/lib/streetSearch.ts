@@ -155,18 +155,55 @@ export function matchesPlaceQuery(place: Place, rawQuery: string): PlaceQueryMat
     return { matched: true, matchedOnStreet: false, matchedField: 'district', score: 0.7 };
   }
 
-  // 5. Direct category match
-  if (categoryNorm && (categoryNorm.includes(queryNorm) || queryNorm.includes(categoryNorm))) {
+  // 5. Direct category match (e.g. searching "cafe", "mall", "taman")
+  if (categoryNorm && categoryNorm.includes(queryNorm)) {
     return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.65 };
   }
 
-  // 6. Intelligent category & synonym intent matching (e.g. "coffe", "tempat wisata", "makan")
+  // 6/7. Intelligent category & synonym intent matching (e.g. "coffe", "tempat wisata", "makan")
   const intent = analyzeSearchQuery(rawQuery);
-  if (intent.category && matchesCategoryIntent(place.category || place.rawCategory || '', intent)) {
-    return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.75 };
+
+  if (intent.category) {
+    // Guard against over-broadening: a specific place name that merely *contains* a
+    // category word (e.g. "Tunjungan Plaza" contains "plaza") must not pull in every
+    // place of that category. Only broaden by category when the query carries no
+    // specific discriminating token that this place fails to match.
+    const conceptTokens = new Set<string>();
+    for (const term of intent.expandedTerms) {
+      for (const tok of normalizeStreetText(term).split(' ')) {
+        if (tok) conceptTokens.add(tok);
+      }
+    }
+    const searchable = `${nameNorm} ${addressNorm} ${districtNorm} ${categoryNorm}`;
+    const hasUnmatchedSpecificToken = normalizeStreetText(intent.clean)
+      .split(' ')
+      .some((tok) => tok.length >= 4 && !conceptTokens.has(tok) && !searchable.includes(tok));
+
+    if (!hasUnmatchedSpecificToken) {
+      // 6. Direct category-intent match against the place's category
+      if (matchesCategoryIntent(place.category || place.rawCategory || '', intent)) {
+        return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.75 };
+      }
+
+      // 7. Check if any expanded intent term matches place name or category
+      for (const term of intent.expandedTerms) {
+        const termNorm = normalizeStreetText(term);
+        if (termNorm.length >= 3) {
+          if (nameNorm.includes(termNorm)) {
+            return { matched: true, matchedOnStreet: false, matchedField: 'name', score: 0.88 };
+          }
+          if (categoryNorm.includes(termNorm)) {
+            return { matched: true, matchedOnStreet: false, matchedField: 'category', score: 0.7 };
+          }
+        }
+      }
+    }
+
+    return { matched: false, matchedOnStreet: false, score: 0 };
   }
 
-  // 7. Check if any expanded intent term matches place name or category
+  // No recognized category intent: fall back to a plain expanded-term (typo-tolerant)
+  // name/category check without any category broadening.
   for (const term of intent.expandedTerms) {
     const termNorm = normalizeStreetText(term);
     if (termNorm.length >= 3) {
