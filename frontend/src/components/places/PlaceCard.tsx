@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Place, STATUS_META, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
+import { Place, placeStatusMeta, getEvidenceFreshness, AccessibilityNeed } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { extractStreetName } from '@/lib/streetSearch';
@@ -87,34 +87,14 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
         </span>
         <span className="place-features-count">
           {place.features && place.features.length > 0
-            ? `${place.features.length} ${t('places.recordedFeatures')}`
+            ? `${place.features.length} ${t('places.recordedFeatures').replace(/:\s*$/, '')}`
             : locale === 'en'
             ? '0 initial features'
             : '0 fasilitas awal'}
         </span>
       </div>
-
-      <div className="chain-mini" aria-label={locale === 'en' ? '8 access chain points' : '8 titik kondisi akses'}>
-        {place.elements.map((e) => {
-          const elemStatusLabel = t(`status.${e.status}.label`, STATUS_META[e.status].label);
-          const elemEvidenceLabel =
-            e.lockedBy === 'kontributor'
-              ? locale === 'en' ? 'Verified by citizen' : 'Diverifikasi warga'
-              : e.isPreSurveyEvidence
-              ? locale === 'en' ? 'Baseline info' : 'Informasi awal'
-              : locale === 'en' ? 'Not yet verified' : 'Belum diverifikasi';
-          return (
-            <i
-              key={e.code}
-              className={`chain-cell cell-${e.status.toLowerCase()}`}
-              title={`${e.code} ${e.label}: ${elemStatusLabel} (${elemEvidenceLabel})`}
-              aria-label={`${e.code} ${e.label}: ${elemStatusLabel}`}
-            >
-              {e.code.replace('E', '')}
-            </i>
-          );
-        })}
-      </div>
+      {/* The cryptic 1–8 element grid was removed from the list card to reduce noise;
+          the full E1–E8 chain is shown in the place detail drawer. */}
     </button>
   );
 }

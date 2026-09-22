@@ -764,6 +764,13 @@ body.reduce-motion .voice-bar {
 .legend-item.legend-tidak_ada svg { color: var(--status-negative-ink); }
 .legend-item.legend-belum_diketahui svg { color: var(--status-unknown-ink); }
 
+/* On desktop the "Kondisi" filter pills already double as the status legend, so
+   hide the in-map status legend there (it stays on mobile). The Peta Jalan /
+   Skematik toggle in the same overlay is unaffected. */
+@media (min-width: 901px) {
+  .map-legend-inline { display: none; }
+}
+
 /* Map View & Leaflet */
 .map-view-wrapper { flex: 1; min-height: 0; position: relative; width: 100%; height: 100%; overflow: hidden; }
 .map-controls-overlay {
