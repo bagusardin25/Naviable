@@ -47,6 +47,7 @@ export interface TranslationDictionary {
     backToMap: string;
     mainNavLabel: string;
     reviewerPortal: string;
+    contributionUpdatesAria: string;
   };
   status: {
     UTUH: {
@@ -358,6 +359,7 @@ export interface TranslationDictionary {
     reportChangeDesc: string;
     draftModeNoticeTitle: string;
     draftModeNoticeDesc: string;
+    authPromptBtn: string;
     draftRestoredText: string;
     draftRestoredTextNoPhoto: string;
     clearDraftBtn: string;
@@ -393,14 +395,13 @@ export interface TranslationDictionary {
     aiAnalyzing: string;
     aiSuggestionReady: string;
     aiNotChecked: string;
-    aiPreviewAlt: string;
     aiManualAlwaysReady: string;
     aiHelpGuidance: string;
     aiNeedsMorePhotos: string;
     aiDisclaimerDefault: string;
     aiAnalyzeBtnText: string;
     aiAnalyzingBtnText: string;
-    step3Title: string;
+    autoCheckAfterSignIn: string;
     humanConfirmationCheck: string;
     submittingReport: string;
     submitAddPlace: string;
@@ -417,7 +418,6 @@ export interface TranslationDictionary {
     photoAndConfirmationRequired: string;
     coordsConfirmationRequired: string;
     submissionFailedError: string;
-    humanLockEyebrow: string;
     humanLockPrompt: string;
     humanLockAria: string;
     initialConditionHeading: string;
@@ -427,6 +427,12 @@ export interface TranslationDictionary {
     correctionNoticeSub: string;
     aiSuggestionLabel: string;
     confidenceLabel: string;
+    completeFirst: string;
+    missingPhoto: string;
+    missingCoords: string;
+    missingConfirm: string;
+    integrityBlockedHint: string;
+    belumDiketahuiHint: string;
   };
   journey: {
     panelAria: string;

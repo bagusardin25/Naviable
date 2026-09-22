@@ -24,7 +24,6 @@ export function HumanLockSelector({
 
   return (
     <div className="manual-lock">
-      <span className="eyebrow">{t('reports.humanLockEyebrow')}</span>
       <p>{t('reports.humanLockPrompt')}</p>
 
       <div className="status-choice" role="radiogroup" aria-label={t('reports.humanLockAria')}>

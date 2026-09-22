@@ -120,6 +120,11 @@ export function ReportForm({
   const attempt = useRef<{ signature: string; key: string } | null>(null);
   const busy = submitting || reading;
   const integrityBlocked = analysis?.photoIntegrity?.recommendedAction === 'request_new_capture';
+  const missingItems = [
+    !photo ? t('reports.missingPhoto') : null,
+    adding && !coordinatesConfirmed ? t('reports.missingCoords') : null,
+    !confirmed ? t('reports.missingConfirm') : null,
+  ].filter((item): item is string => Boolean(item));
   const currentElement = targetPlace?.elements.find(element => element.code === elementCode);
   const similarPlaces = adding && location.name.trim().length >= 3 ? places.filter(p => p.name.toLowerCase().includes(location.name.trim().toLowerCase())).slice(0, 5) : [];
 
@@ -174,15 +179,20 @@ export function ReportForm({
       setPhoto(photoData);
       setReading(false);
       saveDraftPhoto(draftKey, photoData).catch(() => {});
+      // Pemeriksaan foto (integritas + aksesibilitas) berjalan otomatis setiap unggahan.
+      // Endpoint AI memerlukan sesi masuk; untuk draf anonim, pemeriksaan ditunda sampai masuk
+      // dan server tetap memeriksa provenance foto saat laporan dikirim.
+      if (signedIn) void analyze(photoData);
     };
     reader.onerror = () => { setError(t('reports.photoReadError')); setReading(false); };
     reader.readAsDataURL(file);
   }
 
-  async function analyze() {
-    if (!photo || analyzing) return;
+  async function analyze(target?: { image: string; mimeType: string }) {
+    const src = target ?? photo;
+    if (!src || analyzing) return;
     setAnalyzing(true); setAiError(''); setConfirmed(false);
-    try { setAnalysis(await analyzePhoto(photo.image, photo.mimeType)); }
+    try { setAnalysis(await analyzePhoto(src.image, src.mimeType)); }
     catch (e) { setAnalysis(null); setAiError(e instanceof Error ? e.message : t('reports.aiUnavailableError')); }
     finally { setAnalyzing(false); }
   }
@@ -197,7 +207,7 @@ export function ReportForm({
       }
     }
     if (!photo || !confirmed) { setError(t('reports.photoAndConfirmationRequired')); return; }
-    if (integrityBlocked) { setError('Foto memiliki penanda asal AI terverifikasi. Ambil dan unggah foto baru dari lokasi.'); return; }
+    if (integrityBlocked) { setError(t('reports.integrityBlockedHint')); return; }
     if (adding && !coordinatesConfirmed) { setError(t('reports.coordsConfirmationRequired')); return; }
     const evidence = { reporterName, ...photo, humanConfirmed: true as const, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
     const payload: ReportPayload = { placeId, ...evidence };
@@ -255,7 +265,8 @@ export function ReportForm({
   return (
     <div className="page-scroll">
 
-      <button type="button" className="secondary-action" onClick={onCancel}>← {adding ? t('reports.backToExplore') : t('reports.backToDetail')}</button>
+      {/* Add-place navigation is handled by the sidebar, so no back button here; corrections keep it. */}
+      {!adding && <button type="button" className="secondary-action" onClick={onCancel}>← {t('reports.backToDetail')}</button>}
       <div className="page-title"><div><span className="eyebrow">{t('reports.citizenContribution')}</span><h1>{adding ? t('reports.addNewPlaceTitle') : t('reports.reportChangeTitle')}</h1><p>{adding ? t('reports.addNewPlaceDesc') : t('reports.reportChangeDesc', { name: targetPlace?.name ?? '' })}</p></div></div>
       {!signedIn && (
         <div className="auth-prompt-banner" role="status">
@@ -423,17 +434,28 @@ export function ReportForm({
           </label>
         </fieldset>
         <section className="card ai-card" aria-label={t('reports.inspectionAndConfirmationAria')}>
-          <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} uploadedPhotoUrl={photo?.image ?? null} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
-          <button type="button" className="secondary-action" onClick={analyze} disabled={!photo || analyzing || busy}><Icon name="photo" />{analyzing ? t('reports.aiAnalyzingBtnText') : t('reports.aiAnalyzeBtnText')}</button>
+          <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
+          <button type="button" className="secondary-action" onClick={() => analyze()} disabled={!photo || analyzing || busy || !signedIn}><Icon name="photo" />{analyzing ? t('reports.aiAnalyzingBtnText') : t('reports.aiAnalyzeBtnText')}</button>
+          {!signedIn && photo && (
+            <p role="status" style={{ color: 'var(--muted)', fontSize: '12px', margin: '4px 0 0', lineHeight: 1.5 }}>{t('reports.autoCheckAfterSignIn')}</p>
+          )}
           <fieldset disabled={busy || analyzing} style={{ border: 0, padding: 0, minWidth: 0 }}>
             <h2>{adding ? t('reports.initialConditionHeading') : t('reports.updatedConditionHeading')}</h2>
             <HumanLockSelector currentStatus={status} onSelectStatus={s => { setStatus(s); setConfirmed(false); }} />
+            {status === 'BELUM_DIKETAHUI' && (
+              <p role="status" style={{ color: 'var(--muted)', fontSize: '12px', margin: '8px 0 0', lineHeight: 1.5 }}>{t('reports.belumDiketahuiHint')}</p>
+            )}
             <label style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'flex-start', fontSize: '12px' }}>
               <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required disabled={integrityBlocked} style={{ marginTop: '2px' }} />
               <span>{t('reports.humanConfirmationCheck')}</span>
             </label>
           </fieldset>
-          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '20px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? t('reports.submittingReport') : adding ? t('reports.submitAddPlace') : t('reports.submitCorrection')}</button>
+          {!submitting && (integrityBlocked ? (
+            <p role="status" style={{ color: 'var(--ink)', background: 'var(--notice-warning-bg)', border: '1px solid var(--notice-warning-border)', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '16px', lineHeight: 1.5 }}>{t('reports.integrityBlockedHint')}</p>
+          ) : missingItems.length ? (
+            <p role="status" style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '16px', lineHeight: 1.5 }}>{t('reports.completeFirst')} {missingItems.join(', ')}.</p>
+          ) : null)}
+          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '12px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? t('reports.submittingReport') : adding ? t('reports.submitAddPlace') : t('reports.submitCorrection')}</button>
           {error && <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '12px', border: '1px solid #fecaca' }}>{error}</p>}
         </section>
       </form>

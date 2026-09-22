@@ -1,11 +1,10 @@
-import Image from 'next/image';
 import type { ApiAnalysis } from '@/lib/api';
 import { STATUS_META } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
 
-type Props = { analysis: ApiAnalysis | null; analyzing: boolean; error: string; uploadedPhotoUrl: string | null; elementCode: string };
-export function AIDraftPanel({ analysis, analyzing, error, uploadedPhotoUrl, elementCode }: Props) {
+type Props = { analysis: ApiAnalysis | null; analyzing: boolean; error: string; elementCode: string };
+export function AIDraftPanel({ analysis, analyzing, error, elementCode }: Props) {
   const { t } = useTranslation();
   const draft = analysis?.drafts.find(d => d.element === elementCode);
   const integrity = analysis?.photoIntegrity;
@@ -23,7 +22,6 @@ export function AIDraftPanel({ analysis, analyzing, error, uploadedPhotoUrl, ele
       : 'neutral';
   return <div className="ai-draft-section">
     <div className="card-title-row"><div><span className="eyebrow">{t('reports.aiAssistanceEyebrow')}</span><h2>{t('reports.step2Title')}</h2></div><span className={`live-pill ${draft ? 'ready' : ''}`}>{analyzing ? t('reports.aiAnalyzing') : draft ? t('reports.aiSuggestionReady') : t('reports.aiNotChecked')}</span></div>
-    <div className="vision-stage" aria-label={t('reports.aiPreviewAlt')}>{uploadedPhotoUrl ? <Image src={uploadedPhotoUrl} alt={t('reports.aiPreviewAlt')} width={280} height={140} unoptimized className="vision-preview-img" style={{ objectFit: 'contain' }} /> : <Icon name="photo" size={54} />}</div>
     {integrity ? (
       <div className={`integrity-result ${integrityTone}`} role={integrity.outcome === 'trusted_ai_provenance' ? 'alert' : 'status'}>
         <strong>Pemeriksaan asal foto: {integrityLabel}</strong>
