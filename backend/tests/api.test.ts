@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { createApp } from "../src/app.js";
-import { LocalStore } from "../src/store.js";
+import { LocalStore, SupabaseStore } from "../src/store.js";
 import { chainScore, chainSummary, summarizePlace } from "../src/lib/types.js";
 import { csvCell } from "../src/lib/evidence.js";
 import { readConfig, type Config } from "../src/config.js";
@@ -18,14 +18,32 @@ const inconclusiveIntegrity: PhotoIntegrityResult = {
   signals: [{ source: 'openai_provenance', kind: 'not_detected', outcome: 'not_detected', detail: 'Tidak ada penanda uji.' }],
   disclaimer: 'Hasil uji tidak membuktikan keaslian.',
 };
-async function fixture(mode: 'local' | 'supabase' = 'local', reviewer = false, photoIntegrity = inconclusiveIntegrity) {
+/** Builds a model analysis where only `seen` elements are visible in the photo. */
+function analysisSeeing(seen: Record<string, string>) {
+  const chain = ['E1_door', 'E2_ramp', 'E3_toilet', 'E4_lift', 'E5_guiding_block', 'E6_parking', 'E7_signage', 'E8_crossing'] as const;
+  return {
+    drafts: chain.map(element => ({
+      element,
+      status: (seen[element] ?? 'BELUM_DIKETAHUI') as 'UTUH' | 'TERHALANG' | 'TIDAK_STANDAR' | 'TIDAK_ADA' | 'BELUM_DIKETAHUI',
+      confidence: (seen[element] ? 'tinggi' : 'rendah') as 'tinggi' | 'sedang' | 'rendah',
+      reason: 'hasil uji',
+    })),
+    needsMorePhotos: [],
+    visualIntegrity: { outcome: 'no_obvious_signs' as const, confidence: 'tinggi' as const, reasons: [] },
+    provider: 'google' as const,
+    attemptedProviders: ['google' as const],
+    disclaimer: 'uji',
+  };
+}
+async function fixture(mode: 'local' | 'supabase' = 'local', reviewer = false, photoIntegrity = inconclusiveIntegrity,
+  analyze: () => Promise<ReturnType<typeof analysisSeeing>> = async () => { throw new Error('provider unavailable'); }) {
   const directory = await mkdtemp(join(tmpdir(), 'naviable-test-'));
   const store = await new LocalStore(directory).init();
   const config: Config = { mode, production: false, host: '127.0.0.1', port: 4000, localDir: directory, origins: ['http://localhost:3000'], publicUrl: 'http://localhost:4000', trustProxy: 0 };
   const app = createApp({ store, config,
     authenticate: async token => token === 'reviewer-test-token' ? 'reviewer-id' : token === 'valid-test-token' ? 'test-user' : token === 'other-test-token' ? 'other-user' : undefined,
     authenticateReviewer: async token => token === 'reviewer-test-token' ? { id: 'reviewer-id', email: 'reviewer@naviable.test' } : undefined,
-    analyze: async () => { throw new Error('provider unavailable'); },
+    analyze,
     checkIntegrity: async () => photoIntegrity });
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -358,3 +376,117 @@ test('contributor profile (/api/me) exposes the review status, note, and checkli
   } finally { await f.close(); }
 });
 
+
+test('a photo that does not show the chosen element is auto-flagged for revision and explained in the contributor profile', async () => {
+  // The model sees a door, but the contributor claimed the guiding block.
+  const f = await fixture('local', false, inconclusiveIntegrity, async () => analysisSeeing({ E1_door: 'UTUH' }));
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const response = await f.post('/api/reports', report(placeId));
+    const body = await response.json();
+
+    // The contribution is still accepted — it is redirected, not silently dropped.
+    assert.equal(response.status, 201);
+    assert.equal(body.photoCheck.matches, false);
+    assert.deepEqual(body.photoCheck.unsupported, ['E5_guiding_block']);
+    // It goes back to the contributor instead of into the reviewer queue.
+    assert.equal(body.reviewStatus, 'NEEDS_REVISION');
+
+    // The contributor sees why, in their own profile.
+    const me = await (await f.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json();
+    const mine = me.reports.find((r: { id: string }) => r.id === body.reportId);
+    assert.equal(mine.reviewStatus, 'NEEDS_REVISION');
+    assert.match(mine.reviewNote, /jalur pemandu/);
+    // An automated decision never counts as a human approval.
+    assert.equal(mine.reviewedBy, undefined);
+  } finally { await f.close(); }
+});
+
+test('a photo that does show the chosen element passes the AI gate and waits in the reviewer queue', async () => {
+  const f = await fixture('local', false, inconclusiveIntegrity, async () => analysisSeeing({ E5_guiding_block: 'TERHALANG' }));
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const body = await (await f.post('/api/reports', report(placeId))).json();
+    assert.equal(body.photoCheck.matches, true);
+    assert.equal(body.reviewStatus, 'SUBMITTED');
+
+    const reviewer = await fixture('local', true);
+    try {
+      const stored = await f.store.getReport(body.reportId);
+      assert.equal(stored?.reviewStatus, 'SUBMITTED');
+    } finally { await reviewer.close(); }
+  } finally { await f.close(); }
+});
+
+test('an AI outage never blocks a contribution; the report still reaches the reviewer queue', async () => {
+  // Default fixture analyze() throws, simulating every provider being down.
+  const f = await fixture();
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const body = await (await f.post('/api/reports', report(placeId))).json();
+    assert.equal(body.photoCheck, null);
+    assert.equal(body.reviewStatus, 'SUBMITTED');
+  } finally { await f.close(); }
+});
+
+test('SupabaseStore.reviewReport returns the camelCase report contract, not the raw database row', async () => {
+  // Mirrors what review_report actually returns: row_to_json(reports), i.e. a snake_case row
+  // whose camelCase report lives nested in `payload`. Returning that row verbatim used to blank
+  // out elements/reviewStatus for the reviewer UI and crash it right after an approval.
+  const payload = {
+    id: '30000000-0000-4000-8000-000000000001',
+    placeId: 'place-uji',
+    actorId: 'test-user',
+    reporterName: 'Kontributor uji',
+    requestKey: '40000000-0000-4000-8000-000000000001',
+    inputHash: 'hash',
+    elements: [{ element: 'E2_ramp', status: 'TERHALANG', note: 'Terhalang motor' }],
+    photoPath: 'reports/x.jpg',
+    mimeType: 'image/jpeg',
+    createdAt: '2026-09-20T00:00:00.000Z',
+    reviewStatus: 'SUBMITTED',
+  };
+  const rawRow = {
+    id: payload.id, place_id: payload.placeId, actor_id: payload.actorId,
+    request_key: payload.requestKey, input_hash: payload.inputHash, created_at: payload.createdAt,
+    payload,
+    review_status: 'APPROVED', reviewed_by: 'reviewer@naviable.test',
+    reviewed_at: '2026-09-21T00:00:00.000Z', review_note: 'Bukti jelas.',
+    review_checklist: { photoShowsElement: true },
+  };
+  const client = { rpc: async () => ({ data: rawRow, error: null }) } as unknown as ConstructorParameters<typeof SupabaseStore>[0];
+
+  const updated = await new SupabaseStore(client).reviewReport(payload.id, {
+    decision: 'APPROVED', reviewer: 'reviewer@naviable.test', note: 'Bukti jelas.',
+  });
+
+  // The fields the reviewer UI renders must survive the round trip.
+  assert.equal(updated.reviewStatus, 'APPROVED');
+  assert.equal(updated.reporterName, 'Kontributor uji');
+  assert.equal(updated.placeId, 'place-uji');
+  assert.ok(Array.isArray(updated.elements), 'elements must stay an array');
+  assert.equal(updated.elements[0].element, 'E2_ramp');
+  assert.equal(updated.reviewNote, 'Bukti jelas.');
+  // No snake_case leaks through.
+  assert.equal((updated as Record<string, unknown>).review_status, undefined);
+  assert.equal((updated as Record<string, unknown>).payload, undefined);
+});
+
+test('SupabaseStore.reviewReport surfaces the reviewer corrected elements that were applied', async () => {
+  const payload = {
+    id: '30000000-0000-4000-8000-000000000002', placeId: 'place-uji', actorId: 'test-user',
+    reporterName: 'Kontributor uji', requestKey: '40000000-0000-4000-8000-000000000002', inputHash: 'hash',
+    elements: [{ element: 'E2_ramp', status: 'UTUH' }],
+    photoPath: 'reports/y.jpg', mimeType: 'image/jpeg', createdAt: '2026-09-20T00:00:00.000Z', reviewStatus: 'SUBMITTED',
+  };
+  const client = {
+    rpc: async () => ({ data: { payload, review_status: 'APPROVED', reviewed_by: 'r', reviewed_at: 'now', review_note: '', review_checklist: null }, error: null }),
+  } as unknown as ConstructorParameters<typeof SupabaseStore>[0];
+
+  const corrected = [{ element: 'E2_ramp' as const, status: 'TERHALANG' as const, note: 'Dikoreksi reviewer' }];
+  const updated = await new SupabaseStore(client).reviewReport(payload.id, {
+    decision: 'APPROVED', reviewer: 'r', note: '', elements: corrected,
+  });
+  // The place was updated with the reviewer's correction, so that is what callers should see.
+  assert.equal(updated.elements[0].status, 'TERHALANG');
+});

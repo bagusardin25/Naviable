@@ -5,10 +5,10 @@ import { z, ZodError } from "zod";
 import type { Config } from "./config.js";
 import type { Store, Report } from "./store.js";
 import { ApiError } from "./lib/errors.js";
-import { AddPlaceBody, AnalyzeBody, decodePhoto, ElementInput, PlaceId, PlaceQuery, ReportBody, ReviewBody } from "./lib/validation.js";
+import { AddPlaceBody, AnalyzeBody, decodePhoto, ElementInput, PlaceId, PlaceQuery, ReportBody, ReviewBody, type ReportInput } from "./lib/validation.js";
 import { CHAIN_ELEMENTS, ELEMENT_STATUSES, summarizePlace, USER_PROFILES, type Place } from "./lib/types.js";
 import { evidenceCsv, journeyHint, observatory } from "./lib/evidence.js";
-import { analyzeAccessPhoto, checkPhotoProvenance, configuredAIProviders, mergePhotoIntegrity } from "./lib/ai/index.js";
+import { AI_REVIEWER_LABEL, analyzeAccessPhoto, checkPhotoProvenance, configuredAIProviders, matchPhotoToElements, mergePhotoIntegrity, mismatchNote, type PhotoElementMatch } from "./lib/ai/index.js";
 
 type Options = {
   store: Store;
@@ -95,6 +95,34 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     }
     return integrity;
   }
+  /**
+   * Reads the photo with the vision model and checks it against the element the contributor
+   * picked. Returns null when the analysis is unavailable so an AI outage never blocks a
+   * genuine contribution — the report then goes to the human queue as usual.
+   */
+  async function photoElementMatch(photo: ReturnType<typeof decodePhoto>, elements: ReportInput["elements"]) {
+    try {
+      return matchPhotoToElements(await analyze(photo.base64, photo.mimeType), elements);
+    } catch {
+      return null;
+    }
+  }
+  /**
+   * A photo that does not show the chosen element goes straight back to the contributor as
+   * NEEDS_REVISION instead of into the reviewer queue; the automated note is what they see in
+   * their profile. Never fails the submission — an unsaved flag just leaves it for a human.
+   */
+  async function autoFlagMismatch(report: Report, match: PhotoElementMatch | null) {
+    if (!match || match.matches) return report;
+    try {
+      return await store.reviewReport(report.id, { decision: "NEEDS_REVISION", reviewer: AI_REVIEWER_LABEL, note: mismatchNote(match) });
+    } catch {
+      return report;
+    }
+  }
+  function photoCheckResponse(match: PhotoElementMatch | null) {
+    return match ? { matches: match.matches, detail: match.detail, unsupported: match.unsupported } : null;
+  }
   app.get("/api/me", auth, async (_req, res) => {
     const result = await store.contributions(res.locals.actorId);
     // Contributors see the review outcome of their OWN reports (status, reviewer note, checklist).
@@ -129,13 +157,14 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const body = AddPlaceBody.parse(req.body);
     const requestKey = z.uuid().parse(req.headers["idempotency-key"] ?? randomUUID());
     const photo = decodePhoto(body.image, body.mimeType);
-    const photoIntegrity = await verifiedPhotoIntegrity(photo);
+    const [photoIntegrity, match] = await Promise.all([verifiedPhotoIntegrity(photo), photoElementMatch(photo, body.elements)]);
     const place: Place = { ...body.location, id: `place-${randomUUID()}`, city: "Surabaya", kecamatan: null, kelurahan: null,
       preSurvey: {}, sources: [], evidenceLevel: "contributor", verifiedByTeam: false, needsGeocoding: false,
       elements: {}, updatedAt: null, photoCount: 0, reportCount: 0 };
     const inputHash = createHash("sha256").update(JSON.stringify({ kind: "new-place", ...body, image: photo.base64 })).digest("hex");
     const { report, replayed } = await store.publish({ placeId: place.id, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity }, photo, place);
-    res.status(replayed ? 200 : 201).json({ reportId: report.id, replayed, place: summarizePlace(await placeById(report.placeId)) });
+    const reviewed = replayed ? report : await autoFlagMismatch(report, match);
+    res.status(replayed ? 200 : 201).json({ reportId: report.id, replayed, reviewStatus: reviewed.reviewStatus, photoCheck: photoCheckResponse(match), place: summarizePlace(await placeById(report.placeId)) });
   });
   function publicReview(r: import("./store.js").Review) {
     return { id: r.id, placeId: r.placeId, reviewerName: r.reviewerName, experience: r.experience, createdAt: r.createdAt };
@@ -159,10 +188,11 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const requestKey = z.uuid().parse(req.headers["idempotency-key"] ?? randomUUID());
     const photo = decodePhoto(body.image, body.mimeType);
     await placeById(body.placeId);
-    const photoIntegrity = await verifiedPhotoIntegrity(photo);
+    const [photoIntegrity, match] = await Promise.all([verifiedPhotoIntegrity(photo), photoElementMatch(photo, body.elements)]);
     const inputHash = createHash("sha256").update(JSON.stringify({ ...body, image: photo.base64 })).digest("hex");
     const { report, replayed } = await store.publish({ placeId: body.placeId, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity }, photo);
-    res.status(replayed ? 200 : 201).json({ ok: true, reportId: report.id, replayed, photoUrl: `/api/photos/${report.id}`, report: publicReport(report), place: summarizePlace(await placeById(body.placeId)) });
+    const reviewed = replayed ? report : await autoFlagMismatch(report, match);
+    res.status(replayed ? 200 : 201).json({ ok: true, reportId: report.id, replayed, reviewStatus: reviewed.reviewStatus, photoCheck: photoCheckResponse(match), photoUrl: `/api/photos/${report.id}`, report: publicReport(reviewed), place: summarizePlace(await placeById(body.placeId)) });
   });
   app.post("/api/analyze", limiter("analyze", 10), async (req, res) => {
     const body = AnalyzeBody.parse(req.body);
@@ -277,7 +307,18 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const body = ReviewDecisionBody.parse(req.body);
     const reportId = z.uuid().parse(req.params.id);
     const updated = await store.reviewReport(reportId, { ...body, reviewer: res.locals.reviewerLabel ?? res.locals.actorId });
-    res.json({ ok: true, report: updated });
+    // Mirror the GET /reports/:id shape so the reviewer UI can swap this straight into
+    // its state after a decision without losing the place name, address or photo.
+    const place = await store.getPlace(updated.placeId);
+    res.json({
+      ok: true,
+      report: {
+        ...updated,
+        placeName: place?.name ?? updated.placeId,
+        placeAddress: place?.address ?? null,
+        photoUrl: `/api/photos/${updated.id}`,
+      },
+    });
   });
   app.get("/api/reviewer/history", async (req, res) => {
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));

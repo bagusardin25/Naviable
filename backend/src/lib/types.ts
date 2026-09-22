@@ -101,18 +101,21 @@ export function chainScore(
   return max === 0 ? null : Math.round((sum / max) * 100);
 }
 
+/** Plain-Indonesian names for each chain element, for messages shown to people. */
+export const CHAIN_ELEMENT_LABELS: Record<ChainElement, string> = {
+  E1_door: "pintu",
+  E2_ramp: "ramp",
+  E3_toilet: "toilet",
+  E4_lift: "lift",
+  E5_guiding_block: "jalur pemandu",
+  E6_parking: "parkir",
+  E7_signage: "rambu",
+  E8_crossing: "penyeberangan",
+};
+
 /** Honest summary sentence — shown WITH the score, never instead of it. */
 export function chainSummary(elements: Place["elements"], profile?: UserProfile): string {
-  const LABELS: Record<ChainElement, string> = {
-    E1_door: "pintu",
-    E2_ramp: "ramp",
-    E3_toilet: "toilet",
-    E4_lift: "lift",
-    E5_guiding_block: "jalur pemandu",
-    E6_parking: "parkir",
-    E7_signage: "rambu",
-    E8_crossing: "penyeberangan",
-  };
+  const LABELS = CHAIN_ELEMENT_LABELS;
   const broken: string[] = [];
   let intact = 0;
   const relevant = profile ? Object.keys(PROFILE_WEIGHTS[profile]) as ChainElement[] : CHAIN_ELEMENTS;

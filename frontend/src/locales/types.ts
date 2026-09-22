@@ -410,6 +410,10 @@ export interface TranslationDictionary {
     successBody: string;
     successCurateTitle: string;
     successCurateDesc: string;
+    photoMismatchEyebrow: string;
+    photoMismatchTitle: string;
+    photoMismatchNextTitle: string;
+    photoMismatchNextDesc: string;
     successDoneBtn: string;
     photoSizeError: string;
     photoReadError: string;

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Place, ChainElementCode, AccessibilityStatus, CHAIN_ELEMENT_MAP, STATUS_META } from '@/types';
-import { analyzePhoto, submitReport, submitNewPlace, type ApiAnalysis, type ReportPayload, type NewLocation } from '@/lib/api';
+import { analyzePhoto, submitReport, submitNewPlace, type ApiAnalysis, type PhotoCheck, type ReportPayload, type NewLocation } from '@/lib/api';
 import { placeHref } from '@/lib/navigation';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
@@ -117,6 +117,9 @@ export function ReportForm({
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccessPlace, setSubmittedSuccessPlace] = useState<Place | null>(null);
+  // Server-side verdict on whether the photo showed the chosen element; drives the
+  // confirmation screen so a mismatch is explained here, not only in the profile.
+  const [submittedPhotoCheck, setSubmittedPhotoCheck] = useState<PhotoCheck>(null);
   const attempt = useRef<{ signature: string; key: string } | null>(null);
   const busy = submitting || reading;
   const integrityBlocked = analysis?.photoIntegrity?.recommendedAction === 'request_new_capture';
@@ -223,6 +226,7 @@ export function ReportForm({
         // ignore
       }
       deleteDraftPhoto(draftKey).catch(() => {});
+      setSubmittedPhotoCheck(result.photoCheck ?? null);
       setSubmittedSuccessPlace(result.place);
     }
     catch (e) { setError(e instanceof Error ? e.message : t('reports.submissionFailedError')); }
@@ -230,23 +234,30 @@ export function ReportForm({
   }
 
   if (submittedSuccessPlace) {
+    // The AI gate found the photo does not show the element that was picked, so the report
+    // went back to the contributor instead of into the reviewer queue. Say so plainly here.
+    const mismatched = submittedPhotoCheck !== null && !submittedPhotoCheck.matches;
     return (
       <div className="page-scroll">
         <div className="card form-card" style={{ maxWidth: '560px', margin: '40px auto', textAlign: 'center', padding: '32px 24px' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--notice-warning-bg)', border: '1px solid var(--notice-warning-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--orange)' }}>
-            <Icon name="check" size={28} />
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: mismatched ? 'var(--notice-error-bg)' : 'var(--notice-warning-bg)', border: `1px solid ${mismatched ? 'var(--notice-error-border)' : 'var(--notice-warning-border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: mismatched ? 'var(--notice-error-ink)' : 'var(--orange)' }}>
+            <Icon name={mismatched ? 'warning' : 'check'} size={28} />
           </div>
-          <span className="eyebrow" style={{ color: 'var(--orange)', fontWeight: 700 }}>{t('reports.successEyebrow')}</span>
-          <h1 style={{ fontSize: '1.4rem', margin: '6px 0 12px', color: 'var(--ink)' }}>{t('reports.successTitle')}</h1>
+          <span className="eyebrow" style={{ color: mismatched ? 'var(--notice-error-ink)' : 'var(--orange)', fontWeight: 700 }}>
+            {mismatched ? t('reports.photoMismatchEyebrow') : t('reports.successEyebrow')}
+          </span>
+          <h1 style={{ fontSize: '1.4rem', margin: '6px 0 12px', color: 'var(--ink)' }}>
+            {mismatched ? t('reports.photoMismatchTitle') : t('reports.successTitle')}
+          </h1>
           <p style={{ color: 'var(--ink)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '16px' }}>
-            {t('reports.successBody', { name: submittedSuccessPlace.name })}
+            {mismatched ? submittedPhotoCheck.detail : t('reports.successBody', { name: submittedSuccessPlace.name })}
           </p>
           <div style={{ background: 'var(--surface-secondary)', border: '1px solid var(--line)', borderRadius: '10px', padding: '12px 16px', marginBottom: '24px', fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'left' }}>
             <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--ink)' }}>
-              {t('reports.successCurateTitle')}
+              {mismatched ? t('reports.photoMismatchNextTitle') : t('reports.successCurateTitle')}
             </p>
             <p style={{ margin: 0, lineHeight: 1.5 }}>
-              {t('reports.successCurateDesc')}
+              {mismatched ? t('reports.photoMismatchNextDesc') : t('reports.successCurateDesc')}
             </p>
           </div>
           <button

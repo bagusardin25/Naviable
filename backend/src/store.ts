@@ -39,6 +39,32 @@ export interface Store {
 }
 
 type State = { version: 1; places: Place[]; reports: Report[]; reviews?: Review[] };
+
+// Demo visitor reviews for local/dev mode. Without these the place drawer's review
+// history is empty for every location (no contributor flow has run yet), so the
+// "review history" section can never demonstrate real entries. One review per seed
+// place keeps the section populated no matter which place is opened. Never used by
+// SupabaseStore, which reads real reviews from the database.
+const DEMO_REVIEWERS = ["Rina Andriani", "Fajar Nugroho", "Melati Kusuma", "Yoga Pratama", "Sari Wulandari", "Bagas Saputra"];
+const DEMO_REVIEW_TEMPLATES = [
+  (name: string) => `Berkunjung ke ${name} bersama keluarga. Petugas cukup membantu mengarahkan jalur akses menuju pintu masuk.`,
+  (name: string) => `Sebagai pengguna kursi roda, akses masuk ${name} masih bisa dilalui walau ada beberapa titik yang perlu perhatian.`,
+  (name: string) => `Jalur pemandu dan rambu di ${name} lumayan jelas. Semoga fasilitas toiletnya makin ramah difabel.`,
+  (name: string) => `Pengalaman di ${name} cukup baik. Area parkir dan penyeberangan terdekat masih agak menantang bagi tunanetra.`,
+];
+function buildDemoReviews(places: Place[]): Review[] {
+  return places.map((place, i) => ({
+    id: `review-demo-${(i + 1).toString().padStart(4, "0")}`,
+    placeId: place.id,
+    actorId: `00000000-0000-4000-9000-${(i + 1).toString().padStart(12, "0")}`,
+    reviewerName: DEMO_REVIEWERS[i % DEMO_REVIEWERS.length],
+    experience: DEMO_REVIEW_TEMPLATES[i % DEMO_REVIEW_TEMPLATES.length](place.name),
+    createdAt: new Date(Date.UTC(2026, 8, 12 + (i % 6), 2 + (i % 9), (i * 11) % 60)).toISOString(),
+    requestKey: `review-demo-key-${(i + 1).toString().padStart(4, "0")}`,
+    inputHash: `review-demo-hash-${(i + 1).toString().padStart(4, "0")}`,
+  }));
+}
+
 export class LocalStore implements Store {
   private state!: State;
   private queue: Promise<unknown> = Promise.resolve();
@@ -51,7 +77,7 @@ export class LocalStore implements Store {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       const seedPlaces = await loadSeed();
-      const demoReports: Report[] = [
+      const demoReportSeed: Report[] = [
         {
           id: "10000000-0000-4000-8000-000000000001",
           placeId: seedPlaces[3]?.id ?? "osm-node-4794254291",
@@ -136,12 +162,79 @@ export class LocalStore implements Store {
           reviewedAt: "2026-09-18T17:20:00.000Z",
           reviewNote: "Foto buram dan tidak menunjukkan titik lokasi penyeberangan yang dilaporkan.",
           reviewChecklist: { photoMatchesPlace: false, photoShowsElement: false, descriptionMatchesEvidence: false, notDuplicate: true, accessStatusMatchesEvidence: false },
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000006",
+          placeId: "osm-relation-6664927", // Tunjungan Plaza
+          actorId: "00000000-0000-4000-8000-000000000006",
+          reporterName: "Nadia Puspita",
+          requestKey: "20000000-0000-4000-8000-000000000006",
+          inputHash: "demo-hash-6",
+          elements: [{ element: "E6_parking", status: "UTUH", note: "Parkir khusus difabel tersedia dekat pintu utama dan bertanda jelas." }],
+          photoPath: "photos/demo-parking.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-20T09:05:00.000Z",
+          reviewStatus: "SUBMITTED",
+          reviewedBy: null,
+          reviewedAt: null,
+          reviewNote: null,
+          reviewChecklist: null,
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000007",
+          placeId: "osm-way-307282859", // Pakuwon City Mall
+          actorId: "00000000-0000-4000-8000-000000000007",
+          reporterName: "Hendra Gunawan",
+          requestKey: "20000000-0000-4000-8000-000000000007",
+          inputHash: "demo-hash-7",
+          elements: [{ element: "E3_toilet", status: "UTUH", note: "Toilet difabel bersih dengan pegangan dan ruang gerak kursi roda memadai." }],
+          photoPath: "photos/demo-toilet.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-20T13:40:00.000Z",
+          reviewStatus: "APPROVED",
+          reviewedBy: "reviewer.naviable",
+          reviewedAt: "2026-09-21T02:15:00.000Z",
+          reviewNote: "Foto jelas memperlihatkan toilet ramah difabel sesuai laporan.",
+          reviewChecklist: { photoMatchesPlace: true, photoShowsElement: true, descriptionMatchesEvidence: true, notDuplicate: true, accessStatusMatchesEvidence: true },
+        },
+        {
+          id: "10000000-0000-4000-8000-000000000008",
+          placeId: "desk-taman-bungkul", // Taman Bungkul
+          actorId: "00000000-0000-4000-8000-000000000008",
+          reporterName: "Ayu Lestari",
+          requestKey: "20000000-0000-4000-8000-000000000008",
+          inputHash: "demo-hash-8",
+          elements: [{ element: "E8_crossing", status: "TIDAK_STANDAR", note: "Penyeberangan menuju taman ada, tapi tanpa pemandu taktil dan lampu penyeberangan." }],
+          photoPath: "photos/demo-crossing-2.jpg",
+          mimeType: "image/jpeg",
+          createdAt: "2026-09-19T23:30:00.000Z",
+          reviewStatus: "SUBMITTED",
+          reviewedBy: null,
+          reviewedAt: null,
+          reviewNote: null,
+          reviewChecklist: null,
         }
       ];
-      this.state = { version: 1, places: seedPlaces, reports: demoReports };
+      // Skip any demo report whose place is not in the current seed set.
+      const demoReports = demoReportSeed.filter(report => seedPlaces.some(place => place.id === report.placeId));
+      this.state = { version: 1, places: seedPlaces, reports: demoReports, reviews: buildDemoReviews(seedPlaces) };
       await this.persist(this.state);
     }
+    await this.backfillDemoReviews();
     return this;
+  }
+  /**
+   * Older or partial local databases — created before demo reviews existed, or left behind by a
+   * smoke test — leave the place drawer's review history empty for every location. Seed the demo
+   * reviews once so the section always has entries to show. Idempotent: it only fills an
+   * absent/empty reviews list and never touches real contributor reviews.
+   */
+  private async backfillDemoReviews() {
+    if (Array.isArray(this.state.reviews) && this.state.reviews.length > 0) return;
+    const reviews = buildDemoReviews(this.state.places);
+    if (reviews.length === 0) return;
+    this.state.reviews = reviews;
+    await this.persist(this.state);
   }
   private async persist(state: State) {
     const temporary = join(this.directory, `database-${randomUUID()}.tmp`);
@@ -450,7 +543,28 @@ export class SupabaseStore implements Store {
       p_elements: input.elements ?? null,
     });
     dbError(error);
-    return data as Report;
+    // review_report returns the raw reports ROW (snake_case, with the report itself
+    // nested in `payload`). Normalize it to the same camelCase Report shape that
+    // getReport/listAllReports hand back, so callers keep a consistent contract.
+    const row = data as {
+      payload: Report;
+      review_status?: Report["reviewStatus"];
+      reviewed_by?: string | null;
+      reviewed_at?: string | null;
+      review_note?: string | null;
+      review_checklist?: Record<string, boolean> | null;
+    };
+    return {
+      ...row.payload,
+      reviewStatus: row.review_status ?? input.decision,
+      reviewedBy: row.reviewed_by ?? input.reviewer,
+      reviewedAt: row.reviewed_at ?? new Date().toISOString(),
+      reviewNote: row.review_note ?? input.note,
+      reviewChecklist: row.review_checklist ?? input.checklist ?? null,
+      // The reviewer's corrections are what got applied to the place on APPROVE,
+      // so surface them instead of the now-superseded reported statuses.
+      elements: input.elements?.length ? input.elements : row.payload.elements,
+    } satisfies Report;
   }
   async review(input: ReviewInput) {
     const review: Review = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
