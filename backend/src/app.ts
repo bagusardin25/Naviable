@@ -97,7 +97,19 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
   }
   app.get("/api/me", auth, async (_req, res) => {
     const result = await store.contributions(res.locals.actorId);
-    res.json({ mode: config.mode, total: result.total, reports: result.reports.map(publicReport) });
+    // Contributors see the review outcome of their OWN reports (status, reviewer note, checklist).
+    // reviewedBy is intentionally omitted: the reviewer's identity is internal.
+    res.json({
+      mode: config.mode,
+      total: result.total,
+      reports: result.reports.map(r => ({
+        ...publicReport(r),
+        reviewStatus: r.reviewStatus,
+        reviewedAt: r.reviewedAt ?? null,
+        reviewNote: r.reviewNote ?? null,
+        reviewChecklist: r.reviewChecklist ?? null,
+      })),
+    });
   });
   app.get("/api/places", async (req, res) => {
     const { places, filters } = await filtered(req.query);

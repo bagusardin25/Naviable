@@ -322,3 +322,39 @@ test('reviewer workflow: list, detail, approve, revise with notes, reject, and a
   } finally { await f.close(); }
 });
 
+test('contributor profile (/api/me) exposes the review status, note, and checklist for the contributor own reports, without leaking the reviewer identity', async () => {
+  const f = await fixture('local', true); // reviewer=true so f.get/f.post default to the reviewer token
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    // Contributor 'test-user' submits a report.
+    const submit = await f.post('/api/reports', report(placeId), randomUUID(), 'valid-test-token');
+    assert.equal(submit.status, 201);
+    const reportId = (await submit.json()).reportId;
+
+    // Before review: the contributor sees it as SUBMITTED with no note.
+    const before = await (await f.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json();
+    const myBefore = before.reports.find((r: { id: string }) => r.id === reportId);
+    assert.ok(myBefore, 'report should appear in the contributor profile');
+    assert.equal(myBefore.reviewStatus, 'SUBMITTED');
+    assert.equal(myBefore.reviewNote, null);
+
+    // Reviewer rejects with a note and a checklist that has a failed item.
+    const reject = await f.post(`/api/reviewer/reports/${reportId}/review`, {
+      decision: 'REJECTED',
+      note: 'Foto buram, tidak menunjukkan elemen yang dilaporkan.',
+      checklist: { photoMatchesPlace: true, photoShowsElement: false, notDuplicate: true },
+    });
+    assert.equal(reject.status, 200);
+
+    // After review: the contributor profile reflects the decision, note, and checklist.
+    const after = await (await f.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json();
+    const myAfter = after.reports.find((r: { id: string }) => r.id === reportId);
+    assert.ok(myAfter);
+    assert.equal(myAfter.reviewStatus, 'REJECTED');
+    assert.equal(myAfter.reviewNote, 'Foto buram, tidak menunjukkan elemen yang dilaporkan.');
+    assert.equal(myAfter.reviewChecklist.photoShowsElement, false);
+    // The reviewer's identity stays internal.
+    assert.equal(myAfter.reviewedBy, undefined);
+  } finally { await f.close(); }
+});
+

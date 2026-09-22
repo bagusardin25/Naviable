@@ -370,8 +370,21 @@ export class SupabaseStore implements Store {
     dbError(error); return data?.payload as Report | undefined;
   }
   async contributions(actorId: string) {
-    const { data, error, count } = await this.client.from("reports").select("payload", { count: "exact" }).eq("actor_id", actorId).order("created_at", { ascending: false }).limit(50);
-    dbError(error); return { total: count ?? 0, reports: (data ?? []).map(r => r.payload as Report) };
+    // The review decision lives in dedicated columns, not in the stored payload, so we
+    // merge them in — otherwise a contributor would always see the stale "SUBMITTED" payload.
+    const { data, error, count } = await this.client.from("reports")
+      .select("payload, review_status, reviewed_at, review_note, review_checklist", { count: "exact" })
+      .eq("actor_id", actorId).order("created_at", { ascending: false }).limit(50);
+    dbError(error);
+    type ReportRow = { payload: Report; review_status?: Report["reviewStatus"]; reviewed_at?: string | null; review_note?: string | null; review_checklist?: Record<string, boolean> | null };
+    const reports = ((data ?? []) as ReportRow[]).map(row => ({
+      ...row.payload,
+      reviewStatus: row.review_status ?? row.payload.reviewStatus ?? "SUBMITTED",
+      reviewedAt: row.reviewed_at ?? row.payload.reviewedAt ?? null,
+      reviewNote: row.review_note ?? row.payload.reviewNote ?? null,
+      reviewChecklist: row.review_checklist ?? row.payload.reviewChecklist ?? null,
+    }));
+    return { total: count ?? 0, reports };
   }
   async photo(report: Report) {
     const { data, error } = await this.client.storage.from("photos").createSignedUrl(report.photoPath, 300);
