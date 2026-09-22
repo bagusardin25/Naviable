@@ -2995,20 +2995,62 @@ html.large-text .place-card,
   }
 }
 
-/* Dyslexia Friendly Mode */
-html.dyslexia-mode,
-[data-a11y-dyslexia="true"] {
-  font-family: var(--font-dyslexia) !important;
-  letter-spacing: .04em !important;
-  word-spacing: .08em !important;
-  line-height: 1.65 !important;
+/* OpenDyslexic Font Definitions */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: local('OpenDyslexic Regular'), local('OpenDyslexic-Regular'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: local('OpenDyslexic Italic'), local('OpenDyslexic-Italic'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-italic.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: local('OpenDyslexic Bold'), local('OpenDyslexic-Bold'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-bold.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: local('OpenDyslexic Bold-Italic'), local('OpenDyslexic-BoldItalic'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-bold-italic.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-bold-italic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Dyslexia Friendly Mode */
+html.dyslexia-mode,
+[data-a11y-dyslexia="true"],
 html.dyslexia-mode body,
 html.dyslexia-mode body *,
 [data-a11y-dyslexia="true"] body,
 [data-a11y-dyslexia="true"] body * {
-  font-family: var(--font-dyslexia) !important;
+  font-family: 'OpenDyslexic', var(--font-dyslexia) !important;
+}
+
+html.dyslexia-mode,
+[data-a11y-dyslexia="true"] {
+  letter-spacing: .04em !important;
+  word-spacing: .08em !important;
+  line-height: 1.65 !important;
 }
 
 /* Mobile View Switcher */

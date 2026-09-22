@@ -43,6 +43,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className={`min-h-full antialiased ${inter.variable}`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic.css"
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         <LanguageProvider>
           <AccessibilityProvider>
