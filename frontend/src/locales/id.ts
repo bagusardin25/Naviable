@@ -154,7 +154,7 @@ export const id: TranslationDictionary = {
     exploreMap: 'Jelajahi Peta',
     seeHowItWorks: 'Lihat cara kerja',
     canExploreWithoutAccount: 'Bisa dijelajahi tanpa akun.',
-    heroEyebrow: 'DARI SURABAYA, UNTUK SETIAP LANGKAH',
+    heroEyebrow: 'DARI SURABAYA, MENUJU KOTA YANG LEBIH AKSESIBEL',
     heroTitleLine1: 'Kenali kondisi akses',
     heroTitleLine2: 'sebelum berangkat.',
     heroDescription: 'Pintu masuk, ramp, hingga toilet. Lihat informasi yang sudah tercatat dan bagian yang masih perlu dicek, sesuai kebutuhan perjalanan Anda.',
