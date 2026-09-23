@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -87,11 +87,14 @@ test('new location is atomic and idempotent; reviews persist without changing ac
     const [a, b] = await Promise.all(responses.map(r => r.json()));
     assert.equal(a.place.id, b.place.id); assert.equal((await f.store.listPlaces()).length, 47);
     assert.equal(a.place.reportCount, 1); assert.equal(a.place.verifiedByTeam, false);
+    assert.equal(a.place.pendingApproval, true);
     assert.equal(Object.keys(a.place.elements).length, 1);
     assert.equal((await f.post('/api/places', { ...body, location: { ...body.location, name: 'Changed' } }, key)).status, 409);
     assert.equal((await f.post('/api/places', { ...body, image: 'invalid photo bytes' })).status, 400);
     assert.equal((await f.post('/api/places', { ...body, location: { ...body.location, lat: 100 } })).status, 400);
     assert.equal((await f.store.listPlaces()).length, 47);
+    // Reviews need a public place, so publish it the way a reviewer would.
+    await f.store.reviewReport(a.reportId, { decision: 'APPROVED', reviewer: 'reviewer@naviable.test', note: '' });
     const before = await f.store.getPlace(a.place.id);
     const review = { placeId: a.place.id, reviewerName: 'Pengunjung Uji', experience: 'Petugas membantu saya saat berkunjung.' };
     const reviewKey = randomUUID();
@@ -109,6 +112,121 @@ test('new location is atomic and idempotent; reviews persist without changing ac
     assert.equal((await restored.listReviews(a.place.id, 20, 0)).reviews[0].experience, review.experience);
     const photo = await f.get(`/api/photos/${a.reportId}`);
     assert.equal(photo.status, 200);
+  } finally { await f.close(); }
+});
+
+test('a new location stays off every public read until a reviewer approves it', async () => {
+  const contributor = await fixture();
+  try {
+    const { placeId: _placeId, ...evidence } = report('unused');
+    const body = { ...evidence, location: { name: 'Lokasi Spam Uji', category: 'Taman Kota', address: 'Jalan Uji 11, Surabaya', lat: -7.26, lng: 112.74 } };
+    const created = await (await contributor.post('/api/places', body)).json();
+    const placeId = created.place.id;
+    assert.equal(created.place.pendingApproval, true);
+
+    const listed = async () => {
+      const all = await (await contributor.get('/api/places?limit=100')).json();
+      const second = all.total > 100 ? await (await contributor.get('/api/places?limit=100&offset=100')).json() : { places: [] };
+      return [...all.places, ...second.places].some((p: { id: string }) => p.id === placeId);
+    };
+    assert.equal(await listed(), false);
+    assert.equal((await contributor.get(`/api/places/${placeId}`)).status, 404);
+    assert.equal((await contributor.get(`/api/places/${placeId}/reports`)).status, 404);
+    assert.equal((await contributor.get(`/api/places/${placeId}/reviews`)).status, 404);
+    assert.equal((await contributor.post('/api/reports', report(placeId))).status, 404);
+    assert.equal((await contributor.post('/api/reviews', { placeId, reviewerName: 'Uji', experience: 'Pengalaman yang cukup panjang.' })).status, 404);
+    const csv = await (await contributor.get('/api/evidence.csv')).text();
+    assert.equal(csv.includes('Lokasi Spam Uji'), false);
+    // The contributor still sees their own submission, with the place name.
+    const me = await (await contributor.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json();
+    assert.equal(me.reports[0].placeName, 'Lokasi Spam Uji');
+
+    // Revision and rejection keep it hidden; only approval publishes it.
+    await contributor.store.reviewReport(created.reportId, { decision: 'NEEDS_REVISION', reviewer: 'r', note: 'Foto kurang jelas.' });
+    await contributor.store.reviewReport(created.reportId, { decision: 'REJECTED', reviewer: 'r', note: 'Lokasi fiktif.' });
+    assert.equal(await listed(), false);
+    await contributor.store.reviewReport(created.reportId, { decision: 'APPROVED', reviewer: 'r', note: '' });
+    assert.equal(await listed(), true);
+    assert.equal((await contributor.get(`/api/places/${placeId}`)).status, 200);
+  } finally { await contributor.close(); }
+});
+
+test('the reviewer is told when approving a report will publish a new location', async () => {
+  const f = await fixture('local', true);
+  try {
+    const { placeId: _placeId, ...evidence } = report('unused');
+    const body = { ...evidence, location: { name: 'Lokasi Baru Reviewer', category: 'Taman Kota', address: 'Jalan Uji 12, Surabaya', lat: -7.27, lng: 112.73 } };
+    const created = await (await f.post('/api/places', body, randomUUID(), 'valid-test-token')).json();
+    const detail = await (await f.get(`/api/reviewer/reports/${created.reportId}`)).json();
+    assert.equal(detail.report.placePendingApproval, true);
+    const approved = await (await f.post(`/api/reviewer/reports/${created.reportId}/review`, { decision: 'APPROVED', note: '' })).json();
+    assert.equal(approved.report.placePendingApproval, false);
+    // A report on an existing seed place is never about a pending place.
+    const correction = await (await f.post('/api/reports', report((await f.store.listPlaces())[0].id), randomUUID(), 'valid-test-token')).json();
+    const seeded = await (await f.get(`/api/reviewer/reports/${correction.reportId}`)).json();
+    assert.equal(seeded.report.placePendingApproval, false);
+  } finally { await f.close(); }
+});
+
+test('Kondisi akses always matches the public history: newest standing report per element wins', async () => {
+  const f = await fixture('local', true);
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const submit = async (status: string, note?: string) => (await (await f.post('/api/reports', {
+      ...report(placeId), elements: [{ element: 'E1_door', status, ...(note ? { note } : {}) }],
+    }, randomUUID(), 'valid-test-token')).json()).reportId as string;
+    const door = async () => (await (await f.get(`/api/places/${placeId}`)).json()).place.elements.E1_door?.status ?? 'none';
+    const history = async () => (await (await f.get(`/api/places/${placeId}/reports`)).json()) as
+      { total: number; reports: { id: string; reviewStatus: string; elements: { element: string; status: string }[] }[] };
+    const review = (id: string, body: object) => f.post(`/api/reviewer/reports/${id}/review`, body);
+
+    const intact = await submit('UTUH', 'Pintu lebar');
+    await submit('BELUM_DIKETAHUI');
+    assert.equal(await door(), 'UTUH', '"Belum diketahui" must not erase known evidence');
+
+    const missing = await submit('TIDAK_ADA');
+    assert.equal(await door(), 'TIDAK_ADA');
+    assert.equal((await review(missing, { decision: 'REJECTED', note: 'Foto bukan lokasi ini.' })).status, 200);
+    assert.equal(await door(), 'UTUH', 'a rejected report must come off the place');
+    const afterReject = await history();
+    assert.equal(afterReject.total, 2);
+    assert.equal(afterReject.reports.some(r => r.id === missing), false, 'a rejected report must leave the public history');
+    assert.equal((await (await f.get(`/api/places/${placeId}`)).json()).place.reportCount, afterReject.total);
+
+    // A reviewer correction is what both the place and the history show.
+    await review(intact, { decision: 'APPROVED', note: '', elements: [{ element: 'E1_door', status: 'TERHALANG', note: 'Terhalang pot' }] });
+    assert.equal(await door(), 'TERHALANG');
+    const approved = (await history()).reports.find(r => r.id === intact)!;
+    assert.equal(approved.reviewStatus, 'APPROVED');
+    assert.equal(approved.elements[0].status, 'TERHALANG');
+
+    // Approving an older report never overwrites a newer one.
+    await submit('TIDAK_STANDAR');
+    await review(intact, { decision: 'APPROVED', note: 'Dicek ulang.' });
+    assert.equal(await door(), 'TIDAK_STANDAR');
+    const newest = (await history()).reports[0];
+    assert.equal(newest.reviewStatus, 'SUBMITTED');
+    assert.equal(newest.elements[0].status, 'TIDAK_STANDAR');
+  } finally { await f.close(); }
+});
+
+test('a local database from an older version loses its demo reviews and demo reports', async () => {
+  const f = await fixture();
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const real = await (await f.post('/api/reviews', { placeId, reviewerName: 'Warga Asli', experience: 'Pengalaman nyata di lokasi ini.' })).json();
+    const database = join(f.directory, 'database.json');
+    const state = JSON.parse(await readFile(database, 'utf8'));
+    state.reviews.push({ id: 'review-demo-0001', placeId, actorId: 'demo', reviewerName: 'Rina Andriani', experience: 'Ulasan contoh yang bukan dari warga.', createdAt: '2026-09-12T02:00:00.000Z', requestKey: 'k', inputHash: 'h' });
+    state.reports.push({ id: '10000000-0000-4000-8000-000000000001', placeId, actorId: 'demo', reporterName: 'Ahmad Rizki', requestKey: '20000000-0000-4000-8000-000000000001', inputHash: 'demo-hash-1',
+      elements: [{ element: 'E2_ramp', status: 'TERHALANG' }], photoPath: 'photos/demo-ramp.jpg', mimeType: 'image/jpeg', createdAt: '2026-09-18T10:15:00.000Z', reviewStatus: 'SUBMITTED' });
+    await writeFile(database, JSON.stringify(state));
+
+    const restored = await new LocalStore(f.directory).init();
+    const reviews = (await restored.listReviews(placeId, 20, 0)).reviews;
+    assert.deepEqual(reviews.map(r => r.id), [real.review.id]);
+    assert.equal(await restored.getReport('10000000-0000-4000-8000-000000000001'), undefined);
+    assert.equal((await restored.getPlace(placeId))!.elements.E2_ramp, undefined);
   } finally { await f.close(); }
 });
 
@@ -289,6 +407,8 @@ test('contributions are selected by validated actor ID, not a client-provided us
 test('reviewer workflow: list, detail, approve, revise with notes, reject, and audit trail', async () => {
   const f = await fixture('local', true);
   try {
+    // The local store has no demo reports, so a contributor submits one to review.
+    assert.equal((await f.post('/api/reports', report((await f.store.listPlaces())[0].id), randomUUID(), 'valid-test-token')).status, 201);
     const statsRes = await f.get('/api/reviewer/stats');
     assert.equal(statsRes.status, 200);
     const stats = await statsRes.json();
