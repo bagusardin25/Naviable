@@ -17,6 +17,7 @@ import {
   Minus,
   ZoomIn,
   ZoomOut,
+  ChevronLeft,
   ChevronRight,
   ShieldCheck,
   Image as LucideImage,
@@ -53,6 +54,9 @@ import {
   ExternalLink,
   Moon,
   Waves,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelLeft,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -78,6 +82,8 @@ export type IconName =
   | 'download'
   | 'location'
   | 'chevron'
+  | 'chevron-left'
+  | 'chevron-right'
   | 'shield'
   | 'photo'
   | 'route'
@@ -113,7 +119,10 @@ export type IconName =
   | 'navigation'
   | 'external-link'
   | 'dark-mode'
-  | 'reduce-motion';
+  | 'reduce-motion'
+  | 'panel-left-close'
+  | 'panel-left-open'
+  | 'panel-left';
 
 const iconMap: Record<string, LucideIcon> = {
   map: LucideMap,
@@ -137,6 +146,8 @@ const iconMap: Record<string, LucideIcon> = {
   'zoom-in': ZoomIn,
   'zoom-out': ZoomOut,
   chevron: ChevronRight,
+  'chevron-left': ChevronLeft,
+  'chevron-right': ChevronRight,
   shield: ShieldCheck,
   photo: LucideImage,
   route: Route,
@@ -173,6 +184,9 @@ const iconMap: Record<string, LucideIcon> = {
   'external-link': ExternalLink,
   'dark-mode': Moon,
   'reduce-motion': Waves,
+  'panel-left-close': PanelLeftClose,
+  'panel-left-open': PanelLeftOpen,
+  'panel-left': PanelLeft,
 };
 
 export type IconProps = {

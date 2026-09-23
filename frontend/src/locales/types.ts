@@ -48,6 +48,8 @@ export interface TranslationDictionary {
     mainNavLabel: string;
     reviewerPortal: string;
     contributionUpdatesAria: string;
+    collapseSidebar: string;
+    expandSidebar: string;
   };
   status: {
     UTUH: {

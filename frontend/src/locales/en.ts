@@ -47,6 +47,8 @@ export const en: TranslationDictionary = {
     backToMap: 'Back to Map',
     mainNavLabel: 'Main navigation',
     contributionUpdatesAria: ', {count} new contribution status update(s)',
+    collapseSidebar: 'Close sidebar',
+    expandSidebar: 'Open sidebar',
     reviewerPortal: 'Reviewer Portal',
   },
   status: {

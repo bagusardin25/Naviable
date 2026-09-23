@@ -60,6 +60,42 @@ export default function ExploreApp() {
   } = useContributionUpdates(Boolean(auth.user), screen);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
+
+  // Sidebar collapsed state with localStorage persistence and tablet/desktop default
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('naviable_sidebar_collapsed');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return window.innerWidth <= 1180 && window.innerWidth > 900;
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('naviable_sidebar_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      // Trigger map resize smoothly during and after transition (380ms cubic-bezier)
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 240);
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 420);
+      return next;
+    });
+  }, []);
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
   const nameParam = searchParams.get('name');
@@ -364,7 +400,7 @@ export default function ExploreApp() {
     setScreen('map');
   }
 
-  const appClassName = 'app-shell';
+  const appClassName = `app-shell ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`;
 
   const hasActiveFilters =
     statusFilter !== 'all' || categoryFilter !== 'all' || searchQuery.trim().length > 0;
@@ -385,6 +421,8 @@ export default function ExploreApp() {
         authReady={auth.ready}
         userProfile={auth.profile}
         contributionUpdates={contributionUnseen}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
       />
 
       <section id="main-content" className="workspace">

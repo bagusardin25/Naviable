@@ -47,6 +47,8 @@ export const id: TranslationDictionary = {
     backToMap: 'Kembali ke Peta',
     mainNavLabel: 'Navigasi utama',
     contributionUpdatesAria: ', {count} pembaruan status kontribusi baru',
+    collapseSidebar: 'Tutup sidebar',
+    expandSidebar: 'Buka sidebar',
     reviewerPortal: 'Portal Reviewer',
   },
   status: {
