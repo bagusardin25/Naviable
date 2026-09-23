@@ -435,10 +435,9 @@ export class SupabaseStore implements Store {
       reviewedAt: row.reviewed_at ?? new Date().toISOString(),
       reviewNote: row.review_note ?? input.note,
       reviewChecklist: row.review_checklist ?? input.checklist ?? null,
+      // Same contract as getReport and LocalStore: `elements` stays what the contributor
+      // reported, and the correction applied to the place is `reviewedElements`.
       reviewedElements: (row as ReportRow).reviewed_elements ?? null,
-      // The reviewer's corrections are what got applied to the place on APPROVE,
-      // so surface them instead of the now-superseded reported statuses.
-      elements: input.elements?.length ? input.elements : row.payload.elements,
     } satisfies Report;
   }
   async review(input: ReviewInput) {

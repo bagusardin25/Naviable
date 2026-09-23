@@ -264,7 +264,10 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     res.json(journeyHint(await publicPlaces(), from, to, input.profile));
   });
   // Reviewer Endpoints
-  app.use('/api/reviewer', limiter('reviewer-ip', 120), auth, async (req, res, next) => {
+  // Every reviewer reaches this API through the same Next.js server, so a per-IP budget would be
+  // shared by all of them and one busy reviewer could lock the others out. The IP limit only caps
+  // unauthenticated floods (each costs a token check); each signed-in account gets its own budget.
+  app.use('/api/reviewer', limiter('reviewer-ip', 1000), auth, limiter('reviewer', 300), async (req, res, next) => {
     const token = /^Bearer (\S+)$/i.exec(req.headers.authorization ?? '')?.[1];
     const reviewer = token ? await authenticateReviewer?.(token) : undefined;
     if (!reviewer || reviewer.id !== res.locals.actorId) throw new ApiError(403, 'Hak reviewer diperlukan');

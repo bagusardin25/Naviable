@@ -42,8 +42,9 @@ async function fixture(mode: 'local' | 'supabase' = 'local', reviewer = false, p
   const store = await new LocalStore(directory).init();
   const config: Config = { mode, production: false, host: '127.0.0.1', port: 4000, localDir: directory, origins: ['http://localhost:3000'], publicUrl: 'http://localhost:4000', trustProxy: 0 };
   const app = createApp({ store, config,
-    authenticate: async token => token === 'reviewer-test-token' ? 'reviewer-id' : token === 'valid-test-token' ? 'test-user' : token === 'other-test-token' ? 'other-user' : undefined,
-    authenticateReviewer: async token => token === 'reviewer-test-token' ? { id: 'reviewer-id', email: 'reviewer@naviable.test' } : undefined,
+    authenticate: async token => token === 'reviewer-test-token' ? 'reviewer-id' : token === 'second-reviewer-token' ? 'second-reviewer-id' : token === 'valid-test-token' ? 'test-user' : token === 'other-test-token' ? 'other-user' : undefined,
+    authenticateReviewer: async token => token === 'reviewer-test-token' ? { id: 'reviewer-id', email: 'reviewer@naviable.test' }
+      : token === 'second-reviewer-token' ? { id: 'second-reviewer-id', email: 'second@naviable.test' } : undefined,
     analyze,
     checkIntegrity: async () => photoIntegrity });
   const server = app.listen(0, '127.0.0.1');
@@ -227,6 +228,32 @@ test('a local database from an older version loses its demo reviews and demo rep
     assert.deepEqual(reviews.map(r => r.id), [real.review.id]);
     assert.equal(await restored.getReport('10000000-0000-4000-8000-000000000001'), undefined);
     assert.equal((await restored.getPlace(placeId))!.elements.E2_ramp, undefined);
+  } finally { await f.close(); }
+});
+
+test('each reviewer account has its own request budget, even behind one shared server IP', async () => {
+  const f = await fixture('local', true);
+  try {
+    const stats = (token: string) => f.get('/api/reviewer/stats', { Authorization: `Bearer ${token}` }).then(r => r.status);
+    const statuses = [];
+    for (let i = 0; i < 301; i++) statuses.push(await stats('reviewer-test-token'));
+    assert.equal(statuses.slice(0, 300).every(status => status === 200), true, 'a busy reviewer gets 300 requests per 15 minutes');
+    assert.equal(statuses[300], 429);
+    // All requests came from the same IP, like reviewers behind the Next.js proxy: others still work.
+    assert.equal(await stats('second-reviewer-token'), 200);
+  } finally { await f.close(); }
+});
+
+test('reopening an approved report returns the correction applied, next to what was reported', async () => {
+  const f = await fixture('local', true);
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const submitted = await (await f.post('/api/reports', { ...report(placeId), elements: [{ element: 'E1_door', status: 'BELUM_DIKETAHUI' }] }, randomUUID(), 'valid-test-token')).json();
+    const corrected = [{ element: 'E1_door', status: 'UTUH', note: 'Dua pintu terbuka lebar' }];
+    await f.post(`/api/reviewer/reports/${submitted.reportId}/review`, { decision: 'APPROVED', note: '', elements: corrected });
+    const detail = await (await f.get(`/api/reviewer/reports/${submitted.reportId}`)).json();
+    assert.equal(detail.report.elements[0].status, 'BELUM_DIKETAHUI');
+    assert.deepEqual(detail.report.reviewedElements, corrected);
   } finally { await f.close(); }
 });
 
@@ -635,14 +662,16 @@ test('SupabaseStore.reviewReport surfaces the reviewer corrected elements that w
     elements: [{ element: 'E2_ramp', status: 'UTUH' }],
     photoPath: 'reports/y.jpg', mimeType: 'image/jpeg', createdAt: '2026-09-20T00:00:00.000Z', reviewStatus: 'SUBMITTED',
   };
+  const corrected = [{ element: 'E2_ramp' as const, status: 'TERHALANG' as const, note: 'Dikoreksi reviewer' }];
   const client = {
-    rpc: async () => ({ data: { payload, review_status: 'APPROVED', reviewed_by: 'r', reviewed_at: 'now', review_note: '', review_checklist: null }, error: null }),
+    rpc: async () => ({ data: { payload, review_status: 'APPROVED', reviewed_by: 'r', reviewed_at: 'now', review_note: '', review_checklist: null, reviewed_elements: corrected }, error: null }),
   } as unknown as ConstructorParameters<typeof SupabaseStore>[0];
 
-  const corrected = [{ element: 'E2_ramp' as const, status: 'TERHALANG' as const, note: 'Dikoreksi reviewer' }];
   const updated = await new SupabaseStore(client).reviewReport(payload.id, {
     decision: 'APPROVED', reviewer: 'r', note: '', elements: corrected,
   });
-  // The place was updated with the reviewer's correction, so that is what callers should see.
-  assert.equal(updated.elements[0].status, 'TERHALANG');
+  // The correction applied to the place comes back as reviewedElements (what the reviewer page
+  // reopens with); elements stay the contributor's report, as in getReport and LocalStore.
+  assert.deepEqual(updated.reviewedElements, corrected);
+  assert.equal(updated.elements[0].status, 'UTUH');
 });
