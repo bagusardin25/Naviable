@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { findBestMatchingPlace } from '@/lib/voice-search';
 import { matchesPlaceQuery, getPopularStreetCorridors } from '@/lib/streetSearch';
 import { fetchExternalPlaces, type ExternalPlaceResult } from '@/lib/externalGeocoding';
@@ -61,9 +61,17 @@ export default function ExploreApp() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
 
-  // Sidebar collapsed state with localStorage persistence and tablet/desktop default
+  // Desktop sidebar collapsed preference reference (restored when returning to desktop > 900px)
+  const desktopCollapsedRef = useRef<boolean>(false);
+
+  // Sidebar collapsed state with localStorage persistence and tablet/desktop default.
+  // Note: On mobile (<= 900px), bottom navigation must never be collapsed.
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
+    // On mobile viewports, always start uncollapsed so bottom navigation is fully intact
+    if (window.innerWidth <= 900) {
+      return false;
+    }
     try {
       const saved = localStorage.getItem('naviable_sidebar_collapsed');
       if (saved !== null) {
@@ -75,9 +83,47 @@ export default function ExploreApp() {
     }
   });
 
+  // Watch breakpoint changes (desktop <-> mobile): ensure mobile never receives collapsed state,
+  // while desktop restores the saved user preference.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const saved = localStorage.getItem('naviable_sidebar_collapsed');
+      if (saved !== null) {
+        desktopCollapsedRef.current = saved === 'true';
+      } else {
+        desktopCollapsedRef.current = window.innerWidth <= 1180 && window.innerWidth > 900;
+      }
+    } catch {
+      desktopCollapsedRef.current = false;
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 900px)');
+
+    const handleBreakpointChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (e.matches) {
+        // Entering mobile: reset sidebar collapse so bottom navigation renders normally
+        setIsSidebarCollapsed(false);
+      } else {
+        // Returning to desktop: restore saved desktop preference
+        setIsSidebarCollapsed(desktopCollapsedRef.current);
+      }
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    mediaQuery.addEventListener('change', handleBreakpointChange);
+    return () => mediaQuery.removeEventListener('change', handleBreakpointChange);
+  }, []);
+
   const handleToggleSidebar = useCallback(() => {
+    // Desktop only toggle: on mobile, bottom navigation does not support toggle
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+      return;
+    }
     setIsSidebarCollapsed(prev => {
       const next = !prev;
+      desktopCollapsedRef.current = next;
       try {
         localStorage.setItem('naviable_sidebar_collapsed', String(next));
       } catch {

@@ -154,7 +154,7 @@ export const en: TranslationDictionary = {
     exploreMap: 'Explore Map',
     seeHowItWorks: 'See how it works',
     canExploreWithoutAccount: 'Can be explored without an account.',
-    heroEyebrow: 'FROM SURABAYA, FOR EVERY STEP',
+    heroEyebrow: 'FROM SURABAYA, TOWARDS A MORE ACCESSIBLE CITY',
     heroTitleLine1: 'Know accessibility conditions',
     heroTitleLine2: 'before you go.',
     heroDescription: 'From entrance, ramps, to accessible toilets. Check verified information and see what still needs verification, tailored to your journey needs.',
