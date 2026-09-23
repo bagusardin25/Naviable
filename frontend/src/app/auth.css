@@ -8,8 +8,7 @@
 .profile-identity { min-width: 0; overflow-wrap: anywhere; }
 .profile-hero .avatar { flex-shrink: 0; }
 .profile-page > .secondary-action { margin-top: 16px; }
-.profile-email { overflow-wrap: anywhere; }
-@media (max-width: 1180px) { .sidebar .sidebar-account-copy { display: none; } }
+/* Account identity visibility is controlled by sidebar collapse state in globals.css */
 @media (max-width: 900px) {
   .sidebar nav button { min-width: 0; }
   .sidebar nav .nav-label-mobile { display: inline; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -21,6 +21,8 @@ const authConfigured = Boolean(
 const AUTH_RETURN_KEY = "naviable:auth-return";
 
 type LoginMode = AuthMode | "reviewer";
+type PolicyType = "terms" | "privacy";
+const POLICY_SECTION_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 export function LoginForm() {
   const { t } = useTranslation();
@@ -59,7 +61,9 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState<"google" | "email" | null>(null);
-  const [policy, setPolicy] = useState(t('auth.termsBtn'));
+  const [activePolicy, setActivePolicy] = useState<PolicyType>("terms");
+  const [isPolicyOpen, setIsPolicyOpen] = useState(false);
+  const policyTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   // Reviewer specific states
   const [reviewerUsername, setReviewerUsername] = useState("");
@@ -291,10 +295,33 @@ export function LoginForm() {
     }
   }
 
-  function openPolicy(title: string) {
-    setPolicy(title);
-    dialogRef.current?.showModal();
-  }
+  useEffect(() => {
+    if (!isPolicyOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isPolicyOpen]);
+
+  const openPolicy = useCallback((type: PolicyType, triggerEl: HTMLButtonElement) => {
+    policyTriggerRef.current = triggerEl;
+    setActivePolicy(type);
+    setIsPolicyOpen(true);
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, []);
+
+  const closePolicy = useCallback(() => {
+    const dialog = dialogRef.current;
+    if (dialog?.open) {
+      dialog.close();
+    }
+    setIsPolicyOpen(false);
+    policyTriggerRef.current?.focus();
+  }, []);
 
   if (authMode === "reviewer") {
     return (
@@ -580,7 +607,7 @@ export function LoginForm() {
         </button>
 
         <button className={styles.guestLink} type="button" onClick={() => router.push(guestDestination)}>
-          {t('auth.guestContinue')} <span aria-hidden="true">→</span>
+          {t('auth.guestContinue')}
         </button>
 
       </form>
@@ -588,26 +615,105 @@ export function LoginForm() {
 
       <p className={styles.legal}>
         {t('auth.legalPrefix')}{" "}
-        <button type="button" onClick={() => openPolicy(t('auth.termsBtn'))}>
+        <button type="button" onClick={(e) => openPolicy("terms", e.currentTarget)}>
           {t('auth.termsBtn')}
         </button>{" "}
         {t('auth.andText')}{" "}
-        <button type="button" onClick={() => openPolicy(t('auth.privacyBtn'))}>
+        <button type="button" onClick={(e) => openPolicy("privacy", e.currentTarget)}>
           {t('auth.privacyBtn')}
         </button>{" "}
         {t('auth.legalSuffix')}
       </p>
 
-      <dialog ref={dialogRef} className={styles.policyDialog} aria-labelledby="policy-title">
-        <h2 id="policy-title">{policy}</h2>
-        <p>{t('auth.policyAlignNotice', { policy })}</p>
-        <button
-          className={`${styles.button} ${styles.loginButton}`}
-          type="button"
-          onClick={() => dialogRef.current?.close()}
+      <dialog
+        ref={dialogRef}
+        className={styles.policyDialog}
+        aria-labelledby="policy-title"
+        onClick={(e) => {
+          if (e.target === dialogRef.current) {
+            const rect = dialogRef.current.getBoundingClientRect();
+            const isClickInside =
+              rect.top <= e.clientY &&
+              e.clientY <= rect.top + rect.height &&
+              rect.left <= e.clientX &&
+              e.clientX <= rect.left + rect.width;
+            if (!isClickInside) {
+              closePolicy();
+            }
+          }
+        }}
+        onCancel={(e) => {
+          e.preventDefault();
+          closePolicy();
+        }}
+        onClose={() => {
+          setIsPolicyOpen(false);
+          policyTriggerRef.current?.focus();
+        }}
+      >
+        <div className={styles.policyHeader}>
+          <h2 id="policy-title">
+            {activePolicy === "terms" ? t('auth.termsTitle') : t('auth.privacyTitle')}
+          </h2>
+          <button
+            type="button"
+            className={styles.policyIconClose}
+            onClick={closePolicy}
+            aria-label={t('auth.policyCloseBtn')}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div
+          className={styles.policyBody}
+          tabIndex={0}
+          role="region"
+          aria-label={activePolicy === "terms" ? t('auth.termsTitle') : t('auth.privacyTitle')}
         >
-          {t('auth.policyCloseBtn')}
-        </button>
+          <p className={styles.policyIntro}>
+            {activePolicy === "terms" ? t('auth.termsIntro') : t('auth.privacyIntro')}
+          </p>
+
+          {POLICY_SECTION_NUMS.map((num) => {
+            const titleKey = activePolicy === "terms"
+              ? `auth.termsSection${num}Title`
+              : `auth.privacySection${num}Title`;
+            const bodyKey = activePolicy === "terms"
+              ? `auth.termsSection${num}Body`
+              : `auth.privacySection${num}Body`;
+
+            return (
+              <section key={num} className={styles.policySection}>
+                <h3 className={styles.policySectionTitle}>{t(titleKey)}</h3>
+                <p className={styles.policySectionBody}>{t(bodyKey)}</p>
+              </section>
+            );
+          })}
+        </div>
+
+        <div className={styles.policyFooter}>
+          <button
+            className={`${styles.button} ${styles.loginButton} ${styles.policyCloseButton}`}
+            type="button"
+            onClick={closePolicy}
+          >
+            {t('auth.policyCloseBtn')}
+          </button>
+        </div>
       </dialog>
     </div>
   );

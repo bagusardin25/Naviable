@@ -182,3 +182,58 @@ test('9. Accessibility Badges: shared container, wrap support, and clean icon re
   assert.equal(loginContent.includes('svgHigh'), false);
 });
 
+test('10. Guest Mode Button: arrows removed, clean localized text, preserved click destination', () => {
+  const loginForm = source('src/app/login/login-form.tsx');
+  const idLocale = source('src/locales/id.ts');
+  const enLocale = source('src/locales/en.ts');
+
+  // Must not have arrow characters in JSX
+  assert.equal(loginForm.includes('aria-hidden="true">→</span>'), false, 'Arrow span must be removed');
+  assert.equal(loginForm.includes('→'), false, 'No unicode arrow in login-form.tsx');
+
+  // Exact localized strings without arrows
+  assert.ok(idLocale.includes("guestContinue: 'Lanjut tanpa akun (Mode Tamu)'"));
+  assert.ok(enLocale.includes("guestContinue: 'Continue without an account (Guest Mode)'"));
+  assert.equal(idLocale.includes("Lanjut tanpa akun (Mode Tamu) →"), false);
+  assert.equal(enLocale.includes("Continue as Guest (No Account) →"), false);
+
+  // Click behavior and destination preserved
+  assert.match(loginForm, /onClick=\{\(\)\s*=>\s*router\.push\(guestDestination\)\}/);
+});
+
+test('11. Policy Modals Architecture: distinct titles, 9 sections each, no generic placeholder', () => {
+  const loginForm = source('src/app/login/login-form.tsx');
+  const idLocale = source('src/locales/id.ts');
+  const enLocale = source('src/locales/en.ts');
+
+  // Generic {policy} notice must be completely removed
+  assert.equal(idLocale.includes('{policy}'), false, 'id.ts must not contain {policy}');
+  assert.equal(enLocale.includes('{policy}'), false, 'en.ts must not contain {policy}');
+  assert.equal(loginForm.includes('policyAlignNotice'), false, 'login-form must not use policyAlignNotice');
+
+  // Distinct titles
+  assert.ok(idLocale.includes("termsTitle: 'Ketentuan Layanan'"));
+  assert.ok(idLocale.includes("privacyTitle: 'Kebijakan Privasi'"));
+  assert.ok(enLocale.includes("termsTitle: 'Terms of Service'"));
+  assert.ok(enLocale.includes("privacyTitle: 'Privacy Policy'"));
+
+  // Check 9 sections exist for Terms and Privacy in ID and EN
+  for (let i = 1; i <= 9; i++) {
+    assert.ok(idLocale.includes(`termsSection${i}Title:`), `ID missing termsSection${i}Title`);
+    assert.ok(idLocale.includes(`termsSection${i}Body:`), `ID missing termsSection${i}Body`);
+    assert.ok(enLocale.includes(`termsSection${i}Title:`), `EN missing termsSection${i}Title`);
+    assert.ok(enLocale.includes(`termsSection${i}Body:`), `EN missing termsSection${i}Body`);
+
+    assert.ok(idLocale.includes(`privacySection${i}Title:`), `ID missing privacySection${i}Title`);
+    assert.ok(idLocale.includes(`privacySection${i}Body:`), `ID missing privacySection${i}Body`);
+    assert.ok(enLocale.includes(`privacySection${i}Title:`), `EN missing privacySection${i}Title`);
+    assert.ok(enLocale.includes(`privacySection${i}Body:`), `EN missing privacySection${i}Body`);
+  }
+
+  // Dialog has accessible header, close controls, and scrollable body
+  assert.match(loginForm, /<dialog[^>]*className=\{styles\.policyDialog\}[^>]*aria-labelledby="policy-title"/);
+  assert.match(loginForm, /<button[^>]*className=\{styles\.policyIconClose\}/);
+  assert.match(loginForm, /<div[^>]*className=\{styles\.policyBody\}/);
+  assert.ok(loginForm.includes('styles.policyCloseButton'), 'login-form must include styles.policyCloseButton');
+});
+
