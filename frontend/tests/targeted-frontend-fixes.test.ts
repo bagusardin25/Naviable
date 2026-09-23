@@ -66,26 +66,46 @@ test('highlight links targets every href without treating regular buttons as lin
   assert.equal(/button:not|\[role="button"\]/.test(highlightSection), false);
 });
 
-test('fetchPlaceReports returns correction history with author and timestamp fields', async () => {
+/** Runs `body` with `fetch` answering every request with `respond()`. */
+async function withFetch(respond: () => Response, body: () => Promise<void>) {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => respond()) as typeof fetch;
+  try { await body(); } finally { globalThis.fetch = original; }
+}
+const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
+
+test('fetchPlaceReports returns the server history as-is, empty included, and never invents entries', async () => {
   const { fetchPlaceReports } = await import('../src/lib/api');
-  const res = await fetchPlaceReports('osm-relation-6664927');
-  assert.ok(res.reports.length > 0, 'Must have at least one report');
-  assert.ok(res.total > 0, 'Total must be greater than 0');
-  const report = res.reports[0];
-  assert.ok(report.reporterName, 'Report must have author/reporterName');
-  assert.ok(report.createdAt, 'Report must have createdAt timestamp');
-  assert.ok(Array.isArray(report.elements) && report.elements.length > 0, 'Report must have accessibility elements');
+  const report = { id: 'r1', placeId: 'p', reporterName: 'Warga', createdAt: '2026-09-20T00:00:00Z', photoUrl: '/api/photos/r1', reviewStatus: 'APPROVED', elements: [{ element: 'E1_door', status: 'UTUH' }] };
+  await withFetch(() => json({ reports: [report], total: 1, limit: 20, offset: 0 }), async () => {
+    const res = await fetchPlaceReports('p');
+    assert.deepEqual(res.reports, [report]);
+    assert.equal(res.total, 1);
+  });
+  await withFetch(() => json({ reports: [], total: 0, limit: 20, offset: 0 }), async () => {
+    const res = await fetchPlaceReports('p');
+    assert.deepEqual(res.reports, []);
+    assert.equal(res.total, 0);
+  });
+  await withFetch(() => json({ error: 'down' }, 503), async () => {
+    await assert.rejects(fetchPlaceReports('p'));
+  });
 });
 
-test('fetchReviews returns review history with reviewerName, createdAt, and experience', async () => {
+test('fetchReviews returns only real reviews: empty stays empty and errors reject', async () => {
   const { fetchReviews } = await import('../src/lib/api');
-  const res = await fetchReviews('osm-relation-6664927');
-  assert.ok(res.reviews.length > 0, 'Must have at least one review');
-  assert.ok(res.total > 0, 'Total must be greater than 0');
-  const review = res.reviews[0];
-  assert.ok(review.reviewerName, 'Review must have reviewerName');
-  assert.ok(review.createdAt, 'Review must have createdAt timestamp');
-  assert.ok(review.experience && review.experience.length >= 10, 'Review must have experience text');
+  const review = { id: 'v1', placeId: 'p', reviewerName: 'Pengunjung', experience: 'Pengalaman yang nyata.', createdAt: '2026-09-22T00:00:00Z' };
+  await withFetch(() => json({ reviews: [review], total: 1 }), async () => {
+    assert.deepEqual((await fetchReviews('p')).reviews, [review]);
+  });
+  await withFetch(() => json({ reviews: [], total: 0 }), async () => {
+    const res = await fetchReviews('p');
+    assert.deepEqual(res.reviews, []);
+    assert.equal(res.total, 0);
+  });
+  await withFetch(() => json({ error: 'down' }, 503), async () => {
+    await assert.rejects(fetchReviews('p'));
+  });
 });
 
 test('OpenDyslexic font has explicit @font-face declarations, linked stylesheet, and font-family rules', () => {

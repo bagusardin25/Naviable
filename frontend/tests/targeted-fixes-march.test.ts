@@ -80,14 +80,13 @@ test('4. Add Location: Form placeholders and labels are fully localized', () => 
   assert.equal(reportForm.includes('placeholder="Contoh: Budi Santoso"'), false);
 
   // AIDraftPanel must use localized keys
-  assert.match(aiDraft, /t\('reports\.integrityAiTrusted'\)/);
-  assert.match(aiDraft, /t\('reports\.integritySuspicious'\)/);
-  assert.match(aiDraft, /t\('reports\.integrityUncertain'\)/);
-  assert.match(aiDraft, /t\('reports\.integrityNotChecked'\)/);
-  assert.match(aiDraft, /t\('reports\.integrityCheckTitle'\)/);
-  assert.match(aiDraft, /t\('reports\.integrityDefaultSignals'\)/);
-  assert.match(aiDraft, /t\('reports\.visualAnalysisLabel'\)/);
-  assert.match(aiDraft, /t\('reports\.attemptsLabel'\)/);
+  assert.match(aiDraft, /t\('reports\.aiAnalyzingHint'\)/);
+  assert.match(aiDraft, /t\('reports\.aiNoDescription'\)/);
+  assert.match(aiDraft, /t\('reports\.aiHelpGuidance'\)/);
+  // Contributors only get the photo description; provenance and provider details stay with reviewers.
+  assert.equal(aiDraft.includes('photoIntegrity'), false);
+  assert.equal(aiDraft.includes('attemptedProviders'), false);
+  assert.equal(aiDraft.includes('needsMorePhotos'), false);
 });
 
 test('5. Translation Parity for newly added report keys', () => {
@@ -96,14 +95,13 @@ test('5. Translation Parity for newly added report keys', () => {
     'categoryPlaceholder',
     'fullAddressPlaceholder',
     'reporterNamePlaceholder',
-    'integrityAiTrusted',
-    'integritySuspicious',
-    'integrityUncertain',
-    'integrityNotChecked',
-    'integrityCheckTitle',
-    'integrityDefaultSignals',
-    'visualAnalysisLabel',
-    'attemptsLabel',
+    'photoPreviewAlt',
+    'aiChecked',
+    'aiAnalyzingHint',
+    'aiNoDescription',
+    'aiElementMismatch',
+    'aiSwitchElementBtn',
+    'successCurateDescNewPlace',
   ] as const;
 
   for (const key of newKeys) {
