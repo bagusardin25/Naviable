@@ -125,6 +125,10 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
   }
   app.get("/api/me", auth, async (_req, res) => {
     const result = await store.contributions(res.locals.actorId);
+    // Name each report's place so the contributor's notifications and profile can say which
+    // location a decision is about (one lookup per distinct place, at most 50 reports).
+    const placeIds = [...new Set(result.reports.map(r => r.placeId))];
+    const placeNames = new Map(await Promise.all(placeIds.map(async id => [id, (await store.getPlace(id))?.name ?? null] as const)));
     // Contributors see the review outcome of their OWN reports (status, reviewer note, checklist).
     // reviewedBy is intentionally omitted: the reviewer's identity is internal.
     res.json({
@@ -132,6 +136,7 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
       total: result.total,
       reports: result.reports.map(r => ({
         ...publicReport(r),
+        placeName: placeNames.get(r.placeId) ?? null,
         reviewStatus: r.reviewStatus,
         reviewedAt: r.reviewedAt ?? null,
         reviewNote: r.reviewNote ?? null,

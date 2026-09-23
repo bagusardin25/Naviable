@@ -84,13 +84,13 @@ test('new location is atomic and idempotent; reviews persist without changing ac
     const responses = await Promise.all([f.post('/api/places', body, key), f.post('/api/places', body, key)]);
     assert.deepEqual(responses.map(r => r.status).sort(), [200, 201]);
     const [a, b] = await Promise.all(responses.map(r => r.json()));
-    assert.equal(a.place.id, b.place.id); assert.equal((await f.store.listPlaces()).length, 45);
+    assert.equal(a.place.id, b.place.id); assert.equal((await f.store.listPlaces()).length, 47);
     assert.equal(a.place.reportCount, 1); assert.equal(a.place.verifiedByTeam, false);
     assert.equal(Object.keys(a.place.elements).length, 1);
     assert.equal((await f.post('/api/places', { ...body, location: { ...body.location, name: 'Changed' } }, key)).status, 409);
     assert.equal((await f.post('/api/places', { ...body, image: 'invalid photo bytes' })).status, 400);
     assert.equal((await f.post('/api/places', { ...body, location: { ...body.location, lat: 100 } })).status, 400);
-    assert.equal((await f.store.listPlaces()).length, 45);
+    assert.equal((await f.store.listPlaces()).length, 47);
     const before = await f.store.getPlace(a.place.id);
     const review = { placeId: a.place.id, reviewerName: 'Pengunjung Uji', experience: 'Petugas membantu saya saat berkunjung.' };
     const reviewKey = randomUUID();
@@ -115,14 +115,14 @@ test('seed, filters, pagination, unknown coordinates and evidence boundaries', a
   const f = await fixture();
   try {
     const result = await (await f.get('/api/places?profile=mobilitas')).json();
-    assert.equal(result.total, 44);
+    assert.equal(result.total, 46);
     assert.ok(result.places.every((p: { score: unknown; elements: object; verifiedByTeam: boolean; overall: string }) => p.score === null && Object.keys(p.elements).length === 0 && !p.verifiedByTeam && p.overall === 'BELUM_DIKETAHUI'));
     const missing = await (await f.get('/api/places?geocoded=false')).json();
     assert.equal(missing.total, 7);
     assert.ok(missing.places.every((p: { lat: unknown; lng: unknown }) => p.lat === null && p.lng === null));
-    assert.equal((await (await f.get('/api/places?geocoded=true')).json()).total, 37);
+    assert.equal((await (await f.get('/api/places?geocoded=true')).json()).total, 39);
     const page = await (await f.get('/api/places?limit=2&offset=2')).json();
-    assert.equal(page.places.length, 2); assert.equal(page.total, 44);
+    assert.equal(page.places.length, 2); assert.equal(page.total, 46);
     assert.equal((await (await f.get('/api/places?q=Siola')).json()).places[0].id, 'desk-mpp-siola');
     const bbox = await (await f.get('/api/places?bbox=112.63,-7.4,112.85,-7.2')).json();
     assert.ok(bbox.places.every((p: { lat: number | null }) => p.lat !== null));
@@ -132,7 +132,7 @@ test('seed, filters, pagination, unknown coordinates and evidence boundaries', a
     assert.equal((await f.get('/api/places/missing')).status, 404);
     assert.equal((await f.get('/api/ready')).status, 200);
     const stats = await (await f.get('/api/observatory')).json();
-    assert.equal(stats.brokenPlaces, 0); assert.equal(stats.elements.E5_guiding_block.BELUM_DIKETAHUI, 44);
+    assert.equal(stats.brokenPlaces, 0); assert.equal(stats.elements.E5_guiding_block.BELUM_DIKETAHUI, 46);
     assert.equal(stats.districts[0].name, 'Belum diketahui');
   } finally { await f.close(); }
 });
@@ -355,6 +355,8 @@ test('contributor profile (/api/me) exposes the review status, note, and checkli
     assert.ok(myBefore, 'report should appear in the contributor profile');
     assert.equal(myBefore.reviewStatus, 'SUBMITTED');
     assert.equal(myBefore.reviewNote, null);
+    // The place is named so notifications can say which location a decision is about.
+    assert.equal(myBefore.placeName, (await f.store.getPlace(placeId))!.name);
 
     // Reviewer rejects with a note and a checklist that has a failed item.
     const reject = await f.post(`/api/reviewer/reports/${reportId}/review`, {
