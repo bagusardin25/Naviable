@@ -126,3 +126,59 @@ test('7. SSR HTTP response from live dev server returns correct login page conte
     // If dev server is not actively bound on localhost:3000, skip SSR network test
   }
 });
+
+test('8. Hero Branding Section: desktop & mobile structure, typography, and illustration scaling', () => {
+  const css = source('src/app/login/login.module.css');
+
+  // .brandContent must be a unified vertical column with centered alignment
+  assert.match(css, /\.brandContent\s*\{[^}]*display:\s*flex;/);
+  assert.match(css, /\.brandContent\s*\{[^}]*flex-direction:\s*column;/);
+  assert.match(css, /\.brandContent\s*\{[^}]*align-items:\s*center;/);
+  assert.match(css, /\.brandContent\s*\{[^}]*text-align:\s*center;/);
+
+  // Tagline has proportional max-width and clean line-height
+  assert.match(css, /\.tagline\s*\{[^}]*max-width:\s*34ch;/);
+  assert.match(css, /\.tagline\s*\{[^}]*line-height:\s*1\.5;/);
+
+  // Illustration is responsive with preserved aspect ratio
+  assert.match(css, /\.illustration\s*\{[^}]*aspect-ratio:\s*420\s*\/\s*264;/);
+  assert.match(css, /\.illustration\s*\{[^}]*object-fit:\s*contain;/);
+
+  // Responsive mobile illustration scaling
+  const mobile880 = css.slice(css.indexOf('@media (max-width: 880px)'));
+  assert.match(mobile880, /\.illustration\s*\{[^}]*max-width:\s*220px;/);
+  assert.match(mobile880, /\.badges\s*\{[^}]*display:\s*flex;/);
+
+  const mobile600 = css.slice(css.indexOf('@media (max-width: 600px)'));
+  assert.match(mobile600, /\.illustration\s*\{[^}]*max-width:\s*190px;/);
+
+  const mobile360 = css.slice(css.indexOf('@media (max-width: 360px)'));
+  assert.match(mobile360, /\.illustration\s*\{[^}]*max-width:\s*160px;/);
+
+  // Contrast mode tagline white color
+  assert.ok(css.includes(':global(html.contrast-mode) .tagline'));
+});
+
+test('9. Accessibility Badges: shared container, wrap support, and clean icon rendering', () => {
+  const loginContent = source('src/app/login/LoginContent.tsx');
+  const css = source('src/app/login/login.module.css');
+
+  // Shared container uses flex-wrap and center alignment
+  assert.match(css, /\.badges\s*\{[^}]*display:\s*flex;/);
+  assert.match(css, /\.badges\s*\{[^}]*flex-wrap:\s*wrap;/);
+  assert.match(css, /\.badges\s*\{[^}]*justify-content:\s*center;/);
+
+  // Badges list item structure
+  assert.match(css, /\.badges\s+li\s*\{[^}]*display:\s*inline-flex;/);
+  assert.match(css, /\.badges\s+li\s*\{[^}]*align-items:\s*center;/);
+  assert.match(css, /\.badges\s+li\s*\{[^}]*gap:\s*7px;/);
+
+  // Badges in LoginContent render valid Icon components without raw text 'svg'
+  assert.match(loginContent, /<Icon\s+name="access"\s+size=\{16\}\s*\/>\s*<span>\{\s*t\('auth\.badgeWheelchair'\)\s*\}<\/span>/);
+  assert.match(loginContent, /<Icon\s+name="volume"\s+size=\{16\}\s*\/>\s*<span>\{\s*t\('auth\.badgeAudio'\)\s*\}<\/span>/);
+  assert.match(loginContent, /<Icon\s+name="eye"\s+size=\{16\}\s*\/>\s*<span>\{\s*t\('auth\.badgeContrast'\)\s*\}<\/span>/);
+  assert.equal(loginContent.includes('svgWheelchair'), false);
+  assert.equal(loginContent.includes('svgAudio'), false);
+  assert.equal(loginContent.includes('svgHigh'), false);
+});
+

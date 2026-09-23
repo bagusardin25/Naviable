@@ -35,10 +35,19 @@ export function LoginContent() {
             priority
           />
 
-          <ul className={styles.badges} aria-label="Fitur aksesibilitas">
-            <li><Icon name="access" size={16} /> <span>{t('auth.badgeWheelchair')}</span></li>
-            <li><Icon name="volume" size={16} /> <span>{t('auth.badgeAudio')}</span></li>
-            <li><Icon name="eye" size={16} /> <span>{t('auth.badgeContrast')}</span></li>
+          <ul className={styles.badges} aria-label={t('a11yWidget.sectionFeatures')}>
+            <li>
+              <Icon name="access" size={16} />
+              <span>{t('auth.badgeWheelchair')}</span>
+            </li>
+            <li>
+              <Icon name="volume" size={16} />
+              <span>{t('auth.badgeAudio')}</span>
+            </li>
+            <li>
+              <Icon name="eye" size={16} />
+              <span>{t('auth.badgeContrast')}</span>
+            </li>
           </ul>
         </div>
       </section>
