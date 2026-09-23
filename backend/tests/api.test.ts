@@ -19,9 +19,10 @@ const inconclusiveIntegrity: PhotoIntegrityResult = {
   disclaimer: 'Hasil uji tidak membuktikan keaslian.',
 };
 /** Builds a model analysis where only `seen` elements are visible in the photo. */
-function analysisSeeing(seen: Record<string, string>) {
+function analysisSeeing(seen: Record<string, string>, description = 'Pintu masuk gedung dengan ramp di sisi kiri; tidak ada hambatan yang terlihat.') {
   const chain = ['E1_door', 'E2_ramp', 'E3_toilet', 'E4_lift', 'E5_guiding_block', 'E6_parking', 'E7_signage', 'E8_crossing'] as const;
   return {
+    description,
     drafts: chain.map(element => ({
       element,
       status: (seen[element] ?? 'BELUM_DIKETAHUI') as 'UTUH' | 'TERHALANG' | 'TIDAK_STANDAR' | 'TIDAK_ADA' | 'BELUM_DIKETAHUI',
@@ -378,6 +379,39 @@ test('contributor profile (/api/me) exposes the review status, note, and checkli
   } finally { await f.close(); }
 });
 
+
+test('the AI photo description reaches the contributor and the reviewer but never public responses', async () => {
+  const description = 'Trotoar di depan pintu masuk dengan jalur pemandu kuning yang tertutup sepeda motor.';
+  const f = await fixture('local', true, inconclusiveIntegrity, async () => analysisSeeing({ E5_guiding_block: 'TERHALANG' }, description));
+  try {
+    // The contributor sees it while checking the photo.
+    const analysis = await (await f.post('/api/analyze', { image, mimeType: 'image/png' }, randomUUID(), 'valid-test-token')).json();
+    assert.equal(analysis.description, description);
+
+    const placeId = (await f.store.listPlaces())[0].id;
+    const submitted = await (await f.post('/api/reports', report(placeId), randomUUID(), 'valid-test-token')).json();
+    assert.equal(submitted.reviewStatus, 'SUBMITTED'); // the photo matched the claimed element
+
+    // The reviewer sees it with the report.
+    const detail = await (await f.get(`/api/reviewer/reports/${submitted.reportId}`)).json();
+    assert.equal(detail.report.aiDescription, description);
+
+    // It is not part of the public correction trail or the contributor's report feed.
+    const publicTrail = await (await f.get(`/api/places/${placeId}/reports`)).json();
+    assert.ok(publicTrail.reports.every((r: Record<string, unknown>) => !('aiDescription' in r)));
+    const me = await (await f.get('/api/me', { Authorization: 'Bearer valid-test-token' })).json();
+    assert.ok(me.reports.every((r: Record<string, unknown>) => !('aiDescription' in r)));
+  } finally { await f.close(); }
+
+  // With the AI unavailable the report is still accepted, just without a description.
+  const offline = await fixture('local', true);
+  try {
+    const placeId = (await offline.store.listPlaces())[0].id;
+    const submitted = await (await offline.post('/api/reports', report(placeId), randomUUID(), 'valid-test-token')).json();
+    const detail = await (await offline.get(`/api/reviewer/reports/${submitted.reportId}`)).json();
+    assert.equal(detail.report.aiDescription, null);
+  } finally { await offline.close(); }
+});
 
 test('a photo that does not show the chosen element is auto-flagged for revision and explained in the contributor profile', async () => {
   // The model sees a door, but the contributor claimed the guiding block.
