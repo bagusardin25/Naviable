@@ -5,14 +5,14 @@
     "description": "Data awal untuk memilih lokasi survei dan menampilkan kandidat pada peta. Entri ini bukan hasil survei lapangan tim.",
     "generated_at": "2026-09-13",
     "area": "Kota Surabaya, Jawa Timur, Indonesia",
-    "record_count": 44,
-    "records_with_coordinates": 37,
+    "record_count": 46,
+    "records_with_coordinates": 39,
     "evidence_breakdown": {
-      "community_reported": 35,
+      "community_reported": 37,
       "documented": 9
     },
     "osm_wheelchair_tag_counts": {
-      "yes": 17,
+      "yes": 19,
       "limited": 7,
       "no": 11
     },
@@ -33,56 +33,1178 @@
     ]
   },
   "records": [
-    {"id":"osm-node-659961942","name":"Carrefour","category":"supermarket","lat":-7.2411846,"lng":112.7462826,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/659961942","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-4191188521","name":"Calibre","category":"cafe","lat":-7.2611565,"lng":112.7488027,"address":"Jalan Walikota Mustajab 67-69, Genteng, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/4191188521","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-4191209387","name":"Carl's Jr.","category":"fast_food","lat":-7.2801553,"lng":112.7745969,"address":"Jalan Raya Kertajaya Indah Blok F No. 312, Mulyorejo, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/4191209387","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-4794254291","name":"Stasiun Wonokromo","category":"station","lat":-7.3020554,"lng":112.7392222,"address":"Jalan Stasiun Wonokromo 1, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/4794254291","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-5873197056","name":"Starbucks","category":"cafe","lat":-7.2797036,"lng":112.7673519,"address":null,"elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/5873197056","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-6533803561","name":"Masjid Umar","category":"place_of_worship","lat":-7.2310967,"lng":112.7679709,"address":"Jalan Tanah Merah II No. 20, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/6533803561","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-6585930978","name":"Uppercut Steakhouse","category":"restaurant","lat":-7.2596907,"lng":112.7349172,"address":"Jalan Embong Malang 85-89, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/6585930978","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-6621178654","name":"Baskin-Robbins","category":"ice_cream","lat":-7.2625535,"lng":112.7380786,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/6621178654","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-10554645106","name":"Toby's Estate La Viz","category":"cafe","lat":-7.289331,"lng":112.6738712,"address":"PM Home Pro Ground Floor, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/10554645106","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-10792453030","name":"Halte Mulyorejo 2","category":"bus_stop","lat":-7.2639006,"lng":112.7832595,"address":null,"elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/10792453030","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-11021766295","name":"Gubug Makan Mang Engking Yani Golf Surabaya","category":"restaurant","lat":-7.3018131,"lng":112.714989,"address":"Jl. Golf 1, Gunungsari, Dukuh Pakis, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"yes","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/11021766295","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-12161565398","name":"Pelni Cabang Surabaya","category":"ticket_office","lat":-7.2448616,"lng":112.7387042,"address":"Jl. Pahlawan 112, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/12161565398","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-13167686601","name":"Surabaya Convention Center","category":"conference_centre","lat":-7.290478,"lng":112.6735858,"address":"Pakuwon Trade Centre, Jl. Mayjend. Jonosewojo No. 2, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/13167686601","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-13534229567","name":"Toko Kopi TUKU - Margorejo","category":"cafe","lat":-7.3183613,"lng":112.7441672,"address":"Jalan Margorejo Indah, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/13534229567","license":"ODbL 1.0","source_check_date":"2026-02-12","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-13912221876","name":"Shisha Chana","category":"hookah_lounge","lat":-7.2868854,"lng":112.7366474,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/13912221876","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-node-14168511592","name":"URI Studio Surabaya","category":"photo_booth","lat":-7.282917,"lng":112.6591036,"address":"One Arcade Citraland ARG-08, Lontar, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/14168511592","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-29100272","name":"Pusat Grosir Jembatan Merah Plaza","category":"mall","lat":-7.2343437,"lng":112.737909,"address":"Jalan Garuda, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/29100272","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-279572424","name":"Stasiun Surabaya Kota","category":"station","lat":-7.2430513,"lng":112.7419893,"address":"Jalan Semut Baru 9, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/279572424","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-307282859","name":"Pakuwon City Mall","category":"mall","lat":-7.2757152,"lng":112.8050231,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"yes","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/307282859","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-311061594","name":"Warkob Imanuel","category":"restaurant","lat":-7.2681528,"lng":112.7400009,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/311061594","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-426896956","name":"NAV Karaoke","category":"karaoke","lat":-7.2722247,"lng":112.7500064,"address":"Jalan Bangka 15, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/426896956","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-429077971","name":"Vasa Suite Surabaya","category":"hotel","lat":-7.2760148,"lng":112.7459124,"address":"Jalan Raya Gubeng 102-106, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/429077971","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-449296740","name":"Masjid Al Hadits","category":"place_of_worship","lat":-7.2829862,"lng":112.7666446,"address":"Jalan Manyar Sabrangan 9, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/449296740","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-450049933","name":"Ponten Umum No. 12A","category":"toilet","lat":-7.242244,"lng":112.7510969,"address":"Jalan Gembong Sekolahan, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/450049933","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-450529576","name":"Museum Olahraga Surabaya","category":"museum","lat":-7.2867273,"lng":112.7310688,"address":"Pakis Gelora III, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"yes"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/450529576","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-451515975","name":"TK Insan Cendekia","category":"kindergarten","lat":-7.2559345,"lng":112.7305167,"address":"Jalan Kranggan No. 86, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/451515975","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-451516161","name":"Masjid At Taubah","category":"place_of_worship","lat":-7.2549822,"lng":112.7306171,"address":"Jalan Kranggan IV, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/451516161","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-451857622","name":"Pasar Wonokitri","category":"marketplace","lat":-7.2945625,"lng":112.7256896,"address":"Jalan Brawijaya, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/451857622","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-456737729","name":"Masjid As Shiddiq","category":"place_of_worship","lat":-7.2756445,"lng":112.7260131,"address":"Jalan Banyu Urip Wetan I A No. 20, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/456737729","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-459758199","name":"Masjid As-Salam","category":"place_of_worship","lat":-7.2588674,"lng":112.6622461,"address":"Jalan Manukan Lor IV A No. 9, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/459758199","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-461332372","name":"Masjid Nuruzzaman","category":"place_of_worship","lat":-7.2710114,"lng":112.7573394,"address":"Jalan Airlangga, Surabaya","elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/461332372","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-470872309","name":"Mercure Surabaya Manyar","category":"hotel","lat":-7.2802435,"lng":112.7658715,"address":"Jalan Manyar Kertoarjo 44, Surabaya","elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/470872309","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-689258417","name":"Universitas Kristen Petra","category":"university","lat":-7.3395172,"lng":112.7383179,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"yes","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/689258417","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-way-1266690499","name":"Kost Nazya","category":"hostel","lat":-7.3352995,"lng":112.7968508,"address":null,"elements":{},"pre_survey":{"wheelchair":"no","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/way/1266690499","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"osm-relation-6664927","name":"Tunjungan Plaza","category":"mall","lat":-7.2623907,"lng":112.7393172,"address":null,"elements":{},"pre_survey":{"wheelchair":"yes","toilet_accessible":"unknown","tactile_paving":"unknown"},"evidence_level":"community_reported","verified_by_team":false,"source":{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/relation/6664927","license":"ODbL 1.0","retrieved_at":"2026-09-13"}},
-    {"id":"desk-mpp-siola","name":"Mal Pelayanan Publik Siola","category":"government_service","lat":null,"lng":null,"address":"Jl. Tunjungan No. 1-3, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["ruang tunggu difabel","layanan ABK"],"claims_for_elements":[]},"evidence_level":"official_documentation","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"Mal Pelayanan Publik Surabaya","url":"https://mpp.surabaya.go.id/","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-bbpom-surabaya","name":"Balai Besar POM di Surabaya","category":"government_service","lat":null,"lng":null,"address":"Jl. Karang Menjangan No. 20, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["kursi roda tersedia","kursi prioritas","toilet disabilitas"],"claims_for_elements":["E3_toilet"]},"evidence_level":"official_documentation","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"BBPOM Surabaya","url":"https://surabaya.pom.go.id/berita/wujudkan-keadilan-pelayanan-publik-bbpom-di-surabaya-hadirkan-layanan-inklusif-ramah-kelompok-rentan","source_date":"2026-01-10","retrieved_at":"2026-09-13"},{"name":"BBPOM Surabaya contact","url":"https://bbpomsurabaya.pom.go.id/kontak","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-perpustakaan-balai-pemuda","name":"Perpustakaan Balai Pemuda","category":"library","lat":null,"lng":null,"address":"Jl. Gubernur Suryo No. 15, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["koleksi buku Braille"],"claims_for_elements":[]},"evidence_level":"official_documentation","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"Dinas Perpustakaan dan Kearsipan Surabaya","url":"https://dispusip.surabaya.go.id/berita/65d30b0aee0ae","source_date":"2024-02-19","retrieved_at":"2026-09-13"},{"name":"Disbudporapar Surabaya","url":"https://disbudporapar.surabaya.go.id/adinda/portaldata/cagarbudaya/detail/balai-pemuda-surabaya","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-museum-dr-soetomo","name":"Museum Dr. Soetomo","category":"museum","lat":null,"lng":null,"address":"Jl. Bubutan No. 85-87, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["toilet disabilitas dan lansia"],"claims_for_elements":["E3_toilet"]},"evidence_level":"government_registry","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"Sisparnas Kementerian Pariwisata","url":"https://sisparnas.kemenpar.go.id/p/91181","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-museum-pendidikan","name":"Museum Pendidikan Surabaya","category":"museum","lat":-7.256205406834597,"lng":112.74286520995625,"address":"Jl. Genteng Kali No. 10, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["toilet disabilitas","kursi roda gratis"],"claims_for_elements":["E3_toilet"]},"evidence_level":"research_documentation","verified_by_team":false,"needs_geocoding":false,"sources":[{"name":"JIIP - Jurnal Ilmiah Ilmu Pendidikan","url":"https://www.jiip.stkipyapisdompu.ac.id/jiip/index.php/JIIP/article/download/6399/4797","source_date":"2024-12","retrieved_at":"2026-09-13"},{"name":"Musea Surabaya","url":"https://musea.surabaya.go.id/museum-pendidikan-surabaya/","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-masjid-al-akbar","name":"Masjid Nasional Al-Akbar Surabaya","category":"place_of_worship","lat":null,"lng":null,"address":"Jl. Masjid Al-Akbar Timur No. 1, Pagesangan, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["tiga toilet difabel","grab bar","jalur kursi roda","drop-off","kursi roda tersedia"],"claims_for_elements":["E2_ramp","E3_toilet","E6_parking"]},"evidence_level":"news_report","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"detikJatim","url":"https://www.detik.com/jatim/berita/d-8352365/masjid-nasional-al-akbar-surabaya-punya-toilet-vip-untuk-jemaah-difabel","source_date":"2026-02-12","retrieved_at":"2026-09-13"},{"name":"Masjid Nasional Al-Akbar contact","url":"https://www.masjidalakbar.or.id/kontak/","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-taman-bungkul","name":"Taman Bungkul","category":"park","lat":null,"lng":null,"address":"Jl. Taman Bungkul, Darmo, Wonokromo, Surabaya","elements":{},"pre_survey":{"wheelchair":"limited","features":["ramp tersedia tetapi dilaporkan curam","jalur pemandu tersedia tetapi terbatas","toilet tersedia","parkir difabel dilaporkan belum memadai"],"claims_for_elements":["E2_ramp","E3_toilet","E5_guiding_block","E6_parking"]},"evidence_level":"research_documentation","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"Universitas Airlangga","url":"https://unair.ac.id/pemenuhan-fasilitas-bagi-penyandang-difabel-saat-berkunjung-ke-taman-bungkul-kota-surabaya/","source_date":"2021","retrieved_at":"2026-09-13"},{"name":"ITS Repository","url":"https://repository.its.ac.id/117884/","source_date":"2025","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-stasiun-gubeng","name":"Stasiun Surabaya Gubeng","category":"station","lat":-7.2653211,"lng":112.7522142,"address":"Surabaya, Jawa Timur","elements":{},"pre_survey":{"wheelchair":"limited","features":["tactile block dilaporkan tersedia","toilet disabilitas","kursi roda","bantuan petugas garis depan"],"claims_for_elements":["E3_toilet","E5_guiding_block","E7_signage"]},"evidence_level":"operator_statement_reported_by_news","verified_by_team":false,"needs_geocoding":false,"sources":[{"name":"ANTARA Jawa Timur","url":"https://jatim.antaranews.com/berita/894321/kci-luncurkan-1000-kartu-prioritas-untuk-disabilitas-di-surabaya","source_date":"2025-03-14","retrieved_at":"2026-09-13"},{"name":"OpenStreetMap","url":"https://www.openstreetmap.org/node/7991949185","license":"ODbL 1.0","retrieved_at":"2026-09-13"}]},
-    {"id":"desk-puskesmas-tambakrejo","name":"Puskesmas Tambakrejo","category":"healthcare","lat":null,"lng":null,"address":"Jl. Ngaglik No. 87, Surabaya","elements":{},"pre_survey":{"wheelchair":"unknown","features":["layanan lansia","layanan anak berkebutuhan khusus"],"claims_for_elements":[]},"evidence_level":"official_documentation","verified_by_team":false,"needs_geocoding":true,"sources":[{"name":"Dinas Kesehatan Surabaya","url":"https://dinkes.surabaya.go.id/portal_dinkes/d/pkm_tambakrejo","retrieved_at":"2026-09-13"},{"name":"Pemerintah Kota Surabaya","url":"https://www.surabaya.go.id/id/berita/74795/seluruh-puskesmas-di-surabaya-terapkan-layanan-ramah-anak","retrieved_at":"2026-09-13","scope_note":"Klaim ramp, kursi roda, dan toilet disabilitas berlaku umum untuk puskesmas; belum terbukti spesifik untuk gedung Tambakrejo."}]}
+    {
+      "id": "osm-node-659961942",
+      "name": "Carrefour",
+      "category": "supermarket",
+      "lat": -7.2411846,
+      "lng": 112.7462826,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/659961942",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-4191188521",
+      "name": "Calibre",
+      "category": "cafe",
+      "lat": -7.2611565,
+      "lng": 112.7488027,
+      "address": "Jalan Walikota Mustajab 67-69, Genteng, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/4191188521",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-4191209387",
+      "name": "Carl's Jr.",
+      "category": "fast_food",
+      "lat": -7.2801553,
+      "lng": 112.7745969,
+      "address": "Jalan Raya Kertajaya Indah Blok F No. 312, Mulyorejo, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/4191209387",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-4794254291",
+      "name": "Stasiun Wonokromo",
+      "category": "station",
+      "lat": -7.3020554,
+      "lng": 112.7392222,
+      "address": "Jalan Stasiun Wonokromo 1, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/4794254291",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-5873197056",
+      "name": "Starbucks",
+      "category": "cafe",
+      "lat": -7.2797036,
+      "lng": 112.7673519,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/5873197056",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-6533803561",
+      "name": "Masjid Umar",
+      "category": "place_of_worship",
+      "lat": -7.2310967,
+      "lng": 112.7679709,
+      "address": "Jalan Tanah Merah II No. 20, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/6533803561",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-6585930978",
+      "name": "Uppercut Steakhouse",
+      "category": "restaurant",
+      "lat": -7.2596907,
+      "lng": 112.7349172,
+      "address": "Jalan Embong Malang 85-89, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/6585930978",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-6621178654",
+      "name": "Baskin-Robbins",
+      "category": "ice_cream",
+      "lat": -7.2625535,
+      "lng": 112.7380786,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/6621178654",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-10554645106",
+      "name": "Toby's Estate La Viz",
+      "category": "cafe",
+      "lat": -7.289331,
+      "lng": 112.6738712,
+      "address": "PM Home Pro Ground Floor, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/10554645106",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-10792453030",
+      "name": "Halte Mulyorejo 2",
+      "category": "bus_stop",
+      "lat": -7.2639006,
+      "lng": 112.7832595,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/10792453030",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-11021766295",
+      "name": "Gubug Makan Mang Engking Yani Golf Surabaya",
+      "category": "restaurant",
+      "lat": -7.3018131,
+      "lng": 112.714989,
+      "address": "Jl. Golf 1, Gunungsari, Dukuh Pakis, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "yes",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/11021766295",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-12161565398",
+      "name": "Pelni Cabang Surabaya",
+      "category": "ticket_office",
+      "lat": -7.2448616,
+      "lng": 112.7387042,
+      "address": "Jl. Pahlawan 112, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/12161565398",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-13167686601",
+      "name": "Surabaya Convention Center",
+      "category": "conference_centre",
+      "lat": -7.290478,
+      "lng": 112.6735858,
+      "address": "Pakuwon Trade Centre, Jl. Mayjend. Jonosewojo No. 2, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/13167686601",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-13534229567",
+      "name": "Toko Kopi TUKU - Margorejo",
+      "category": "cafe",
+      "lat": -7.3183613,
+      "lng": 112.7441672,
+      "address": "Jalan Margorejo Indah, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/13534229567",
+        "license": "ODbL 1.0",
+        "source_check_date": "2026-02-12",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-13912221876",
+      "name": "Shisha Chana",
+      "category": "hookah_lounge",
+      "lat": -7.2868854,
+      "lng": 112.7366474,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/13912221876",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-node-14168511592",
+      "name": "URI Studio Surabaya",
+      "category": "photo_booth",
+      "lat": -7.282917,
+      "lng": 112.6591036,
+      "address": "One Arcade Citraland ARG-08, Lontar, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/node/14168511592",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-29100272",
+      "name": "Pusat Grosir Jembatan Merah Plaza",
+      "category": "mall",
+      "lat": -7.2343437,
+      "lng": 112.737909,
+      "address": "Jalan Garuda, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/29100272",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-279572424",
+      "name": "Stasiun Surabaya Kota",
+      "category": "station",
+      "lat": -7.2430513,
+      "lng": 112.7419893,
+      "address": "Jalan Semut Baru 9, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/279572424",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-307282859",
+      "name": "Pakuwon City Mall",
+      "category": "mall",
+      "lat": -7.2757152,
+      "lng": 112.8050231,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "yes",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/307282859",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-311061594",
+      "name": "Warkob Imanuel",
+      "category": "restaurant",
+      "lat": -7.2681528,
+      "lng": 112.7400009,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/311061594",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-426896956",
+      "name": "NAV Karaoke",
+      "category": "karaoke",
+      "lat": -7.2722247,
+      "lng": 112.7500064,
+      "address": "Jalan Bangka 15, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/426896956",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-429077971",
+      "name": "Vasa Suite Surabaya",
+      "category": "hotel",
+      "lat": -7.2760148,
+      "lng": 112.7459124,
+      "address": "Jalan Raya Gubeng 102-106, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/429077971",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-449296740",
+      "name": "Masjid Al Hadits",
+      "category": "place_of_worship",
+      "lat": -7.2829862,
+      "lng": 112.7666446,
+      "address": "Jalan Manyar Sabrangan 9, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/449296740",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-450049933",
+      "name": "Ponten Umum No. 12A",
+      "category": "toilet",
+      "lat": -7.242244,
+      "lng": 112.7510969,
+      "address": "Jalan Gembong Sekolahan, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/450049933",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-450529576",
+      "name": "Museum Olahraga Surabaya",
+      "category": "museum",
+      "lat": -7.2867273,
+      "lng": 112.7310688,
+      "address": "Pakis Gelora III, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "yes"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/450529576",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-451515975",
+      "name": "TK Insan Cendekia",
+      "category": "kindergarten",
+      "lat": -7.2559345,
+      "lng": 112.7305167,
+      "address": "Jalan Kranggan No. 86, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/451515975",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-451516161",
+      "name": "Masjid At Taubah",
+      "category": "place_of_worship",
+      "lat": -7.2549822,
+      "lng": 112.7306171,
+      "address": "Jalan Kranggan IV, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/451516161",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-451857622",
+      "name": "Pasar Wonokitri",
+      "category": "marketplace",
+      "lat": -7.2945625,
+      "lng": 112.7256896,
+      "address": "Jalan Brawijaya, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/451857622",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-456737729",
+      "name": "Masjid As Shiddiq",
+      "category": "place_of_worship",
+      "lat": -7.2756445,
+      "lng": 112.7260131,
+      "address": "Jalan Banyu Urip Wetan I A No. 20, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/456737729",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-459758199",
+      "name": "Masjid As-Salam",
+      "category": "place_of_worship",
+      "lat": -7.2588674,
+      "lng": 112.6622461,
+      "address": "Jalan Manukan Lor IV A No. 9, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/459758199",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-461332372",
+      "name": "Masjid Nuruzzaman",
+      "category": "place_of_worship",
+      "lat": -7.2710114,
+      "lng": 112.7573394,
+      "address": "Jalan Airlangga, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/461332372",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-470872309",
+      "name": "Mercure Surabaya Manyar",
+      "category": "hotel",
+      "lat": -7.2802435,
+      "lng": 112.7658715,
+      "address": "Jalan Manyar Kertoarjo 44, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/470872309",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-689258417",
+      "name": "Universitas Kristen Petra",
+      "category": "university",
+      "lat": -7.3395172,
+      "lng": 112.7383179,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "yes",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/689258417",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-way-1266690499",
+      "name": "Kost Nazya",
+      "category": "hostel",
+      "lat": -7.3352995,
+      "lng": 112.7968508,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "no",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/1266690499",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "osm-relation-6664927",
+      "name": "Tunjungan Plaza",
+      "category": "mall",
+      "lat": -7.2623907,
+      "lng": 112.7393172,
+      "address": null,
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "unknown",
+        "tactile_paving": "unknown"
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/relation/6664927",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-13"
+      }
+    },
+    {
+      "id": "desk-mpp-siola",
+      "name": "Mal Pelayanan Publik Siola",
+      "category": "government_service",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Tunjungan No. 1-3, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "ruang tunggu difabel",
+          "layanan ABK"
+        ],
+        "claims_for_elements": []
+      },
+      "evidence_level": "official_documentation",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "Mal Pelayanan Publik Surabaya",
+          "url": "https://mpp.surabaya.go.id/",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-bbpom-surabaya",
+      "name": "Balai Besar POM di Surabaya",
+      "category": "government_service",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Karang Menjangan No. 20, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "kursi roda tersedia",
+          "kursi prioritas",
+          "toilet disabilitas"
+        ],
+        "claims_for_elements": [
+          "E3_toilet"
+        ]
+      },
+      "evidence_level": "official_documentation",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "BBPOM Surabaya",
+          "url": "https://surabaya.pom.go.id/berita/wujudkan-keadilan-pelayanan-publik-bbpom-di-surabaya-hadirkan-layanan-inklusif-ramah-kelompok-rentan",
+          "source_date": "2026-01-10",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "BBPOM Surabaya contact",
+          "url": "https://bbpomsurabaya.pom.go.id/kontak",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-perpustakaan-balai-pemuda",
+      "name": "Perpustakaan Balai Pemuda",
+      "category": "library",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Gubernur Suryo No. 15, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "koleksi buku Braille"
+        ],
+        "claims_for_elements": []
+      },
+      "evidence_level": "official_documentation",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "Dinas Perpustakaan dan Kearsipan Surabaya",
+          "url": "https://dispusip.surabaya.go.id/berita/65d30b0aee0ae",
+          "source_date": "2024-02-19",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "Disbudporapar Surabaya",
+          "url": "https://disbudporapar.surabaya.go.id/adinda/portaldata/cagarbudaya/detail/balai-pemuda-surabaya",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-museum-dr-soetomo",
+      "name": "Museum Dr. Soetomo",
+      "category": "museum",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Bubutan No. 85-87, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "toilet disabilitas dan lansia"
+        ],
+        "claims_for_elements": [
+          "E3_toilet"
+        ]
+      },
+      "evidence_level": "government_registry",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "Sisparnas Kementerian Pariwisata",
+          "url": "https://sisparnas.kemenpar.go.id/p/91181",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-museum-pendidikan",
+      "name": "Museum Pendidikan Surabaya",
+      "category": "museum",
+      "lat": -7.256205406834597,
+      "lng": 112.74286520995625,
+      "address": "Jl. Genteng Kali No. 10, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "toilet disabilitas",
+          "kursi roda gratis"
+        ],
+        "claims_for_elements": [
+          "E3_toilet"
+        ]
+      },
+      "evidence_level": "research_documentation",
+      "verified_by_team": false,
+      "needs_geocoding": false,
+      "sources": [
+        {
+          "name": "JIIP - Jurnal Ilmiah Ilmu Pendidikan",
+          "url": "https://www.jiip.stkipyapisdompu.ac.id/jiip/index.php/JIIP/article/download/6399/4797",
+          "source_date": "2024-12",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "Musea Surabaya",
+          "url": "https://musea.surabaya.go.id/museum-pendidikan-surabaya/",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-masjid-al-akbar",
+      "name": "Masjid Nasional Al-Akbar Surabaya",
+      "category": "place_of_worship",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Masjid Al-Akbar Timur No. 1, Pagesangan, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "tiga toilet difabel",
+          "grab bar",
+          "jalur kursi roda",
+          "drop-off",
+          "kursi roda tersedia"
+        ],
+        "claims_for_elements": [
+          "E2_ramp",
+          "E3_toilet",
+          "E6_parking"
+        ]
+      },
+      "evidence_level": "news_report",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "detikJatim",
+          "url": "https://www.detik.com/jatim/berita/d-8352365/masjid-nasional-al-akbar-surabaya-punya-toilet-vip-untuk-jemaah-difabel",
+          "source_date": "2026-02-12",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "Masjid Nasional Al-Akbar contact",
+          "url": "https://www.masjidalakbar.or.id/kontak/",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-taman-bungkul",
+      "name": "Taman Bungkul",
+      "category": "park",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Taman Bungkul, Darmo, Wonokromo, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "features": [
+          "ramp tersedia tetapi dilaporkan curam",
+          "jalur pemandu tersedia tetapi terbatas",
+          "toilet tersedia",
+          "parkir difabel dilaporkan belum memadai"
+        ],
+        "claims_for_elements": [
+          "E2_ramp",
+          "E3_toilet",
+          "E5_guiding_block",
+          "E6_parking"
+        ]
+      },
+      "evidence_level": "research_documentation",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "Universitas Airlangga",
+          "url": "https://unair.ac.id/pemenuhan-fasilitas-bagi-penyandang-difabel-saat-berkunjung-ke-taman-bungkul-kota-surabaya/",
+          "source_date": "2021",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "ITS Repository",
+          "url": "https://repository.its.ac.id/117884/",
+          "source_date": "2025",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-stasiun-gubeng",
+      "name": "Stasiun Surabaya Gubeng",
+      "category": "station",
+      "lat": -7.2653211,
+      "lng": 112.7522142,
+      "address": "Surabaya, Jawa Timur",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "limited",
+        "features": [
+          "tactile block dilaporkan tersedia",
+          "toilet disabilitas",
+          "kursi roda",
+          "bantuan petugas garis depan"
+        ],
+        "claims_for_elements": [
+          "E3_toilet",
+          "E5_guiding_block",
+          "E7_signage"
+        ]
+      },
+      "evidence_level": "operator_statement_reported_by_news",
+      "verified_by_team": false,
+      "needs_geocoding": false,
+      "sources": [
+        {
+          "name": "ANTARA Jawa Timur",
+          "url": "https://jatim.antaranews.com/berita/894321/kci-luncurkan-1000-kartu-prioritas-untuk-disabilitas-di-surabaya",
+          "source_date": "2025-03-14",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "OpenStreetMap",
+          "url": "https://www.openstreetmap.org/node/7991949185",
+          "license": "ODbL 1.0",
+          "retrieved_at": "2026-09-13"
+        }
+      ]
+    },
+    {
+      "id": "desk-puskesmas-tambakrejo",
+      "name": "Puskesmas Tambakrejo",
+      "category": "healthcare",
+      "lat": null,
+      "lng": null,
+      "address": "Jl. Ngaglik No. 87, Surabaya",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "unknown",
+        "features": [
+          "layanan lansia",
+          "layanan anak berkebutuhan khusus"
+        ],
+        "claims_for_elements": []
+      },
+      "evidence_level": "official_documentation",
+      "verified_by_team": false,
+      "needs_geocoding": true,
+      "sources": [
+        {
+          "name": "Dinas Kesehatan Surabaya",
+          "url": "https://dinkes.surabaya.go.id/portal_dinkes/d/pkm_tambakrejo",
+          "retrieved_at": "2026-09-13"
+        },
+        {
+          "name": "Pemerintah Kota Surabaya",
+          "url": "https://www.surabaya.go.id/id/berita/74795/seluruh-puskesmas-di-surabaya-terapkan-layanan-ramah-anak",
+          "retrieved_at": "2026-09-13",
+          "scope_note": "Klaim ramp, kursi roda, dan toilet disabilitas berlaku umum untuk puskesmas; belum terbukti spesifik untuk gedung Tambakrejo."
+        }
+      ]
+    },
+    {
+      "id": "osm-unesa-lidah-wetan",
+      "name": "Universitas Negeri Surabaya (UNESA) Kampus Lidah Wetan",
+      "category": "university",
+      "lat": -7.30154,
+      "lng": 112.67432,
+      "address": "Jl. Lidah Wetan, Kec. Lakarsantri, Surabaya",
+      "kecamatan": "Lakarsantri",
+      "kelurahan": "Lidah Wetan",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "yes",
+        "tactile_paving": "limited",
+        "features": [
+          "Akses jalur landai dan ramp kursi roda di gedung rektorat dan fakultas",
+          "Pusat Studi dan Layanan Disabilitas (PSLD) UNESA",
+          "Toilet khusus disabilitas"
+        ],
+        "summary": "Kampus utama UNESA dengan fasilitas ramah disabilitas dan Pusat Layanan Disabilitas."
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/451633534",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-23"
+      }
+    },
+    {
+      "id": "osm-unesa-ketintang",
+      "name": "Universitas Negeri Surabaya (UNESA) Kampus Ketintang",
+      "category": "university",
+      "lat": -7.31294,
+      "lng": 112.72748,
+      "address": "Jl. Ketintang, Kec. Gayungan, Surabaya",
+      "kecamatan": "Gayungan",
+      "kelurahan": "Ketintang",
+      "elements": {},
+      "pre_survey": {
+        "wheelchair": "yes",
+        "toilet_accessible": "yes",
+        "tactile_paving": "unknown",
+        "features": [
+          "Ramp akses kursi roda di gedung utama",
+          "Fasilitas parkir disabilitas"
+        ],
+        "summary": "Kampus Ketintang UNESA dengan fasilitas bertahap ramah disabilitas."
+      },
+      "evidence_level": "community_reported",
+      "verified_by_team": false,
+      "source": {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/way/302832810",
+        "license": "ODbL 1.0",
+        "retrieved_at": "2026-09-23"
+      }
+    }
   ],
   "base_location_datasets": [
-    {"name":"Open Data Surabaya","url":"https://opendata.surabaya.go.id/","use":"Portal utama untuk mencari registry lokasi pemerintah."},
-    {"name":"Jumlah Puskesmas Kota Surabaya","url":"https://ckan.surabaya.go.id/gl/dataset/1700-5326-156","format":"CSV","use":"Nama, alamat, jenis layanan, dan akreditasi; tidak memuat atribut aksesibilitas.","license_status":"No License Provided"},
-    {"name":"Jumlah Taman Kota dan Luasnya yang Dikelola Pemerintah 2023","url":"https://ckan.surabaya.go.id/en/dataset/jumlah-taman-kota-dan-luasnya-yang-dikelola-oleh-pemerintah-2023/resource/2c44252c-3bd4-4518-bd71-2981e6fe2d2d","format":"CSV","use":"Nama/lokasi taman, kecamatan, kelurahan, dan luas; tidak memuat atribut aksesibilitas.","license_status":"No License Provided"},
-    {"name":"Data layanan perpustakaan Surabaya","url":"https://opendata.surabaya.go.id/kumpulan_dataset/1900-6686-26","use":"Nama, kode, tipe, dan alamat layanan; tidak memuat atribut aksesibilitas."},
-    {"name":"Inovasi transportasi inklusif Surabaya","url":"https://www.surabaya.go.id/id/berita/23990/komitmen-jadi-kota-pelopor-revolusi-transportasi-inklusif-di-indonesia-pemkot-surabaya-kenalkan-9-inovasi-kategori-perhubungan-di-inovboyo","use":"Referensi kebijakan dan jenis fasilitas halte aksesibel; belum menyediakan daftar halte per lokasi."}
+    {
+      "name": "Open Data Surabaya",
+      "url": "https://opendata.surabaya.go.id/",
+      "use": "Portal utama untuk mencari registry lokasi pemerintah."
+    },
+    {
+      "name": "Jumlah Puskesmas Kota Surabaya",
+      "url": "https://ckan.surabaya.go.id/gl/dataset/1700-5326-156",
+      "format": "CSV",
+      "use": "Nama, alamat, jenis layanan, dan akreditasi; tidak memuat atribut aksesibilitas.",
+      "license_status": "No License Provided"
+    },
+    {
+      "name": "Jumlah Taman Kota dan Luasnya yang Dikelola Pemerintah 2023",
+      "url": "https://ckan.surabaya.go.id/en/dataset/jumlah-taman-kota-dan-luasnya-yang-dikelola-oleh-pemerintah-2023/resource/2c44252c-3bd4-4518-bd71-2981e6fe2d2d",
+      "format": "CSV",
+      "use": "Nama/lokasi taman, kecamatan, kelurahan, dan luas; tidak memuat atribut aksesibilitas.",
+      "license_status": "No License Provided"
+    },
+    {
+      "name": "Data layanan perpustakaan Surabaya",
+      "url": "https://opendata.surabaya.go.id/kumpulan_dataset/1900-6686-26",
+      "use": "Nama, kode, tipe, dan alamat layanan; tidak memuat atribut aksesibilitas."
+    },
+    {
+      "name": "Inovasi transportasi inklusif Surabaya",
+      "url": "https://www.surabaya.go.id/id/berita/23990/komitmen-jadi-kota-pelopor-revolusi-transportasi-inklusif-di-indonesia-pemkot-surabaya-kenalkan-9-inovasi-kategori-perhubungan-di-inovboyo",
+      "use": "Referensi kebijakan dan jenis fasilitas halte aksesibel; belum menyediakan daftar halte per lokasi."
+    }
   ]
 }

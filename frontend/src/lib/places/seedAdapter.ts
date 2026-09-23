@@ -106,6 +106,7 @@ function extractDistrict(address: string | null, name: string): string {
   if (text.includes('pabean cantian')) return 'Pabean Cantian';
   if (text.includes('sawahan') || text.includes('banyu urip')) return 'Sawahan';
   if (text.includes('tandes') || text.includes('manukan')) return 'Tandes';
+  if (text.includes('lakarsantri') || text.includes('lidah')) return 'Lakarsantri';
   return 'Surabaya';
 }
 
