@@ -4211,6 +4211,47 @@ html[data-a11y-highlight-interactive="true"] a[href][data-icon-only-link] {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+/* Dark Mode styling for Floating Trigger Button */
+.dark .a11y-widget-btn,
+[data-theme='dark'] .a11y-widget-btn,
+[data-a11y-dark='true'] .a11y-widget-btn {
+  background: linear-gradient(135deg, #241844 0%, #17102e 100%);
+  color: #f1f0f7;
+  border: 1px solid rgba(154, 120, 240, 0.32);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(154, 120, 240, 0.12);
+}
+
+.dark .a11y-widget-btn:hover,
+[data-theme='dark'] .a11y-widget-btn:hover,
+[data-a11y-dark='true'] .a11y-widget-btn:hover {
+  background: linear-gradient(135deg, #2f2056 0%, #1e153b 100%);
+  border-color: rgba(167, 139, 250, 0.5);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6), 0 3px 8px rgba(154, 120, 240, 0.22);
+}
+
+.dark .a11y-widget-btn.active,
+[data-theme='dark'] .a11y-widget-btn.active,
+[data-a11y-dark='true'] .a11y-widget-btn.active {
+  background: linear-gradient(135deg, #18102e 0%, #110b22 100%);
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.dark .a11y-widget-icon-wrapper,
+[data-theme='dark'] .a11y-widget-icon-wrapper,
+[data-a11y-dark='true'] .a11y-widget-icon-wrapper {
+  background: rgba(154, 120, 240, 0.18);
+  color: #c4b5fd;
+}
+
+.dark .a11y-active-badge,
+[data-theme='dark'] .a11y-active-badge,
+[data-a11y-dark='true'] .a11y-active-badge {
+  background: #facc15;
+  color: #1e1b4b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
 .a11y-widget-icon-wrapper {
   display: flex;
   align-items: center;
@@ -4714,6 +4755,23 @@ html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
   .widget-pos-right {
     bottom: calc(74px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* Login has no bottom navigation. Anchor cleanly at bottom across mobile & tablet. */
+  .widget-page-login.widget-pos-left {
+    position: fixed;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    left: 16px;
+    top: auto;
+    right: auto;
+  }
+
+  .widget-page-login.widget-pos-right {
+    position: fixed;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    top: auto;
+    left: auto;
+  }
 }
 
 @media (max-width: 600px) {
@@ -4791,6 +4849,25 @@ html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
     padding: 8px;
     gap: 0;
     border-radius: 50%;
+    justify-content: center;
+    position: relative;
+    overflow: visible;
+  }
+
+  .widget-page-login .a11y-widget-icon-wrapper {
+    margin: 0;
+  }
+
+  .widget-page-login .a11y-active-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
   }
 
