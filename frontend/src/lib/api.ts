@@ -8,7 +8,7 @@ export type ApiPlace = {
   id: string; name: string; category: string; lat: number | null; lng: number | null;
   address: string | null; kecamatan: string | null; kelurahan: string | null;
   preSurvey: Record<string, unknown>; sources: { name?: string; url?: string; license?: string; retrieved_at?: string }[];
-  evidenceLevel: string; verifiedByTeam: boolean; needsGeocoding: boolean;
+  evidenceLevel: string; verifiedByTeam: boolean; needsGeocoding: boolean; pendingApproval?: boolean;
   elements: Record<string, { status: AccessibilityStatus; lockedBy: 'kontributor'; photoUrl?: string | null; note?: string | null }>;
   score: number | null; summary: string; overall: AccessibilityStatus; coverage: { known: number; total: number };
   updatedAt: string | null; photoCount: number; reportCount: number; bottlenecks?: string[];
@@ -25,8 +25,9 @@ export type ApiAnalysis = {
   disclaimer: string; fallback?: 'manual_checklist'; error?: string;
 };
 export type { PhotoIntegrityResult } from '@/types';
-export type ApiReport = { id: string; placeId: string; reporterName: string; createdAt: string; photoUrl: string; elements: { element: string; status: AccessibilityStatus; note?: string }[]; photoIntegrity?: PhotoIntegrityResult };
 export type ReviewStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'NEEDS_REVISION' | 'APPROVED' | 'REJECTED' | 'PUBLISHED';
+/** `elements` is what the report counts as on the place: the reviewer's correction when there is one. */
+export type ApiReport = { id: string; placeId: string; reporterName: string; createdAt: string; photoUrl: string; elements: { element: string; status: AccessibilityStatus; note?: string }[]; reviewStatus?: ReviewStatus; photoIntegrity?: PhotoIntegrityResult };
 // A contributor's own report, including the review outcome shown back to them in their profile.
 export type ContributionReport = ApiReport & {
   /** Name of the place the report is about; null if the place no longer exists. */
@@ -56,7 +57,7 @@ export function toUiPlace(p: ApiPlace): Place {
   const base = adaptSeedRecords([{ id: p.id, name: p.name, category: p.category, address: p.address,
     lat: p.lat, lng: p.lng, needs_geocoding: p.needsGeocoding, verified_by_team: p.verifiedByTeam,
     pre_survey: p.preSurvey, sources: p.sources, evidence_level: p.evidenceLevel }])[0];
-  return { ...base, district: p.kecamatan ?? 'Belum diketahui', overall: p.overall,
+  return { ...base, district: p.kecamatan ?? 'Belum diketahui', overall: p.overall, pendingApproval: Boolean(p.pendingApproval),
     chainSummary: p.summary, photos: p.photoCount, reportCount: p.reportCount, score: p.score, coverage: p.coverage,
     updated: p.updatedAt ? new Date(p.updatedAt).toLocaleString('id-ID') : 'Belum ada laporan lapangan',
     updatedAt: p.updatedAt,
@@ -107,89 +108,15 @@ export async function fetchPlace(id: string, profile?: string) {
     return { place: found, reports: [] };
   }
 }
-function getFallbackReports(placeId: string): ApiReport[] {
-  const seed = loadSeedPlaces();
-  const place = seed.find((p) => String(p.id) === String(placeId));
-  const placeName = place ? place.name : 'Lokasi';
-
-  return [
-    {
-      id: `report-demo-${placeId}-1`,
-      placeId: String(placeId),
-      reporterName: 'Nadia Puspita (Kontributor)',
-      createdAt: '2026-09-20T09:05:00.000Z',
-      photoUrl: DEFAULT_FALLBACK_SVG,
-      elements: [
-        {
-          element: 'E1_door',
-          status: 'UTUH',
-          note: `Pintu masuk utama ${placeName} mudah diakses kursi roda dan bertanda jelas.`,
-        },
-        {
-          element: 'E6_parking',
-          status: 'UTUH',
-          note: 'Area parkir khusus disabilitas tersedia dekat akses masuk utama.',
-        },
-      ],
-    },
-    {
-      id: `report-demo-${placeId}-2`,
-      placeId: String(placeId),
-      reporterName: 'Hendra Gunawan (Kontributor)',
-      createdAt: '2026-09-18T14:30:00.000Z',
-      photoUrl: DEFAULT_FALLBACK_SVG,
-      elements: [
-        {
-          element: 'E3_toilet',
-          status: 'UTUH',
-          note: 'Toilet disabilitas bersih, luas, dan dilengkapi pegangan tangan standar.',
-        },
-      ],
-    },
-  ];
-}
-
-function getFallbackReviews(placeId: string): ApiReview[] {
-  const seed = loadSeedPlaces();
-  const place = seed.find((p) => String(p.id) === String(placeId));
-  const placeName = place ? place.name : 'Lokasi';
-
-  return [
-    {
-      id: `review-demo-${placeId}-1`,
-      placeId: String(placeId),
-      reviewerName: 'Rina Andriani',
-      createdAt: '2026-09-21T10:15:00.000Z',
-      experience: `Berkunjung ke ${placeName} bersama keluarga. Petugas keamanan sangat sigap dan ramah mengarahkan jalur akses kursi roda menuju pintu masuk utama.`,
-    },
-    {
-      id: `review-demo-${placeId}-2`,
-      placeId: String(placeId),
-      reviewerName: 'Fajar Nugroho',
-      createdAt: '2026-09-19T15:40:00.000Z',
-      experience: `Sebagai pengguna kursi roda, fasilitas akses di ${placeName} sudah cukup memadai. Rambu informasi dan toilet disabilitas bersih serta mudah ditemukan.`,
-    },
-  ];
-}
-
 /**
- * Correction trail for one place, newest first. Every report is kept, including the ones
- * a later correction superseded, so the drawer can show who changed which element and when.
+ * Correction trail for one place, newest first: every report that still stands, including the
+ * ones a later correction superseded. These are exactly the reports the place's "Kondisi akses"
+ * is derived from. Errors propagate so the drawer shows a retry instead of invented entries.
  */
 export async function fetchPlaceReports(id: string, limit = 20) {
-  try {
-    const res = await request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
-      `/api/places/${encodeURIComponent(id)}/reports?limit=${limit}`
-    );
-    if (res.reports && res.reports.length > 0) {
-      return res;
-    }
-  } catch {
-    // Backend offline or error -> fall through to fallback
-  }
-  const fallback = getFallbackReports(id);
-  const sliced = fallback.slice(0, limit);
-  return { reports: sliced, total: fallback.length, limit, offset: 0 };
+  return request<{ reports: ApiReport[]; total: number; limit: number; offset: number }>(
+    `/api/places/${encodeURIComponent(id)}/reports?limit=${limit}`
+  );
 }
 export async function analyzePhoto(image: string, mimeType: string): Promise<ApiAnalysis> {
   return request('/api/analyze', { method: 'POST', headers: await headers(), body: JSON.stringify({ image, mimeType }) });
@@ -214,20 +141,11 @@ export async function submitNewPlace(payload: Omit<ReportPayload, 'placeId'> & {
   return { ...result, place: toUiPlace(result.place) };
 }
 export type ApiReview = { id: string; placeId: string; reviewerName: string; experience: string; createdAt: string };
+// Only real visitor reviews: an empty list stays empty, and errors propagate to a retry.
 export async function fetchReviews(placeId: string, offset = 0) {
-  try {
-    const res = await request<{ reviews: ApiReview[]; total: number }>(
-      `/api/places/${encodeURIComponent(placeId)}/reviews?limit=20&offset=${offset}`
-    );
-    if (res.reviews && res.reviews.length > 0) {
-      return res;
-    }
-  } catch {
-    // Backend offline or error -> fall through to fallback reviews
-  }
-  const fallback = getFallbackReviews(placeId);
-  const sliced = fallback.slice(offset, offset + 20);
-  return { reviews: sliced, total: fallback.length };
+  return request<{ reviews: ApiReview[]; total: number }>(
+    `/api/places/${encodeURIComponent(placeId)}/reviews?limit=20&offset=${offset}`
+  );
 }
 export async function submitReview(payload: { placeId: string; reviewerName: string; experience: string }, requestKey: string) {
   const review = await request<{ review: ApiReview }>('/api/reviews', { method: 'POST', headers: { ...await headers(), 'Idempotency-Key': requestKey }, body: JSON.stringify(payload) });

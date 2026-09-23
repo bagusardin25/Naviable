@@ -326,6 +326,9 @@ export interface TranslationDictionary {
     reviewSubmitSuccess: string;
     reviewsCount: string;
     reviewsHeading: string;
+    reviewsTotal: string;
+    reviewByAria: string;
+    visitorReviewLabel: string;
     userExperienceEyebrow: string;
     backToDetail: string;
     authPromptBtn: string;
@@ -344,6 +347,10 @@ export interface TranslationDictionary {
     sourceVerificationSection: string;
     openOriginalSource: string;
     citizenCorrectionHistory: string;
+    historyDrivesConditions: string;
+    reportApprovedChip: string;
+    reportPendingChip: string;
+    unknownKeepsCondition: string;
     historySectionAria: string;
     showingRecentReports: string;
     viewEvidencePhoto: string;
@@ -406,18 +413,20 @@ export interface TranslationDictionary {
     photoFormatHelp: string;
     photoRestoredText: string;
     photoStoredText: string;
+    photoPreviewAlt: string;
     additionalNotesLabel: string;
     additionalNotesPlaceholder: string;
     step2Title: string;
     aiAssistanceEyebrow: string;
     aiAnalyzing: string;
-    aiSuggestionReady: string;
     aiNotChecked: string;
-    aiManualAlwaysReady: string;
+    aiChecked: string;
     aiHelpGuidance: string;
-    aiNeedsMorePhotos: string;
+    aiAnalyzingHint: string;
+    aiNoDescription: string;
+    aiElementMismatch: string;
+    aiSwitchElementBtn: string;
     aiPhotoDescriptionLabel: string;
-    aiDisclaimerDefault: string;
     aiAnalyzeBtnText: string;
     aiAnalyzingBtnText: string;
     autoCheckAfterSignIn: string;
@@ -430,6 +439,7 @@ export interface TranslationDictionary {
     successBody: string;
     successCurateTitle: string;
     successCurateDesc: string;
+    successCurateDescNewPlace: string;
     photoMismatchEyebrow: string;
     photoMismatchTitle: string;
     photoMismatchNextTitle: string;
@@ -448,8 +458,6 @@ export interface TranslationDictionary {
     inspectionAndConfirmationAria: string;
     newPlaceNoticeSub: string;
     correctionNoticeSub: string;
-    aiSuggestionLabel: string;
-    confidenceLabel: string;
     completeFirst: string;
     missingPhoto: string;
     missingCoords: string;
@@ -460,14 +468,6 @@ export interface TranslationDictionary {
     categoryPlaceholder: string;
     fullAddressPlaceholder: string;
     reporterNamePlaceholder: string;
-    integrityAiTrusted: string;
-    integritySuspicious: string;
-    integrityUncertain: string;
-    integrityNotChecked: string;
-    integrityCheckTitle: string;
-    integrityDefaultSignals: string;
-    visualAnalysisLabel: string;
-    attemptsLabel: string;
   };
   observatory: {
     pageEyebrow: string;
@@ -712,6 +712,7 @@ export interface TranslationDictionary {
     noPhotoAttached: string;
     metaPlaceName: string;
     metaAddress: string;
+    pendingPlaceNotice: string;
     metaReporter: string;
     metaReportDate: string;
     reportedElementsHeading: string;

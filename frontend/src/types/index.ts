@@ -73,6 +73,8 @@ export type Place = {
   retrievedAt?: string;
   verifiedByTeam: boolean;
   needsGeocoding: boolean;
+  /** A contributor-added place that is hidden from the public map until a reviewer approves it. */
+  pendingApproval?: boolean;
   chainSummary: string;
   updated: string;
   updatedAt?: string | null;
@@ -569,10 +571,12 @@ export function detectConditionChanges(
   for (let i = 0; i < reports.length - 1; i++) {
     const current = reports[i];
     for (const curEl of current.elements) {
-      if (checkedElements.has(curEl.element)) continue;
+      // "Belum diketahui" never changes an element's condition (the server keeps the last known
+      // status), so it is neither a change nor the status something changed from.
+      if (curEl.status === 'BELUM_DIKETAHUI' || checkedElements.has(curEl.element)) continue;
       for (let j = i + 1; j < reports.length; j++) {
         const prev = reports[j];
-        const prevEl = prev.elements.find((e) => e.element === curEl.element);
+        const prevEl = prev.elements.find((e) => e.element === curEl.element && e.status !== 'BELUM_DIKETAHUI');
         if (prevEl) {
           checkedElements.add(curEl.element);
           if (curEl.status !== prevEl.status) {
@@ -740,6 +744,8 @@ export type ReviewerAuditItem = {
   placeId: string;
   placeName: string;
   placeAddress?: string | null;
+  /** True while the report's place is a new location that approval will put on the public map. */
+  placePendingApproval?: boolean;
   reporterName: string;
   createdAt: string;
   photoUrl: string;
