@@ -38,7 +38,8 @@ export function AppSidebar({ currentScreen, onSelectScreen, authReady, userProfi
           aria-current={currentScreen === 'map' ? 'page' : undefined}
         >
           <Icon name="map" />
-          <span>{t('nav.explore')}</span>
+          <span className="nav-label-full">{t('nav.explore')}</span>
+          <span className="nav-label-mobile">{t('nav.explore')}</span>
         </button>
         <button
           id="nav-report"
