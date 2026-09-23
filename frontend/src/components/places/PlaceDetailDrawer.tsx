@@ -8,7 +8,7 @@ import { AccessibilityChain } from './AccessibilityChain';
 import { CorrectionHistory } from './CorrectionHistory';
 import { PlaceReviews } from './PlaceReviews';
 import { fetchPlaceReports, type ApiReport } from '@/lib/api';
-import { buildGoogleMapsPlaceUrl } from '@/lib/externalMaps';
+import { buildPlaceDirectionsUrl } from '@/lib/externalMaps';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type PlaceDetailDrawerProps = {
@@ -108,10 +108,7 @@ export function PlaceDetailDrawer({
   const meta = placeStatusMeta(place, activeNeed);
   const freshness = getEvidenceFreshness(place.updatedAt);
   const conditionChanges = detectConditionChanges(historySettled ? history.reports : []);
-  const googleMapsPlaceUrl =
-    !place.needsGeocoding && place.lat !== null && place.lng !== null
-      ? buildGoogleMapsPlaceUrl({ destination: place, travelMode: 'walking' })
-      : null;
+  const googleMapsPlaceUrl = buildPlaceDirectionsUrl(place);
 
   const freshnessIcon =
     freshness.level === 'fresh'

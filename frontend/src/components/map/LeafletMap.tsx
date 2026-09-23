@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
 import { createTemporaryMarkerIcon } from './markerIcons';
+import { buildPlaceDirectionsUrl } from '@/lib/externalMaps';
 
 export interface SelectedMapLocation {
   lat: number;
@@ -367,6 +368,7 @@ export default function LeafletMap({
           status: t(`status.${meta.status}.label`, meta.label),
         });
         const icon = createMarkerIcon(place, isSelected, activeNeed, markerTitle);
+        const directionsUrl = buildPlaceDirectionsUrl(place);
 
         return (
           <Marker
@@ -429,6 +431,18 @@ export default function LeafletMap({
                 >
                   {t('map.viewAccessCondition')}
                 </button>
+                {directionsUrl && (
+                  <a
+                    className="google-maps-btn popup-directions-btn"
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('places.gmapsDirectionsAria', { name: place.name })}
+                  >
+                    <Icon name="navigation" size={13} />
+                    <span>{t('places.gmapsDirections')}</span>
+                  </a>
+                )}
               </div>
             </Popup>
           </Marker>

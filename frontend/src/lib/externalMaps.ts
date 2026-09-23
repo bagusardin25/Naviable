@@ -66,6 +66,11 @@ export interface PlaceNavigationOptions {
   destination: GeoPoint;
   origin?: GeoPoint | null;
   travelMode?: TravelMode;
+  /**
+   * Text Google Maps can search for when the destination has no usable coordinates
+   * (e.g. a place still waiting for a map point). Without it, invalid coordinates give null.
+   */
+  fallbackQuery?: string | null;
 }
 
 /**
@@ -76,7 +81,7 @@ export interface PlaceNavigationOptions {
  * https://www.google.com/maps/dir/?api=1&destination=-7.2575,112.7521&travelmode=walking
  */
 export function buildGoogleMapsPlaceUrl(options: PlaceNavigationOptions): string | null {
-  const destStr = formatCoordinate(options.destination);
+  const destStr = formatCoordinate(options.destination) ?? (options.fallbackQuery?.trim() || null);
   if (!destStr) {
     return null;
   }
@@ -95,4 +100,28 @@ export function buildGoogleMapsPlaceUrl(options: PlaceNavigationOptions): string
   }
 
   return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+export interface DirectionsPlace {
+  name: string;
+  address?: string | null;
+  lat: number | null;
+  lng: number | null;
+  needsGeocoding?: boolean;
+}
+
+/**
+ * Google Maps directions to a Naviable place. Uses the exact map point when the place
+ * has one; a place still waiting for a precise point falls back to a "name, address,
+ * Surabaya" search, so every listed place can offer directions.
+ */
+export function buildPlaceDirectionsUrl(place: DirectionsPlace, travelMode: TravelMode = 'walking'): string | null {
+  const hasPoint = !place.needsGeocoding && isValidCoordinate(place.lat, place.lng);
+  const parts = [place.name, place.address].map((part) => part?.trim()).filter((part): part is string => Boolean(part));
+  if (!parts.some((part) => /surabaya/i.test(part))) parts.push('Surabaya');
+  return buildGoogleMapsPlaceUrl({
+    destination: hasPoint ? { lat: place.lat, lng: place.lng, name: place.name } : { lat: null, lng: null },
+    fallbackQuery: parts.join(', '),
+    travelMode,
+  });
 }
