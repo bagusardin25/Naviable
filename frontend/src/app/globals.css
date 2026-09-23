@@ -1878,6 +1878,16 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
   gap: 16px;
   align-items: start;
 }
+/* Informasi Aksesibilitas: one vertical rhythm between every section so
+   "Kelengkapan Data", "Sorotan Akses" and "Wilayah Surabaya" read as separate
+   sections instead of one merged block. The same gap applies between the two
+   grid cards, so they stay evenly spaced when they stack on narrow screens. */
+.dashboard-page { --dashboard-section-gap: 28px; }
+.dashboard-page > .metric-grid { margin: 0 0 var(--dashboard-section-gap); }
+.dashboard-page > .dashboard-grid {
+  margin-top: var(--dashboard-section-gap);
+  gap: var(--dashboard-section-gap);
+}
 .bar-list { display: grid; gap: 14px; margin-top: 18px; }
 .bar-row {
   display: grid;
@@ -3482,6 +3492,7 @@ html.dyslexia-mode,
   .page-scroll { padding: 16px 16px 32px; }
   .page-title h1 { font-size: 24px; }
   .metric-grid { grid-template-columns: 1fr; }
+  .dashboard-page { --dashboard-section-gap: 20px; }
   .topbar { padding: 8px 10px; gap: 6px; }
   .search-box input { font-size: 13px; }
   .map-toolbar { padding: 10px 12px; }

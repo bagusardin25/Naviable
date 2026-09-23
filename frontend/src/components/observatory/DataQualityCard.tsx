@@ -18,7 +18,7 @@ export function DataQualityCard({ places }: DataQualityCardProps) {
   return (
     <div
       className="card"
-      style={{ marginTop: '16px', padding: '16px 20px', minWidth: 0 }}
+      style={{ padding: '16px 20px', minWidth: 0 }}
       aria-label={t('observatory.qualityCardAria')}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', minWidth: 0 }}>
