@@ -63,6 +63,9 @@ export type Place = {
   evidenceLevel: string;
   verifiedByTeam: boolean;
   needsGeocoding: boolean;
+  /** A contributor-added place stays off every public listing (map, search, observatory, CSV)
+   *  until a reviewer approves one of its reports. Absent on seed places, which are public. */
+  pendingApproval?: boolean;
   updatedAt: string | null;
   photoCount: number;
   reportCount: number;

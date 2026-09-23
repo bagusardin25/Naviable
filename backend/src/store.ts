@@ -21,8 +21,42 @@ export type Report = {
   reviewedAt?: string | null;
   reviewNote?: string | null;
   reviewChecklist?: Record<string, boolean> | null;
+  /** The reviewer's corrected element statuses from an approval; null when approved as reported. */
+  reviewedElements?: ReportInput["elements"] | null;
 };
-export type PublishInput = Omit<Report, "id" | "photoPath" | "mimeType" | "createdAt" | "reviewStatus" | "reviewedBy" | "reviewedAt" | "reviewNote" | "reviewChecklist">;
+export type PublishInput = Omit<Report, "id" | "photoPath" | "mimeType" | "createdAt" | "reviewStatus" | "reviewedBy" | "reviewedAt" | "reviewNote" | "reviewChecklist" | "reviewedElements">;
+
+/** Reports that still stand. Revised or rejected ones leave the public history and the place. */
+export const STANDING_REVIEW_STATUSES: readonly Report["reviewStatus"][] = ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "PUBLISHED"];
+export const isStanding = (report: Pick<Report, "reviewStatus">) => STANDING_REVIEW_STATUSES.includes(report.reviewStatus);
+/** What a report says about each element: the reviewer's correction when there is one. */
+export const effectiveElements = (report: Pick<Report, "elements" | "reviewedElements">) =>
+  report.reviewedElements?.length ? report.reviewedElements : report.elements;
+
+/**
+ * Re-derives a place's "Kondisi akses" from its reports, so the elements always match the
+ * public history. Same rule as refresh_place_elements (migration 007): per element, the newest
+ * standing report with a definite status wins; BELUM_DIKETAHUI never overwrites evidence.
+ */
+function refreshPlace(state: State, placeId: string) {
+  const place = state.places.find(p => p.id === placeId);
+  if (!place) return;
+  const standing = state.reports
+    .map((report, index) => ({ report, index }))
+    .filter(({ report }) => report.placeId === placeId && isStanding(report))
+    .sort((a, b) => b.report.createdAt.localeCompare(a.report.createdAt) || b.index - a.index)
+    .map(({ report }) => report);
+  const elements: Place["elements"] = {};
+  for (const report of standing) {
+    for (const el of effectiveElements(report)) {
+      if (el.status === "BELUM_DIKETAHUI" || elements[el.element]) continue;
+      elements[el.element] = { status: el.status, note: el.note ?? null, photoUrl: `/api/photos/${report.id}`, lockedBy: "kontributor", aiConfidence: null };
+    }
+  }
+  place.elements = elements;
+  place.reportCount = standing.length;
+  place.photoCount = standing.length;
+}
 export type Review = { id: string; placeId: string; actorId: string; reviewerName: string; experience: string; createdAt: string; requestKey: string; inputHash: string };
 export type ReviewInput = Omit<Review, "id" | "createdAt">;
 export interface Store {
@@ -43,31 +77,6 @@ export interface Store {
 
 type State = { version: 1; places: Place[]; reports: Report[]; reviews?: Review[] };
 
-// Demo visitor reviews for local/dev mode. Without these the place drawer's review
-// history is empty for every location (no contributor flow has run yet), so the
-// "review history" section can never demonstrate real entries. One review per seed
-// place keeps the section populated no matter which place is opened. Never used by
-// SupabaseStore, which reads real reviews from the database.
-const DEMO_REVIEWERS = ["Rina Andriani", "Fajar Nugroho", "Melati Kusuma", "Yoga Pratama", "Sari Wulandari", "Bagas Saputra"];
-const DEMO_REVIEW_TEMPLATES = [
-  (name: string) => `Berkunjung ke ${name} bersama keluarga. Petugas cukup membantu mengarahkan jalur akses menuju pintu masuk.`,
-  (name: string) => `Sebagai pengguna kursi roda, akses masuk ${name} masih bisa dilalui walau ada beberapa titik yang perlu perhatian.`,
-  (name: string) => `Jalur pemandu dan rambu di ${name} lumayan jelas. Semoga fasilitas toiletnya makin ramah difabel.`,
-  (name: string) => `Pengalaman di ${name} cukup baik. Area parkir dan penyeberangan terdekat masih agak menantang bagi tunanetra.`,
-];
-function buildDemoReviews(places: Place[]): Review[] {
-  return places.map((place, i) => ({
-    id: `review-demo-${(i + 1).toString().padStart(4, "0")}`,
-    placeId: place.id,
-    actorId: `00000000-0000-4000-9000-${(i + 1).toString().padStart(12, "0")}`,
-    reviewerName: DEMO_REVIEWERS[i % DEMO_REVIEWERS.length],
-    experience: DEMO_REVIEW_TEMPLATES[i % DEMO_REVIEW_TEMPLATES.length](place.name),
-    createdAt: new Date(Date.UTC(2026, 8, 12 + (i % 6), 2 + (i % 9), (i * 11) % 60)).toISOString(),
-    requestKey: `review-demo-key-${(i + 1).toString().padStart(4, "0")}`,
-    inputHash: `review-demo-hash-${(i + 1).toString().padStart(4, "0")}`,
-  }));
-}
-
 export class LocalStore implements Store {
   private state!: State;
   private queue: Promise<unknown> = Promise.resolve();
@@ -79,165 +88,27 @@ export class LocalStore implements Store {
       if (this.state.version !== 1 || !Array.isArray(this.state.places) || !Array.isArray(this.state.reports)) throw new Error("Unsupported local database");
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      const seedPlaces = await loadSeed();
-      const demoReportSeed: Report[] = [
-        {
-          id: "10000000-0000-4000-8000-000000000001",
-          placeId: seedPlaces[3]?.id ?? "osm-node-4794254291",
-          actorId: "00000000-0000-4000-8000-000000000001",
-          reporterName: "Ahmad Rizki",
-          requestKey: "20000000-0000-4000-8000-000000000001",
-          inputHash: "demo-hash-1",
-          elements: [{ element: "E2_ramp", status: "TERHALANG", note: "Ramp akses kursi roda tertutup parkir motor dan barang pedagang." }],
-          photoPath: "photos/demo-ramp.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-18T10:15:00.000Z",
-          reviewStatus: "SUBMITTED",
-          reviewedBy: null,
-          reviewedAt: null,
-          reviewNote: null,
-          reviewChecklist: null,
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000002",
-          placeId: seedPlaces[0]?.id ?? "osm-node-659961942",
-          actorId: "00000000-0000-4000-8000-000000000002",
-          reporterName: "Siti Nurhaliza",
-          requestKey: "20000000-0000-4000-8000-000000000002",
-          inputHash: "demo-hash-2",
-          elements: [{ element: "E5_guiding_block", status: "UTUH", note: "Jalur pemandu kuning terhubung rapi dari trotoar pintu masuk utama." }],
-          photoPath: "photos/demo-tactile.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-19T07:20:00.000Z",
-          reviewStatus: "APPROVED",
-          reviewedBy: "reviewer.naviable",
-          reviewedAt: "2026-09-19T08:30:00.000Z",
-          reviewNote: "Foto jelas dan menunjukkan jalur pemandu terpasang utuh sesuai standar.",
-          reviewChecklist: { photoMatchesPlace: true, photoShowsElement: true, descriptionMatchesEvidence: true, notDuplicate: true, accessStatusMatchesEvidence: true },
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000003",
-          placeId: seedPlaces[1]?.id ?? "osm-node-4191188521",
-          actorId: "00000000-0000-4000-8000-000000000003",
-          reporterName: "Budi Wicaksono",
-          requestKey: "20000000-0000-4000-8000-000000000003",
-          inputHash: "demo-hash-3",
-          elements: [{ element: "E1_door", status: "UTUH", note: "Pintu masuk lebar tanpa undakan, ramah pengguna kursi roda." }],
-          photoPath: "photos/demo-door.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-19T11:20:00.000Z",
-          reviewStatus: "SUBMITTED",
-          reviewedBy: null,
-          reviewedAt: null,
-          reviewNote: null,
-          reviewChecklist: null,
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000004",
-          placeId: seedPlaces[2]?.id ?? "osm-node-4191209387",
-          actorId: "00000000-0000-4000-8000-000000000004",
-          reporterName: "Dewi Lestari",
-          requestKey: "20000000-0000-4000-8000-000000000004",
-          inputHash: "demo-hash-4",
-          elements: [{ element: "E4_lift", status: "TIDAK_STANDAR", note: "Tombol lift tidak ada huruf braille dan posisinya terlalu tinggi." }],
-          photoPath: "photos/demo-lift.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-18T14:40:00.000Z",
-          reviewStatus: "NEEDS_REVISION",
-          reviewedBy: "reviewer.naviable",
-          reviewedAt: "2026-09-19T09:10:00.000Z",
-          reviewNote: "Foto belum memperlihatkan tombol lift secara keseluruhan. Mohon kirimkan foto yang lebih fokus.",
-          reviewChecklist: { photoMatchesPlace: true, photoShowsElement: false, descriptionMatchesEvidence: true, notDuplicate: true, accessStatusMatchesEvidence: false },
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000005",
-          placeId: seedPlaces[4]?.id ?? "osm-node-5873197056",
-          actorId: "00000000-0000-4000-8000-000000000005",
-          reporterName: "Anonim",
-          requestKey: "20000000-0000-4000-8000-000000000005",
-          inputHash: "demo-hash-5",
-          elements: [{ element: "E8_crossing", status: "TIDAK_ADA", note: "Tidak ada penyeberangan aman" }],
-          photoPath: "photos/demo-crossing.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-18T16:00:00.000Z",
-          reviewStatus: "REJECTED",
-          reviewedBy: "reviewer.naviable",
-          reviewedAt: "2026-09-18T17:20:00.000Z",
-          reviewNote: "Foto buram dan tidak menunjukkan titik lokasi penyeberangan yang dilaporkan.",
-          reviewChecklist: { photoMatchesPlace: false, photoShowsElement: false, descriptionMatchesEvidence: false, notDuplicate: true, accessStatusMatchesEvidence: false },
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000006",
-          placeId: "osm-relation-6664927", // Tunjungan Plaza
-          actorId: "00000000-0000-4000-8000-000000000006",
-          reporterName: "Nadia Puspita",
-          requestKey: "20000000-0000-4000-8000-000000000006",
-          inputHash: "demo-hash-6",
-          elements: [{ element: "E6_parking", status: "UTUH", note: "Parkir khusus difabel tersedia dekat pintu utama dan bertanda jelas." }],
-          photoPath: "photos/demo-parking.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-20T09:05:00.000Z",
-          reviewStatus: "SUBMITTED",
-          reviewedBy: null,
-          reviewedAt: null,
-          reviewNote: null,
-          reviewChecklist: null,
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000007",
-          placeId: "osm-way-307282859", // Pakuwon City Mall
-          actorId: "00000000-0000-4000-8000-000000000007",
-          reporterName: "Hendra Gunawan",
-          requestKey: "20000000-0000-4000-8000-000000000007",
-          inputHash: "demo-hash-7",
-          elements: [{ element: "E3_toilet", status: "UTUH", note: "Toilet difabel bersih dengan pegangan dan ruang gerak kursi roda memadai." }],
-          photoPath: "photos/demo-toilet.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-20T13:40:00.000Z",
-          reviewStatus: "APPROVED",
-          reviewedBy: "reviewer.naviable",
-          reviewedAt: "2026-09-21T02:15:00.000Z",
-          reviewNote: "Foto jelas memperlihatkan toilet ramah difabel sesuai laporan.",
-          reviewChecklist: { photoMatchesPlace: true, photoShowsElement: true, descriptionMatchesEvidence: true, notDuplicate: true, accessStatusMatchesEvidence: true },
-        },
-        {
-          id: "10000000-0000-4000-8000-000000000008",
-          placeId: "desk-taman-bungkul", // Taman Bungkul
-          actorId: "00000000-0000-4000-8000-000000000008",
-          reporterName: "Ayu Lestari",
-          requestKey: "20000000-0000-4000-8000-000000000008",
-          inputHash: "demo-hash-8",
-          elements: [{ element: "E8_crossing", status: "TIDAK_STANDAR", note: "Penyeberangan menuju taman ada, tapi tanpa pemandu taktil dan lampu penyeberangan." }],
-          photoPath: "photos/demo-crossing-2.jpg",
-          mimeType: "image/jpeg",
-          createdAt: "2026-09-19T23:30:00.000Z",
-          reviewStatus: "SUBMITTED",
-          reviewedBy: null,
-          reviewedAt: null,
-          reviewNote: null,
-          reviewChecklist: null,
-        }
-      ];
-      // Skip any demo report whose place is not in the current seed set.
-      const demoReports = demoReportSeed.filter(report => seedPlaces.some(place => place.id === report.placeId));
-      this.state = { version: 1, places: seedPlaces, reports: demoReports, reviews: buildDemoReviews(seedPlaces) };
+      this.state = { version: 1, places: await loadSeed(), reports: [], reviews: [] };
       await this.persist(this.state);
     }
-    await this.backfillDemoReviews();
+    await this.normalize();
     return this;
   }
   /**
-   * Older or partial local databases — created before demo reviews existed, or left behind by a
-   * smoke test — leave the place drawer's review history empty for every location. Seed the demo
-   * reviews once so the section always has entries to show. Idempotent: it only fills an
-   * absent/empty reviews list and never touches real contributor reviews.
+   * Brings a local database written by an older version in line with the current rules:
+   * drops the generated demo reviews and demo reports (they read like real people's
+   * experiences and field evidence) and re-derives every place from its reports.
+   * Persists only when something changed.
    */
-  private async backfillDemoReviews() {
-    if (Array.isArray(this.state.reviews) && this.state.reviews.length > 0) return;
-    const reviews = buildDemoReviews(this.state.places);
-    if (reviews.length === 0) return;
-    this.state.reviews = reviews;
-    await this.persist(this.state);
+  private async normalize() {
+    const before = JSON.stringify(this.state);
+    const next = structuredClone(this.state);
+    next.reviews = (next.reviews ?? []).filter(review => !review.id.startsWith("review-demo-"));
+    next.reports = next.reports.filter(report => !report.inputHash.startsWith("demo-hash-"));
+    for (const place of next.places) refreshPlace(next, place.id);
+    if (JSON.stringify(next) === before) return;
+    await this.persist(next);
+    this.state = next;
   }
   private async persist(state: State) {
     const temporary = join(this.directory, `database-${randomUUID()}.tmp`);
@@ -248,7 +119,12 @@ export class LocalStore implements Store {
   }
   async listPlaces() { return structuredClone(this.state.places); }
   async getPlace(id: string) { return structuredClone(this.state.places.find(p => p.id === id)); }
-  async listReports(placeId: string, limit = 50, offset = 0) { return structuredClone(this.state.reports.filter(r => r.placeId === placeId).reverse().slice(offset, offset + limit)); }
+  async listReports(placeId: string, limit = 50, offset = 0) {
+    // Newest first, and only reports that still stand: the same set the place's elements come from.
+    const standing = this.state.reports.filter(r => r.placeId === placeId && isStanding(r)).reverse()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return structuredClone(standing.slice(offset, offset + limit));
+  }
   async getReport(id: string) { return structuredClone(this.state.reports.find(r => r.id === id)); }
   async listAllReports(options: { status?: string; search?: string; limit?: number; offset?: number } = {}) {
     const { status, search, limit = 50, offset = 0 } = options;
@@ -306,26 +182,20 @@ export class LocalStore implements Store {
       targetReport.reviewedAt = new Date().toISOString();
       targetReport.reviewNote = input.note;
       targetReport.reviewChecklist = input.checklist ?? null;
+      // An approval replaces any earlier correction; other decisions keep it for the audit trail.
+      if (input.decision === "APPROVED") targetReport.reviewedElements = input.elements?.length ? input.elements : null;
 
       if (input.decision === "APPROVED") {
         const place = next.places.find(p => p.id === targetReport.placeId);
         if (place) {
           place.verifiedByTeam = true;
-          // Reviewer-corrected statuses win over the reported ones; unknowns leave the element untouched.
-          const elementsToApply = input.elements?.length ? input.elements : targetReport.elements;
-          for (const el of elementsToApply) {
-            if (el.status === "BELUM_DIKETAHUI") continue;
-            place.elements[el.element] = {
-              status: el.status,
-              note: el.note ?? null,
-              photoUrl: `/api/photos/${targetReport.id}`,
-              lockedBy: "kontributor",
-              aiConfidence: null,
-            };
-          }
+          // An approved report is what puts a contributor-added place on the public map.
+          place.pendingApproval = false;
           place.updatedAt = targetReport.reviewedAt;
         }
       }
+      // Revising or rejecting takes the report's statuses off the place again.
+      refreshPlace(next, targetReport.placeId);
 
       await this.persist(next);
       this.state = next;
@@ -396,19 +266,9 @@ export class LocalStore implements Store {
         reviewNote: null,
         reviewChecklist: null,
       };
-      for (const el of input.elements) {
-        place.elements[el.element] = {
-          status: el.status,
-          note: el.note ?? null,
-          photoUrl: `/api/photos/${id}`,
-          lockedBy: "kontributor",
-          aiConfidence: null,
-        };
-      }
-      place.updatedAt = report.createdAt;
-      place.reportCount++;
-      place.photoCount++;
       next.reports.push(report);
+      refreshPlace(next, place.id);
+      place.updatedAt = report.createdAt;
       await writeFile(join(this.directory, report.photoPath), photo.bytes, { flag: "wx" });
       try { await this.persist(next); }
       catch (error) { await unlink(join(this.directory, report.photoPath)).catch(() => {}); throw error; }
@@ -426,13 +286,35 @@ export function toPlaceRow(p: Place) {
     kecamatan: p.kecamatan, kelurahan: p.kelurahan, pre_survey: p.preSurvey, sources: p.sources,
     evidence_level: p.evidenceLevel, verified_by_team: p.verifiedByTeam, needs_geocoding: p.needsGeocoding };
 }
-type PlaceRow = ReturnType<typeof toPlaceRow> & { updated_at: string | null; photo_count: number; report_count: number; place_elements: { element_code: keyof Place["elements"]; status: NonNullable<Place["elements"][keyof Place["elements"]]>["status"]; note: string | null; report_id: string }[] };
+// pending_approval is optional so a database without migration 006 still reads as "all public".
+type PlaceRow = ReturnType<typeof toPlaceRow> & { pending_approval?: boolean; updated_at: string | null; photo_count: number; report_count: number; place_elements: { element_code: keyof Place["elements"]; status: NonNullable<Place["elements"][keyof Place["elements"]]>["status"]; note: string | null; report_id: string }[] };
 function fromPlaceRow(r: PlaceRow): Place {
   return { id: r.id, name: r.name, category: r.category, city: r.city, address: r.address, lat: r.lat, lng: r.lng,
     kecamatan: r.kecamatan, kelurahan: r.kelurahan, preSurvey: r.pre_survey, sources: r.sources,
     evidenceLevel: r.evidence_level, verifiedByTeam: r.verified_by_team, needsGeocoding: r.needs_geocoding,
+    pendingApproval: r.pending_approval ?? false,
     updatedAt: r.updated_at, photoCount: r.photo_count, reportCount: r.report_count,
     elements: Object.fromEntries((r.place_elements ?? []).map(e => [e.element_code, { status: e.status, note: e.note, lockedBy: "kontributor", photoUrl: `/api/photos/${e.report_id}`, aiConfidence: null }])) };
+}
+type ReportRow = {
+  payload: Report; review_status?: Report["reviewStatus"] | null; reviewed_by?: string | null; reviewed_at?: string | null;
+  review_note?: string | null; review_checklist?: Record<string, boolean> | null;
+  // Absent until migration 007 is applied.
+  reviewed_elements?: ReportInput["elements"] | null;
+};
+// The review decision lives in dedicated columns, not in the payload frozen at submission,
+// so merge them in; otherwise every report would read as the stale "SUBMITTED".
+function fromReportRow(row: ReportRow): Report {
+  const r = row.payload;
+  return {
+    ...r,
+    reviewStatus: row.review_status ?? r.reviewStatus ?? "SUBMITTED",
+    reviewedBy: row.reviewed_by ?? r.reviewedBy ?? null,
+    reviewedAt: row.reviewed_at ?? r.reviewedAt ?? null,
+    reviewNote: row.review_note ?? r.reviewNote ?? null,
+    reviewChecklist: row.review_checklist ?? r.reviewChecklist ?? null,
+    reviewedElements: row.reviewed_elements ?? null,
+  };
 }
 function dbError(error: { code?: string; message: string } | null): void {
   if (!error) return;
@@ -458,29 +340,22 @@ export class SupabaseStore implements Store {
     dbError(error); return data ? fromPlaceRow(data as PlaceRow) : undefined;
   }
   async listReports(placeId: string, limit = 50, offset = 0) {
-    const { data, error } = await this.client.from("reports").select("payload").eq("place_id", placeId).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
-    dbError(error); return (data ?? []).map(r => r.payload as Report);
+    // Only reports that still stand: the same set place_elements is derived from (migration 007).
+    const { data, error } = await this.client.from("reports").select("*").eq("place_id", placeId)
+      .in("review_status", [...STANDING_REVIEW_STATUSES])
+      .order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    dbError(error); return ((data ?? []) as ReportRow[]).map(fromReportRow);
   }
   async getReport(id: string) {
-    const { data, error } = await this.client.from("reports").select("payload").eq("id", id).maybeSingle();
-    dbError(error); return data?.payload as Report | undefined;
+    const { data, error } = await this.client.from("reports").select("*").eq("id", id).maybeSingle();
+    dbError(error); return data ? fromReportRow(data as ReportRow) : undefined;
   }
   async contributions(actorId: string) {
-    // The review decision lives in dedicated columns, not in the stored payload, so we
-    // merge them in — otherwise a contributor would always see the stale "SUBMITTED" payload.
     const { data, error, count } = await this.client.from("reports")
-      .select("payload, review_status, reviewed_at, review_note, review_checklist", { count: "exact" })
+      .select("*", { count: "exact" })
       .eq("actor_id", actorId).order("created_at", { ascending: false }).limit(50);
     dbError(error);
-    type ReportRow = { payload: Report; review_status?: Report["reviewStatus"]; reviewed_at?: string | null; review_note?: string | null; review_checklist?: Record<string, boolean> | null };
-    const reports = ((data ?? []) as ReportRow[]).map(row => ({
-      ...row.payload,
-      reviewStatus: row.review_status ?? row.payload.reviewStatus ?? "SUBMITTED",
-      reviewedAt: row.reviewed_at ?? row.payload.reviewedAt ?? null,
-      reviewNote: row.review_note ?? row.payload.reviewNote ?? null,
-      reviewChecklist: row.review_checklist ?? row.payload.reviewChecklist ?? null,
-    }));
-    return { total: count ?? 0, reports };
+    return { total: count ?? 0, reports: ((data ?? []) as ReportRow[]).map(fromReportRow) };
   }
   async photo(report: Report) {
     const { data, error } = await this.client.storage.from("photos").createSignedUrl(report.photoPath, 300);
@@ -498,16 +373,12 @@ export class SupabaseStore implements Store {
     }
     const { data, error, count } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
     dbError(error);
-    type ReportJoined = { payload: Report; review_status?: string; places?: { name: string; address?: string | null } };
-    const list = ((data ?? []) as ReportJoined[]).map(row => {
-      const r = row.payload;
-      return {
-        ...r,
-        reviewStatus: (row.review_status as Report["reviewStatus"]) ?? r.reviewStatus ?? "SUBMITTED",
-        placeName: row.places?.name ?? r.placeId,
-        placeAddress: row.places?.address ?? null,
-      };
-    });
+    type ReportJoined = ReportRow & { places?: { name: string; address?: string | null } };
+    const list = ((data ?? []) as ReportJoined[]).map(row => ({
+      ...fromReportRow(row),
+      placeName: row.places?.name ?? row.payload.placeId,
+      placeAddress: row.places?.address ?? null,
+    }));
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
       const filtered = list.filter(r => (r.placeName ?? "").toLowerCase().includes(q) || (r.reporterName ?? "").toLowerCase().includes(q));
@@ -564,6 +435,7 @@ export class SupabaseStore implements Store {
       reviewedAt: row.reviewed_at ?? new Date().toISOString(),
       reviewNote: row.review_note ?? input.note,
       reviewChecklist: row.review_checklist ?? input.checklist ?? null,
+      reviewedElements: (row as ReportRow).reviewed_elements ?? null,
       // The reviewer's corrections are what got applied to the place on APPROVE,
       // so surface them instead of the now-superseded reported statuses.
       elements: input.elements?.length ? input.elements : row.payload.elements,

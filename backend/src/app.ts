@@ -3,7 +3,7 @@ import express, { type ErrorRequestHandler, type RequestHandler } from "express"
 import cors from "cors";
 import { z, ZodError } from "zod";
 import type { Config } from "./config.js";
-import type { Store, Report } from "./store.js";
+import { effectiveElements, type Store, type Report } from "./store.js";
 import { ApiError } from "./lib/errors.js";
 import { AddPlaceBody, AnalyzeBody, decodePhoto, ElementInput, PlaceId, PlaceQuery, ReportBody, ReviewBody, type ReportInput } from "./lib/validation.js";
 import { CHAIN_ELEMENTS, ELEMENT_STATUSES, summarizePlace, USER_PROFILES, type Place } from "./lib/types.js";
@@ -67,9 +67,16 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
   });
   app.get("/api/ready", async (_req, res) => { await store.health(); res.json({ status: "ready", storage: config.mode }); });
 
+  // WHY: a new place from a contributor could be spam dropped anywhere on the map, so it stays
+  // hidden from every public read until a reviewer approves it. Reviewer routes and the
+  // contributor's own profile read the store directly and still see it.
+  const isPublic = (place: Place) => !place.pendingApproval;
+  async function publicPlaces() {
+    return (await store.listPlaces()).filter(isPublic);
+  }
   async function filtered(query: unknown) {
     const filters = PlaceQuery.parse(query);
-    const places = (await store.listPlaces()).filter(p => {
+    const places = (await publicPlaces()).filter(p => {
       if (filters.q && ![p.name, p.category, p.address, p.kecamatan].join(" ").toLowerCase().includes(filters.q.toLowerCase())) return false;
       if (filters.category && p.category !== filters.category) return false;
       if (filters.district && p.kecamatan !== filters.district) return false;
@@ -82,11 +89,13 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
   }
   async function placeById(id: unknown): Promise<Place> {
     const place = await store.getPlace(PlaceId.parse(id));
-    if (!place) throw new ApiError(404, "Lokasi tidak ditemukan");
+    if (!place || !isPublic(place)) throw new ApiError(404, "Lokasi tidak ditemukan");
     return place;
   }
+  // `elements` is what the report counts as on the place (the reviewer's correction when there
+  // is one), so the public history always explains the place's current "Kondisi akses".
   function publicReport(r: Report) {
-    return { id: r.id, placeId: r.placeId, reporterName: r.reporterName, elements: r.elements, createdAt: r.createdAt, photoUrl: `/api/photos/${r.id}`, lockedBy: "kontributor", photoIntegrity: r.photoIntegrity };
+    return { id: r.id, placeId: r.placeId, reporterName: r.reporterName, elements: effectiveElements(r), reviewStatus: r.reviewStatus, createdAt: r.createdAt, photoUrl: `/api/photos/${r.id}`, lockedBy: "kontributor", photoIntegrity: r.photoIntegrity };
   }
   async function verifiedPhotoIntegrity(photo: ReturnType<typeof decodePhoto>) {
     const integrity = await checkIntegrity(photo.bytes, photo.mimeType);
@@ -169,12 +178,15 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const photo = decodePhoto(body.image, body.mimeType);
     const [photoIntegrity, { match, description }] = await Promise.all([verifiedPhotoIntegrity(photo), submissionPhotoCheck(photo, body.elements)]);
     const place: Place = { ...body.location, id: `place-${randomUUID()}`, city: "Surabaya", kecamatan: null, kelurahan: null,
-      preSurvey: {}, sources: [], evidenceLevel: "contributor", verifiedByTeam: false, needsGeocoding: false,
+      preSurvey: {}, sources: [], evidenceLevel: "contributor", verifiedByTeam: false, needsGeocoding: false, pendingApproval: true,
       elements: {}, updatedAt: null, photoCount: 0, reportCount: 0 };
     const inputHash = createHash("sha256").update(JSON.stringify({ kind: "new-place", ...body, image: photo.base64 })).digest("hex");
     const { report, replayed } = await store.publish({ placeId: place.id, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity, aiDescription: description }, photo, place);
     const reviewed = replayed ? report : await autoFlagMismatch(report, match);
-    res.status(replayed ? 200 : 201).json({ reportId: report.id, replayed, reviewStatus: reviewed.reviewStatus, photoCheck: photoCheckResponse(match), place: summarizePlace(await placeById(report.placeId)) });
+    // Read straight from the store: the new place is still pending, so the public lookup would 404.
+    const saved = await store.getPlace(report.placeId);
+    if (!saved) throw new ApiError(404, "Lokasi tidak ditemukan");
+    res.status(replayed ? 200 : 201).json({ reportId: report.id, replayed, reviewStatus: reviewed.reviewStatus, photoCheck: photoCheckResponse(match), place: summarizePlace(saved) });
   });
   function publicReview(r: import("./store.js").Review) {
     return { id: r.id, placeId: r.placeId, reviewerName: r.reviewerName, experience: r.experience, createdAt: r.createdAt };
@@ -249,7 +261,7 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     if (input.from === input.to) throw new ApiError(400, "Pilih dua lokasi berbeda");
     const from = await placeById(input.from), to = await placeById(input.to);
     if ([from, to].some(p => p.needsGeocoding || p.lat === null || p.lng === null)) throw new ApiError(422, "Koordinat asal dan tujuan belum tersedia");
-    res.json(journeyHint(await store.listPlaces(), from, to, input.profile));
+    res.json(journeyHint(await publicPlaces(), from, to, input.profile));
   });
   // Reviewer Endpoints
   app.use('/api/reviewer', limiter('reviewer-ip', 120), auth, async (req, res, next) => {
@@ -299,6 +311,7 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
         ...report,
         placeName: place?.name ?? report.placeId,
         placeAddress: place?.address ?? null,
+        placePendingApproval: Boolean(place?.pendingApproval),
         photoUrl: `/api/photos/${report.id}`,
       },
       place: place ? summarizePlace(place) : null,
@@ -326,6 +339,7 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
         ...updated,
         placeName: place?.name ?? updated.placeId,
         placeAddress: place?.address ?? null,
+        placePendingApproval: Boolean(place?.pendingApproval),
         photoUrl: `/api/photos/${updated.id}`,
       },
     });
