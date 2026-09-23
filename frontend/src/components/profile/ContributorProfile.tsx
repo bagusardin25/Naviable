@@ -132,7 +132,7 @@ export function ContributorProfile({ userProfile, onSignedOut, onReviewsSeen }: 
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 700 }}>{r.reporterName}</span>
+                        <span style={{ fontWeight: 700 }}>{r.placeName || r.reporterName}</span>
                         <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
                           {newIds.has(r.id) && (
                             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', whiteSpace: 'nowrap', background: '#dbeafe', border: '1px solid #bfdbfe', color: '#1e40af' }}>

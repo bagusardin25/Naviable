@@ -351,7 +351,7 @@ export default function ReviewReportDetailPage() {
                   </div>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  {t('reviewer.reporterNotesPrefix')}: “{el.note || t('reviewer.noExtraNotes')}”
+                  {t('reviewer.reporterNotesPrefix', { note: el.note || t('reviewer.noExtraNotes') })}
                 </p>
               </div>
             ))}
@@ -382,7 +382,7 @@ export default function ReviewReportDetailPage() {
             ) : (
               <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
                 <p style={{ margin: '0 0 6px' }}>
-                  {t('reviewer.aiDetectedInPhoto')}: <strong>{report.elements[0]?.element.replace('_', ' ')}</strong>
+                  {t('reviewer.aiDetectedInPhoto', { element: report.elements[0]?.element.replace('_', ' ') ?? '-' })}
                 </p>
                 <p style={{ margin: 0, color: 'var(--muted)', fontSize: '12px' }}>
                   {t('reviewer.aiConfidence')}: <strong>Tinggi (High)</strong>

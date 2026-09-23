@@ -600,7 +600,7 @@ export function LoginForm() {
 
       <dialog ref={dialogRef} className={styles.policyDialog} aria-labelledby="policy-title">
         <h2 id="policy-title">{policy}</h2>
-        <p>{t('auth.policyAlignNotice')}</p>
+        <p>{t('auth.policyAlignNotice', { policy })}</p>
         <button
           className={`${styles.button} ${styles.loginButton}`}
           type="button"

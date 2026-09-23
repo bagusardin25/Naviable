@@ -28,7 +28,7 @@ export function DistrictSnapshot({ places }: DistrictSnapshotProps) {
             <div key={district} className="district-row" role="listitem">
               <div>
                 <strong>Kec. {district}</strong>
-                <span>{districtPlaces.length} {t('observatory.districtPlacesCount')}</span>
+                <span>{t('observatory.districtPlacesCount', { count: districtPlaces.length })}</span>
               </div>
               <span className="district-badge">
                 {t('observatory.districtIntactRatio', { intact: intactCount, total: districtPlaces.length })}
