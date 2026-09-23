@@ -127,3 +127,24 @@ export async function fetchExternalPlaces(
     return [];
   }
 }
+
+/**
+ * Resolves a map point to a street address through the /api/reverse-geocode proxy.
+ * Returns null when no address is found or the lookup fails, so the caller can fall
+ * back to manual entry. An abort is re-thrown so a superseded lookup can be ignored.
+ */
+export async function reverseGeocode(lat: number, lng: number, signal?: AbortSignal): Promise<string | null> {
+  try {
+    const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`, {
+      signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.address === 'string' && data.address.trim() ? data.address.trim() : null;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
+    console.warn('reverseGeocode error:', e);
+    return null;
+  }
+}

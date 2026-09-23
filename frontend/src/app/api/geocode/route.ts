@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeSearchQuery } from '@/lib/searchNormalizer';
+import { formatOsmAddress } from '@/lib/osmAddress';
 
 export type ExternalPlace = {
   id: string;
@@ -68,35 +69,6 @@ function mapOsmCategory(category?: string, type?: string): string {
     return 'Layanan Publik';
   }
   return 'Fasilitas Publik';
-}
-
-function formatOsmAddress(addressObj?: Record<string, string>, rawDisplayName?: string): string {
-  if (!addressObj) {
-    if (rawDisplayName) {
-      return rawDisplayName.split(',').slice(0, 4).map(s => s.trim()).join(', ');
-    }
-    return 'Surabaya, Jawa Timur';
-  }
-
-  const road = addressObj.road || addressObj.pedestrian || addressObj.footway || addressObj.street;
-  const houseNumber = addressObj.house_number;
-  const village = addressObj.village || addressObj.suburb || addressObj.neighbourhood;
-  const district = addressObj.municipality || addressObj.city_district || addressObj.subdistrict;
-  const city = addressObj.city || 'Surabaya';
-
-  const parts: string[] = [];
-  if (road) {
-    if (houseNumber) {
-      parts.push(`${road} No. ${houseNumber}`);
-    } else {
-      parts.push(road);
-    }
-  }
-  if (village && village !== district) parts.push(village);
-  if (district) parts.push(district);
-  if (city) parts.push(city);
-
-  return parts.length > 0 ? parts.join(', ') : (rawDisplayName?.split(',').slice(0, 3).join(', ') || 'Surabaya');
 }
 
 async function fetchNominatim(query: string, signal: AbortSignal): Promise<ExternalPlace[]> {
