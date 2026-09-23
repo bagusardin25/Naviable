@@ -29,6 +29,13 @@ function readSeen(): Set<string> {
   }
 }
 
+/** Reports a reviewer (or the automated photo check) has decided on, newest decision first. */
+export function reviewedReports(reports: ContributionReport[]): ContributionReport[] {
+  return reports
+    .filter((report) => signature(report) !== null)
+    .sort((a, b) => (b.reviewedAt ?? b.createdAt).localeCompare(a.reviewedAt ?? a.createdAt));
+}
+
 /** Number of reviewed contributions the citizen has not seen yet. */
 export function countUnseenReviews(reports: ContributionReport[]): number {
   const seen = readSeen();

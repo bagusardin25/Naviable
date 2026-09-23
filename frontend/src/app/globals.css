@@ -2679,6 +2679,164 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
   outline: 2px solid var(--purple);
   outline-offset: 2px;
 }
+/* Directions on every place card. The link sits over the card's bottom edge as a
+   sibling of the select button (a link cannot be nested inside a <button>). */
+.place-card-shell { position: relative; }
+.place-card-shell.has-directions .place-card { padding-bottom: 60px; }
+.place-card-directions {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  width: auto;
+  padding: 8px 12px;
+  z-index: 1;
+}
+.popup-directions-btn { margin-top: 6px; padding: 8px 12px; font-size: 12px; }
+
+/* Contribution notifications: bell + panel in the top bar, toast on a new decision. */
+.notif-center { position: relative; flex-shrink: 0; }
+.notif-bell-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.notif-bell-btn:hover, .notif-bell-btn.active { background: var(--purple-100); border-color: var(--purple); color: var(--purple); }
+.notif-bell-btn:focus-visible, .notif-icon-btn:focus-visible, .notif-toast-view:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1300;
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 18px 40px rgba(20, 39, 70, .18);
+}
+.notif-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+.notif-panel-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.notif-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.notif-icon-btn:hover { background: var(--surface-secondary); color: var(--ink); }
+.notif-empty { margin: 0; padding: 20px 16px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.notif-list { list-style: none; margin: 0; padding: 6px 8px; overflow-y: auto; display: grid; gap: 4px; }
+.notif-item { display: flex; gap: 10px; padding: 10px 8px; border-radius: 10px; }
+.notif-item + .notif-item { border-top: 1px solid var(--border); border-radius: 0 0 10px 10px; }
+.notif-item.is-approved .notif-item-icon { color: #16a34a; }
+.notif-item.is-rejected .notif-item-icon { color: #dc2626; }
+.notif-item.is-needsRevision .notif-item-icon { color: #ea580c; }
+.notif-item-icon { flex-shrink: 0; margin-top: 1px; }
+.notif-item-body { display: grid; gap: 4px; min-width: 0; }
+.notif-item-text { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+.notif-item-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.notif-item-time { font-size: 11px; color: var(--muted); }
+.notif-new-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.notif-panel-foot { padding: 10px 16px 14px; border-top: 1px solid var(--border); }
+.notif-panel-foot .secondary-action { width: 100%; }
+/* Top-right, under the bell it belongs to — clear of the floating accessibility
+   button and the mobile bottom navigation. */
+.notif-toast {
+  position: fixed;
+  top: calc(var(--navbar-height) + 12px);
+  right: 24px;
+  z-index: 1300;
+  width: min(420px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #16a34a;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 18px 40px rgba(20, 39, 70, .2);
+}
+.notif-toast.is-rejected { border-left-color: #dc2626; }
+.notif-toast.is-needsRevision { border-left-color: #ea580c; }
+.notif-toast.is-approved .notif-item-icon { color: #16a34a; }
+.notif-toast.is-rejected .notif-item-icon { color: #dc2626; }
+.notif-toast.is-needsRevision .notif-item-icon { color: #ea580c; }
+.notif-toast p { flex: 1; margin: 0; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.notif-toast-view {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--purple);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+@media (max-width: 560px) {
+  .notif-toast { top: calc(var(--navbar-height) + 8px); left: 16px; right: 16px; width: auto; }
+  .notif-bell-btn { width: 40px; height: 40px; }
+  /* Anchor the panel to the full-width top bar (its backdrop-filter makes it the containing
+     block) so it spans the screen instead of running off the left edge from the bell. */
+  .notif-center { position: static; }
+  .notif-panel { top: calc(100% + 4px); left: 12px; right: 12px; width: auto; }
+}
 
 /* Street Corridors Bar & Quick Filter Chips */
 .street-corridors-bar {

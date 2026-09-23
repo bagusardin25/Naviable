@@ -8,6 +8,7 @@ import { useAccessibility } from '@/hooks/useAccessibility';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { ContributionNotifications, type ContributionNotificationsProps } from './ContributionNotifications';
 import type { Place } from '@/types';
 import type { ExternalPlaceResult } from '@/lib/externalGeocoding';
 import { matchesPlaceQuery } from '@/lib/streetSearch';
@@ -23,6 +24,8 @@ type TopNavbarProps = {
   externalLoading?: boolean;
   onSelectLocalPlace?: (place: Place) => void;
   onSelectExternalPlace?: (ext: ExternalPlaceResult, action: 'view' | 'add') => void;
+  /** Review-decision notifications for a signed-in contributor; omitted for guests. */
+  notifications?: ContributionNotificationsProps;
 };
 
 export function TopNavbar({
@@ -36,6 +39,7 @@ export function TopNavbar({
   externalLoading = false,
   onSelectLocalPlace,
   onSelectExternalPlace,
+  notifications,
 }: TopNavbarProps) {
   const { t, locale } = useTranslation();
   const [voiceNotification, setVoiceNotification] = useState<{
@@ -358,6 +362,7 @@ export function TopNavbar({
       </div>
 
       <div className="topbar-actions">
+        {notifications && <ContributionNotifications {...notifications} />}
         <LanguageSwitcher variant="compact" />
         <button
           id="btn-accessibility"

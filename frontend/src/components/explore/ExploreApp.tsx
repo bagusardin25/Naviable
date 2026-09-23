@@ -51,7 +51,13 @@ export default function ExploreApp() {
   const auth = useAuth();
   // "Admin has responded to your contribution" indicator; recomputes on screen change so
   // visiting the profile (which marks updates seen) clears the badge.
-  const { unseen: contributionUnseen, refresh: refreshContributionUpdates } = useContributionUpdates(Boolean(auth.user), screen);
+  const {
+    unseen: contributionUnseen,
+    unseenIds: contributionUnseenIds,
+    reports: contributionReports,
+    markAllSeen: markContributionUpdatesSeen,
+    refresh: refreshContributionUpdates,
+  } = useContributionUpdates(Boolean(auth.user), screen);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalShownFor, setAuthModalShownFor] = useState<string | null>(null);
   const latParam = searchParams.get('lat');
@@ -399,6 +405,17 @@ export default function ExploreApp() {
               handleViewExternalPlace(ext);
             }
           }}
+          notifications={
+            auth.user
+              ? {
+                  reports: contributionReports,
+                  unseenIds: contributionUnseenIds,
+                  onMarkSeen: markContributionUpdatesSeen,
+                  onOpenProfile: () => setScreen('profile'),
+                  suppressToast: screen === 'profile',
+                }
+              : undefined
+          }
         />
 
         {loading && <p role="status" style={{ padding: '10px 20px' }}>{t('common.loading')}</p>}

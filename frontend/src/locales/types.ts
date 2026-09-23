@@ -526,6 +526,22 @@ export interface TranslationDictionary {
     newUpdatesBanner: string;
     newTag: string;
   };
+  notifications: {
+    bellAria: string;
+    bellAriaUnread: string;
+    title: string;
+    empty: string;
+    approved: string;
+    rejected: string;
+    needsRevision: string;
+    unknownPlace: string;
+    noteLabel: string;
+    newTag: string;
+    viewProfile: string;
+    toastSummary: string;
+    toastView: string;
+    toastDismiss: string;
+  };
   auth: {
     signInPageTitle: string;
     backToMap: string;

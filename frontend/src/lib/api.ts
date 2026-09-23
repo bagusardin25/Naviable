@@ -27,6 +27,8 @@ export type ApiReport = { id: string; placeId: string; reporterName: string; cre
 export type ReviewStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'NEEDS_REVISION' | 'APPROVED' | 'REJECTED' | 'PUBLISHED';
 // A contributor's own report, including the review outcome shown back to them in their profile.
 export type ContributionReport = ApiReport & {
+  /** Name of the place the report is about; null if the place no longer exists. */
+  placeName?: string | null;
   reviewStatus?: ReviewStatus;
   reviewedAt?: string | null;
   reviewNote?: string | null;
