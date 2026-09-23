@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from './lib/auth/session';
+import {
+  clearReviewerSessionCookies,
+  refreshReviewerSession,
+  setReviewerSessionCookies,
+  verifySessionToken,
+  REFRESH_COOKIE_NAME,
+  SESSION_COOKIE_NAME,
+  type ReviewerSessionPayload,
+  type ReviewerTokens,
+} from './lib/auth/session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -8,23 +17,24 @@ export async function middleware(request: NextRequest) {
   // Only protect reviewer routes
   if (pathname === '/reviewer' || pathname.startsWith('/reviewer/')) {
     const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
 
-    if (!sessionToken) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('next', pathname);
-      loginUrl.searchParams.set('mode', 'reviewer');
-      return NextResponse.redirect(loginUrl);
+    let payload: ReviewerSessionPayload | null = await verifySessionToken(sessionToken);
+    // The access token lasts about an hour; renew it from the refresh cookie (password logins)
+    // instead of sending a working admin back to the login page.
+    let renewed: ReviewerTokens | null = null;
+    if (!payload) {
+      renewed = await refreshReviewerSession(refreshToken);
+      if (renewed) payload = { username: renewed.username, role: 'REVIEWER' };
     }
 
-    const payload = await verifySessionToken(sessionToken);
-
     if (!payload) {
-      // Invalid or expired session
+      // Missing, invalid or expired session that could not be renewed
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('next', pathname);
       loginUrl.searchParams.set('mode', 'reviewer');
       const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete(SESSION_COOKIE_NAME);
+      if (sessionToken || refreshToken) clearReviewerSessionCookies(response);
       return response;
     }
 
@@ -37,7 +47,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // Authenticated REVIEWER - allow access
-    return NextResponse.next();
+    const response = NextResponse.next();
+    if (renewed) setReviewerSessionCookies(response, renewed);
+    return response;
   }
 
   return NextResponse.next();

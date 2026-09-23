@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { bearerToken, verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { bearerToken, clearReviewerSessionCookies, setReviewerSessionCookies, verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 
 const noStore = { 'Cache-Control': 'no-store' };
 
@@ -44,14 +44,10 @@ export async function POST(request: Request) {
     { success: true, role: payload.role, username: payload.username, redirect: '/reviewer' },
     { headers: noStore },
   );
-  response.cookies.set({
-    name: SESSION_COOKIE_NAME,
-    value: token,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60,
-  });
+  // A Google login's session is refreshed by the browser client, which calls this route again
+  // with the new token. Drop any refresh cookie left by an earlier password login so it can
+  // never silently switch this browser back to that other account.
+  clearReviewerSessionCookies(response);
+  setReviewerSessionCookies(response, { accessToken: token, expiresIn: 60 * 60 });
   return response;
 }

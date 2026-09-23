@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isReviewerUser, reviewerAuthClient, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { isReviewerUser, reviewerAuthClient, setReviewerSessionCookies } from '@/lib/auth/session';
 
 export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) {
@@ -23,14 +23,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Kredensial tidak cocok atau akun tidak memiliki hak reviewer.' }, { status: 401 });
     }
     const response = NextResponse.json({ success: true, role: 'REVIEWER', username: data.user.email, redirect: '/reviewer' }, { headers: { 'Cache-Control': 'no-store' } });
-    response.cookies.set({
-      name: SESSION_COOKIE_NAME,
-      value: data.session.access_token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: data.session.expires_in,
+    setReviewerSessionCookies(response, {
+      accessToken: data.session.access_token,
+      expiresIn: data.session.expires_in,
+      refreshToken: data.session.refresh_token,
     });
     return response;
   } catch {

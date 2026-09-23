@@ -11,6 +11,11 @@ export function placeHref(id: string, screen: Screen = 'map'): string {
   return screenHref(screen, query.toString());
 }
 
+// Where a reviewer lands after signing in: only a reviewer page, otherwise the dashboard.
+export function safeReviewerReturnTo(value: string | null): string {
+  return value && /^\/reviewer(?:\/[A-Za-z0-9-]+)*$/.test(value) ? value : '/reviewer';
+}
+
 // Only our known explore route is an allowed login destination.
 export function safeReturnTo(value: string | null): string {
   if (!value || !/^\/jelajah(?:\?|$)/.test(value) || /[\\\r\n]/.test(value)) return EXPLORE_PATH;

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { parseScreen, safeReturnTo, screenHref } from "@/lib/navigation";
+import { parseScreen, safeReturnTo, safeReviewerReturnTo, screenHref } from "@/lib/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -30,6 +30,8 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const destination = safeReturnTo(searchParams.get("next"));
+  // A reviewer sent here by an ended session goes back to the page they were on.
+  const reviewerDestination = safeReviewerReturnTo(searchParams.get("next"));
   const returnQuery = destination.split("?")[1] ?? "";
   const guestDestination = screenHref("map", returnQuery);
   const screen = parseScreen(new URLSearchParams(returnQuery).get("screen"));
@@ -88,8 +90,8 @@ export function LoginForm() {
     if (!response.ok || !result.success) {
       throw new Error(result.error || "Akun ini belum memiliki hak admin/reviewer.");
     }
-    router.replace("/reviewer");
-  }, [router]);
+    router.replace(reviewerDestination);
+  }, [router, reviewerDestination]);
 
   // Route a freshly signed-in user by role: reviewers to the dashboard, everyone
   // else back to their intended destination.
@@ -287,7 +289,7 @@ export function LoginForm() {
       }
 
       // Successfully authenticated as REVIEWER
-      router.replace("/reviewer");
+      router.replace(reviewerDestination);
     } catch {
       setReviewerError("Username atau password tidak sesuai.");
     } finally {
