@@ -290,6 +290,26 @@ export default function ReviewReportDetailPage() {
           </div>
 
           <div className={styles.metaList}>
+            {report.placePendingApproval && (
+              <div
+                role="note"
+                style={{
+                  background: 'var(--notice-warning-bg)',
+                  color: 'var(--notice-warning-ink)',
+                  border: '1px solid var(--notice-warning-border)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontSize: '13px',
+                  lineHeight: 1.5,
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
+                <span>{t('reviewer.pendingPlaceNotice')}</span>
+              </div>
+            )}
             <div className={styles.metaItem}>
               <span className={styles.metaLabel}>{t('reviewer.metaPlaceName')}</span>
               <span className={styles.metaValue} style={{ fontSize: '1.05rem', color: 'var(--ink)' }}>

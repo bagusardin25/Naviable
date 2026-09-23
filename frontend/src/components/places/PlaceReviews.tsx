@@ -1,7 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { fetchReviews, type ApiReview } from '@/lib/api';
+import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
+
+const PAGE_SIZE = 20;
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] ?? '?').slice(0, 2)).toUpperCase();
+}
 
 export function PlaceReviews({ placeId, onWrite, signedIn }: { placeId: string; onWrite: () => void; signedIn: boolean }) {
   const { t, formatDate } = useTranslation();
@@ -23,7 +31,10 @@ export function PlaceReviews({ placeId, onWrite, signedIn }: { placeId: string; 
   function load(next: number) { setState('loading'); setOffset(next); }
 
   return <section className="place-reviews" aria-labelledby="reviews-heading">
-    <h3 id="reviews-heading">{t('places.reviewsHeading')}</h3>
+    <div className="place-reviews-header">
+      <h3 id="reviews-heading">{t('places.reviewsHeading')}</h3>
+      {state === 'ready' && total > 0 && <span className="count-pill">{t('places.reviewsTotal', { total })}</span>}
+    </div>
     <p className="flow-help">{t('places.visitorReviewsHelp')}</p>
     {state === 'loading' && <p role="status">{t('places.loadingReviews')}</p>}
     {state === 'error' && (
@@ -35,20 +46,37 @@ export function PlaceReviews({ placeId, onWrite, signedIn }: { placeId: string; 
       </p>
     )}
     {state === 'ready' && (reviews.length ? <>
-      <p>{t('places.reviewsCount', { from: offset + 1, to: offset + reviews.length, total })}</p>
-      {reviews.map(review => (
-        <article key={review.id} className="review-entry">
-          <strong>{review.reviewerName}</strong>
-          <time dateTime={review.createdAt}>{formatDate(new Date(review.createdAt), { day: 'numeric', month: 'numeric', year: 'numeric' })}</time>
-          <p>{review.experience}</p>
-        </article>
-      ))}
-      <div className="flow-actions">
-        {offset > 0 && <button className="secondary-action" type="button" onClick={() => load(Math.max(0, offset - 20))}>{t('places.prevPage')}</button>}
-        {offset + reviews.length < total && <button className="secondary-action" type="button" onClick={() => load(offset + 20)}>{t('places.nextPage')}</button>}
-      </div>
-    </> : <p>{t('places.noReviewsYet')}</p>)}
-    <button type="button" className="secondary-action" onClick={onWrite}>{t('places.writeReview')}</button>
+      {total > PAGE_SIZE && <p className="flow-help">{t('places.reviewsCount', { from: offset + 1, to: offset + reviews.length, total })}</p>}
+      <ol className="review-list">
+        {reviews.map(review => (
+          <li key={review.id}>
+            <article className="review-card" aria-label={t('places.reviewByAria', { name: review.reviewerName })}>
+              <header className="review-card-header">
+                <span className="review-avatar" aria-hidden="true">{initials(review.reviewerName)}</span>
+                <div className="review-card-meta">
+                  <strong>{review.reviewerName}</strong>
+                  <span>
+                    {t('places.visitorReviewLabel')} ·{' '}
+                    <time dateTime={review.createdAt}>{formatDate(new Date(review.createdAt), { day: 'numeric', month: 'short', year: 'numeric' })}</time>
+                  </span>
+                </div>
+              </header>
+              <p className="review-card-body">{review.experience}</p>
+            </article>
+          </li>
+        ))}
+      </ol>
+      {total > PAGE_SIZE && (
+        <div className="flow-actions">
+          {offset > 0 && <button className="secondary-action" type="button" onClick={() => load(Math.max(0, offset - PAGE_SIZE))}>{t('places.prevPage')}</button>}
+          {offset + reviews.length < total && <button className="secondary-action" type="button" onClick={() => load(offset + PAGE_SIZE)}>{t('places.nextPage')}</button>}
+        </div>
+      )}
+    </> : <p className="review-empty">{t('places.noReviewsYet')}</p>)}
+    <button type="button" className="secondary-action review-write-btn" onClick={onWrite}>
+      <Icon name="plus" size={15} />
+      <span>{t('places.writeReview')}</span>
+    </button>
     {!signedIn && <p className="flow-help">{t('places.writeReviewPrompt')}</p>}
   </section>;
 }

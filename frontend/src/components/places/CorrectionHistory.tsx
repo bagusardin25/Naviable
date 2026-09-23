@@ -80,20 +80,27 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
 
   return (
     <section aria-label={t('places.historySectionAria', { total })}>
-      <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '16px 0 8px', color: 'var(--ink)' }}>
+      <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '16px 0 4px', color: 'var(--ink)' }}>
         {t('places.citizenCorrectionHistory', { total })}
       </h3>
+      <p className="flow-help" style={{ margin: '0 0 8px' }}>{t('places.historyDrivesConditions')}</p>
       <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '10px' }}>
         {reports.map((report) => {
           const labels = report.elements.map((e) => elementLabel(e.element));
           const formattedDate = formatReportDate(report.createdAt);
+          const approved = report.reviewStatus === 'APPROVED' || report.reviewStatus === 'PUBLISHED';
           return (
             <li
               key={report.id}
               style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 12px', background: 'var(--surface-secondary)' }}
             >
-              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
-                <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>{report.reporterName}</strong> · {formattedDate}
+              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span>
+                  <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>{report.reporterName}</strong> · {formattedDate}
+                </span>
+                <span className={`history-review-chip ${approved ? 'is-approved' : 'is-pending'}`}>
+                  {approved ? t('places.reportApprovedChip') : t('places.reportPendingChip')}
+                </span>
               </div>
 
               <ul style={{ listStyle: 'none', margin: '0 0 8px', padding: 0, display: 'grid', gap: '4px' }}>
@@ -102,6 +109,7 @@ export function CorrectionHistory({ reports, total, state, onRetry }: Correction
                     <strong>{elementLabel(evidence.element)}</strong>:
                     <StatusBadge status={evidence.status} size="sm" />
                     {evidence.note ? <span style={{ color: 'var(--muted)' }}> — {evidence.note}</span> : null}
+                    {evidence.status === 'BELUM_DIKETAHUI' ? <span style={{ color: 'var(--muted)', fontSize: '12px' }}>({t('places.unknownKeepsCondition')})</span> : null}
                   </li>
                 ))}
               </ul>

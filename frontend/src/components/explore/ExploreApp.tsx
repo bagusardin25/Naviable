@@ -393,9 +393,13 @@ export default function ExploreApp() {
   }
 
   function handleSubmitReport(updated: Place) {
-    setPlaces(current => current.map(p => p.id === updated.id ? updated : p));
-    setSelectedPlace(updated);
-    setDetailPlace(updated);
+    // A new location waits for reviewer approval and is not on the public map yet,
+    // so there is no marker or detail to open for it.
+    if (!updated.pendingApproval) {
+      setPlaces(current => current.map(p => p.id === updated.id ? updated : p));
+      setSelectedPlace(updated);
+      setDetailPlace(updated);
+    }
     setReload(value => value + 1);
     setScreen('map');
   }

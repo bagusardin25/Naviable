@@ -202,6 +202,24 @@ export function ReportForm({
     !confirmed ? t('reports.missingConfirm') : null,
   ].filter((item): item is string => Boolean(item));
   const currentElement = targetPlace?.elements.find(element => element.code === elementCode);
+  // When the photo check cannot see the chosen element but does see others, offer to switch.
+  // Never switched automatically: the contributor decides what they are reporting.
+  // Low-confidence drafts already arrive as BELUM_DIKETAHUI, so "seen" means sedang/tinggi.
+  const chosenDraft = analysis?.drafts.find(draft => draft.element === CHAIN_ELEMENT_MAP[elementCode].codeName);
+  const suggestedElements = analysis && (!chosenDraft || chosenDraft.status === 'BELUM_DIKETAHUI')
+    ? analysis.drafts
+        .filter(draft => draft.status !== 'BELUM_DIKETAHUI')
+        .sort((a, b) => Number(b.confidence === 'tinggi') - Number(a.confidence === 'tinggi'))
+        .map(draft => (Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).find(code => CHAIN_ELEMENT_MAP[code].codeName === draft.element))
+        .filter((code): code is ChainElementCode => Boolean(code))
+        .slice(0, 3)
+    : [];
+  const elementName = (code: ChainElementCode) => t(`elements.${code}.name`) || CHAIN_ELEMENT_MAP[code].label;
+  function selectElement(code: ChainElementCode) {
+    setElementCode(code);
+    setStatus('BELUM_DIKETAHUI');
+    setConfirmed(false);
+  }
   const similarPlaces = adding && location.name.trim().length >= 3 ? places.filter(p => p.name.toLowerCase().includes(location.name.trim().toLowerCase())).slice(0, 5) : [];
 
   // Persist draft on edit
@@ -332,7 +350,11 @@ export function ReportForm({
               {mismatched ? t('reports.photoMismatchNextTitle') : t('reports.successCurateTitle')}
             </p>
             <p style={{ margin: 0, lineHeight: 1.5 }}>
-              {mismatched ? t('reports.photoMismatchNextDesc') : t('reports.successCurateDesc')}
+              {mismatched
+                ? t('reports.photoMismatchNextDesc')
+                : submittedSuccessPlace.pendingApproval
+                ? t('reports.successCurateDescNewPlace')
+                : t('reports.successCurateDesc')}
             </p>
           </div>
           <button
@@ -415,7 +437,9 @@ export function ReportForm({
         </div>
       )}
       <form onSubmit={publish} className="report-grid" aria-busy={busy}>
-        <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
+        {/* Only a submission locks these fields. The photo check can take a while, and the
+            contributor should be able to keep typing notes or fixing details meanwhile. */}
+        <fieldset disabled={submitting} className="card form-card" style={{ minWidth: 0 }}>
           <h2>{t('reports.step1Title')}</h2>
           {adding ? <>
             <LocationPicker point={pointSelected ? { lat: location.lat, lng: location.lng } : null} onPick={handlePointPick} />
@@ -460,41 +484,63 @@ export function ReportForm({
           )}
           <label htmlFor="report-element-select">
             {t('reports.reportedElementLabel')}
-            <select id="report-element-select" value={elementCode} onChange={e => { setElementCode(e.target.value as ChainElementCode); setStatus('BELUM_DIKETAHUI'); setConfirmed(false); }} required>
+            <select id="report-element-select" value={elementCode} onChange={e => selectElement(e.target.value as ChainElementCode)} required>
               {(Object.keys(CHAIN_ELEMENT_MAP) as ChainElementCode[]).map(code => (
                 <option key={code} value={code}>
-                  {code} — {t(`elements.${code}.name`) || CHAIN_ELEMENT_MAP[code].label}
+                  {code} — {elementName(code)}
                 </option>
               ))}
             </select>
           </label>
           <div>
             <span className="field-label-text">{t('reports.photoFieldLabel')}</span>
-            <label htmlFor="file-upload-input" className="upload-box" aria-label={t('reports.photoFieldLabel')}>
-              <Icon name="camera" size={26} />
+            <label htmlFor="file-upload-input" className={`upload-box ${photo ? 'has-photo' : ''}`} aria-label={t('reports.photoFieldLabel')}>
               {photo ? (
-                <div className="upload-preview-badge">
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Icon name="check" size={13} />
-                    <span>{photoRestored ? t('reports.photoRestoredText') : t('reports.photoStoredText')}</span>
-                  </span>
-                </div>
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
+                  <img src={photo.image} alt={t('reports.photoPreviewAlt')} className="upload-preview-img" />
+                  <div className="upload-preview-badge">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Icon name="check" size={13} />
+                      <span>{photoRestored ? t('reports.photoRestoredText') : t('reports.photoStoredText')}</span>
+                    </span>
+                  </div>
+                </>
               ) : (
                 <>
+                  <Icon name="camera" size={26} />
                   <span>{t('reports.photoUploadBoxText')}</span>
                   <small>{t('reports.photoFormatHelp')}</small>
                 </>
               )}
-              <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required={!photo} />
+              {/* Replacing the photo mid-check would let the old photo's result land on the new one. */}
+              <input type="file" id="file-upload-input" accept="image/jpeg,image/png,image/webp" onChange={readPhoto} required={!photo} disabled={reading || analyzing} />
             </label>
           </div>
+          {suggestedElements.length > 0 && (
+            <div className="element-suggestion" role="status">
+              <p>
+                {t('reports.aiElementMismatch', {
+                  seen: suggestedElements.map(elementName).join(', '),
+                  chosen: elementName(elementCode),
+                })}
+              </p>
+              <div className="element-suggestion-actions">
+                {suggestedElements.map(code => (
+                  <button key={code} type="button" className="secondary-action" onClick={() => selectElement(code)}>
+                    {t('reports.aiSwitchElementBtn', { element: `${code} — ${elementName(code)}` })}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <label htmlFor="report-notes">
             {t('reports.additionalNotesLabel')}
             <textarea id="report-notes" value={note} maxLength={1000} onChange={e => { setNote(e.target.value); setConfirmed(false); }} placeholder={t('reports.additionalNotesPlaceholder')} rows={4} />
           </label>
         </fieldset>
         <section className="card ai-card" aria-label={t('reports.inspectionAndConfirmationAria')}>
-          <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} elementCode={CHAIN_ELEMENT_MAP[elementCode].codeName} />
+          <AIDraftPanel analysis={analysis} analyzing={analyzing} error={aiError} />
           <button type="button" className="secondary-action" onClick={() => analyze()} disabled={!photo || analyzing || busy || !signedIn}><Icon name="photo" />{analyzing ? t('reports.aiAnalyzingBtnText') : t('reports.aiAnalyzeBtnText')}</button>
           {!signedIn && photo && (
             <p role="status" style={{ color: 'var(--muted)', fontSize: '12px', margin: '4px 0 0', lineHeight: 1.5 }}>{t('reports.autoCheckAfterSignIn')}</p>
