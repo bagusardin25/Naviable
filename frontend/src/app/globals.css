@@ -2044,6 +2044,9 @@ select:focus, textarea:focus, input[type="text"]:focus, input[type="tel"]:focus,
 .ai-result { display: grid; gap: 4px; background: var(--notice-success-bg); border: 1px solid var(--notice-success-border); color: var(--notice-success-ink); padding: 13px; border-radius: 12px; }
 .ai-result strong { font-size: 13.5px; font-weight: 600; }
 .ai-result span { font-size: 12px; line-height: 1.45; }
+.ai-photo-description { display: grid; gap: 4px; margin: 10px 0; padding: 13px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-secondary); color: var(--ink); }
+.ai-photo-description strong { font-size: 13.5px; font-weight: 600; }
+.ai-photo-description p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
 .integrity-result { display: grid; gap: 5px; padding: 13px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-secondary); color: var(--ink); }
 .integrity-result strong { font-size: 13.5px; }
 .integrity-result span, .integrity-result small { font-size: 12px; line-height: 1.45; color: var(--text-secondary); }

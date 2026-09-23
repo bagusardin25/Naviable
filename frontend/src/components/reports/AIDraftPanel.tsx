@@ -29,6 +29,13 @@ export function AIDraftPanel({ analysis, analyzing, error, elementCode }: Props)
         {analysis?.provider ? <small>{t('reports.visualAnalysisLabel')} {analysis.provider} · {t('reports.attemptsLabel')} {analysis.attemptedProviders.join(' → ')}</small> : null}
       </div>
     ) : null}
+    {/* Announced to screen readers too: a blind contributor hears what the AI sees in their photo. */}
+    {analysis?.description ? (
+      <div className="ai-photo-description" aria-live="polite">
+        <strong>{t('reports.aiPhotoDescriptionLabel')}</strong>
+        <p>{analysis.description}</p>
+      </div>
+    ) : null}
     <div className="ai-result" aria-live="polite"><strong>{draft ? `${t('reports.aiSuggestionLabel')} ${t(`status.${draft.status}.label`) || STATUS_META[draft.status].label}` : t('reports.aiManualAlwaysReady')}</strong><span>{draft ? `${draft.reason} · ${t('reports.confidenceLabel')} ${draft.confidence}` : t('reports.aiHelpGuidance')}</span></div>
     {error && <p role="status">{error}</p>}
     {analysis?.needsMorePhotos.length ? <p>{t('reports.aiNeedsMorePhotos')} {analysis.needsMorePhotos.join('; ')}</p> : null}

@@ -361,10 +361,17 @@ export default function ReviewReportDetailPage() {
           <div className={styles.aiBox}>
             <div className={styles.aiHeader}>
               <Sparkles size={16} />
-              <span>{report.photoIntegrity ? 'Pemeriksaan Integritas Foto' : t('reviewer.aiPhotoCheckBox')}</span>
+              <span>{t('reviewer.aiPhotoCheckBox')}</span>
             </div>
-            {report.photoIntegrity ? (
+            {report.aiDescription && (
+              <div style={{ fontSize: '13px', color: 'var(--ink)', marginBottom: '10px' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 600 }}>{t('reviewer.aiPhotoDescriptionLabel')}</p>
+                <p style={{ margin: 0, lineHeight: 1.5 }}>{report.aiDescription}</p>
+              </div>
+            )}
+            {report.photoIntegrity && (
               <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 600 }}>{t('reviewer.photoIntegrityLabel')}</p>
                 <p style={{ margin: '0 0 6px' }}>
                   Hasil:{' '}
                   <strong>
@@ -379,15 +386,12 @@ export default function ReviewReportDetailPage() {
                   {report.photoIntegrity.signals.map(signal => signal.detail).join(' ') || 'Belum ada hasil pemeriksaan integritas tersimpan untuk laporan ini.'}
                 </p>
               </div>
-            ) : (
-              <div style={{ fontSize: '13px', color: 'var(--ink)' }}>
-                <p style={{ margin: '0 0 6px' }}>
-                  {t('reviewer.aiDetectedInPhoto', { element: report.elements[0]?.element.replace('_', ' ') ?? '-' })}
-                </p>
-                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '12px' }}>
-                  {t('reviewer.aiConfidence')}: <strong>Tinggi (High)</strong>
-                </p>
-              </div>
+            )}
+            {/* Say plainly when there is nothing from the AI — never show placeholder "detections". */}
+            {!report.aiDescription && !report.photoIntegrity && (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>
+                {t('reviewer.aiAnalysisUnavailable')}
+              </p>
             )}
             <div className={styles.aiDisclaimer}>
               {report.photoIntegrity?.disclaimer || t('reviewer.aiReviewerNote')}
