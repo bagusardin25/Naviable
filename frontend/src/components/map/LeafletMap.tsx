@@ -557,7 +557,8 @@ export default function LeafletMap({
                       onAddPlaceAtLocation?.(selectedLocation);
                     }}
                   >
-                    {selectedLocation.name ? t('map.addToNaviable') : t('map.addPlaceTitle')}
+                    <Icon name="plus" size={13} aria-hidden="true" />
+                    <span>{selectedLocation.name ? t('map.addToNaviable') : t('map.addPlaceTitle')}</span>
                   </button>
                 </div>
               )}

@@ -257,9 +257,17 @@ export function PlaceDetailDrawer({
                 href={place.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: 'var(--purple, #6d45cc)', textDecoration: 'underline', wordBreak: 'break-all' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: 'var(--purple, #6d45cc)',
+                  textDecoration: 'underline',
+                  wordBreak: 'break-all',
+                }}
               >
-                {t('places.openOriginalSource')}
+                <span>{t('places.openOriginalSource')}</span>
+                <Icon name="external-link" size={12} aria-hidden="true" />
               </a>
             </div>
           )}

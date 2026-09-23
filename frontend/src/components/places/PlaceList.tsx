@@ -154,7 +154,7 @@ export function PlaceList({
                   onClick={() => onAddExternalPlace?.(unrecordedExternal[0])}
                 >
                   <Icon name="plus" size={12} />
-                  <span>{locale === 'en' ? '➕ Add This Place' : '➕ Tambah Tempat Ini'}</span>
+                  <span>{locale === 'en' ? 'Add This Place' : 'Tambah Tempat Ini'}</span>
                 </button>
               </div>
             )}

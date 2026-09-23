@@ -45,8 +45,26 @@ export function PlaceCard({ place, isSelected, onSelect, activeNeed = 'Mobilitas
         <span className="place-card-meta">
           {place.category} · {place.district} · {place.distance}
           {streetName && (
-            <span style={{ display: 'block', fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>
-              📍 {streetName}
+            <span
+              className="place-card-address"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '4px',
+                fontSize: '11px',
+                color: 'var(--muted)',
+                marginTop: '3px',
+                lineHeight: 1.35,
+              }}
+            >
+              <Icon
+                name="location"
+                size={12}
+                className="flex-shrink-0"
+                style={{ marginTop: '1.5px', color: 'currentColor' }}
+                aria-hidden="true"
+              />
+              <span style={{ overflowWrap: 'anywhere' }}>{streetName}</span>
             </span>
           )}
         </span>
