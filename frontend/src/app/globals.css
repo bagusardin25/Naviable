@@ -325,6 +325,90 @@ html[data-a11y-high-contrast='true'] .sidebar .brand-mark {
 .flow-check input { width: auto !important; margin-top: 5px; }
 .coordinate-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .coordinate-fields input { min-width: 0; }
+/* Coordinates follow the chosen point and are not typed by hand. */
+.coordinate-fields input[readonly] {
+  background: var(--surface-secondary);
+  color: var(--ink);
+  border-style: dashed;
+  cursor: default;
+  font-variant-numeric: tabular-nums;
+}
+.address-lookup-help { display: flex; align-items: center; gap: 6px; margin: -8px 0 0; font-size: 12px; }
+.address-lookup-help.is-failed { color: var(--notice-warning-ink); }
+
+/* Tambah Lokasi — "Pilih Lokasi": device location or a point on the mini map. */
+.location-picker {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+}
+.location-picker-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.location-picker-head h3 svg { color: var(--purple); }
+.location-picker-head p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.location-picker-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.location-picker-actions .secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.location-picker-actions .secondary-action[aria-expanded="true"] { background: var(--purple-100); }
+.location-picker-status {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.location-picker-status.is-info { background: var(--notice-info-bg); border-color: var(--notice-info-border); color: var(--notice-info-ink); }
+.location-picker-status.is-success { background: var(--notice-success-bg); border-color: var(--notice-success-border); color: var(--notice-success-ink); }
+.location-picker-status.is-warning { background: var(--notice-warning-bg); border-color: var(--notice-warning-border); color: var(--notice-warning-ink); }
+.location-picker-map-panel { display: grid; gap: 6px; min-width: 0; }
+.location-picker-map-panel .flow-help { margin: 0; font-size: 12px; }
+.location-picker-map-wrap { display: grid; gap: 8px; min-width: 0; }
+/* Scoped under .location-picker so it beats the global `.leaflet-container { height: 100% }`. */
+.location-picker .location-picker-map {
+  position: relative;
+  isolation: isolate; /* keep Leaflet's pane z-indexes under modals and the navbar */
+  width: 100%;
+  height: 240px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.location-picker-map-loading { background: var(--surface); }
+.location-picker-center-btn {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 600;
+}
+.location-picker-center-btn:hover { background: var(--purple-100); }
+.location-picker-center-btn:disabled { opacity: .6; cursor: default; }
 .review-form { max-width: 760px; }
 .review-form fieldset { border: 0; padding: 0; min-width: 0; }
 .review-form legend { font-weight: 700; margin-bottom: 16px; }
@@ -3493,6 +3577,8 @@ html.dyslexia-mode,
   .page-title h1 { font-size: 24px; }
   .metric-grid { grid-template-columns: 1fr; }
   .dashboard-page { --dashboard-section-gap: 20px; }
+  .location-picker { padding: 12px; }
+  .location-picker .location-picker-map { height: 210px; }
   .topbar { padding: 8px 10px; gap: 6px; }
   .search-box input { font-size: 13px; }
   .map-toolbar { padding: 10px 12px; }

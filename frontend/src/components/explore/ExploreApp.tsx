@@ -5,6 +5,7 @@ import { findBestMatchingPlace } from '@/lib/voice-search';
 import { matchesPlaceQuery, getPopularStreetCorridors } from '@/lib/streetSearch';
 import { fetchExternalPlaces, type ExternalPlaceResult } from '@/lib/externalGeocoding';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { parseScreen, screenHref } from '@/lib/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useContributionUpdates } from '@/hooks/useContributionUpdates';
@@ -24,7 +25,6 @@ import { NeedFilterTabs } from '@/components/navigation/NeedFilterTabs';
 import { MapView } from '@/components/map/MapView';
 import { PlaceList } from '@/components/places/PlaceList';
 import { PlaceDetailDrawer } from '@/components/places/PlaceDetailDrawer';
-import { ReportForm } from '@/components/reports/ReportForm';
 import { ReviewForm } from '@/components/places/ReviewForm';
 import { DashboardStats } from '@/components/observatory/DashboardStats';
 import { StatusDistribution } from '@/components/observatory/StatusDistribution';
@@ -34,6 +34,14 @@ import { ContributorProfile } from '@/components/profile/ContributorProfile';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
+
+// The report form restores its draft (point, address, name, notes) from
+// localStorage while initialising state, which the server cannot see. Rendering
+// it only in the browser avoids a server/client hydration mismatch.
+const ReportForm = dynamic(() => import('@/components/reports/ReportForm').then((m) => m.ReportForm), {
+  ssr: false,
+  loading: () => <div className="page-scroll" aria-busy="true" />,
+});
 
 export default function ExploreApp() {
   const { t, locale } = useTranslation();

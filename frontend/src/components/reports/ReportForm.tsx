@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Place, ChainElementCode, AccessibilityStatus, CHAIN_ELEMENT_MAP, STATUS_META } from '@/types';
 import { analyzePhoto, submitReport, submitNewPlace, type ApiAnalysis, type PhotoCheck, type ReportPayload, type NewLocation } from '@/lib/api';
+import { reverseGeocode } from '@/lib/externalGeocoding';
 import { placeHref } from '@/lib/navigation';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import { AIDraftPanel } from './AIDraftPanel';
 import { HumanLockSelector } from './HumanLockSelector';
+import { LocationPicker } from './LocationPicker';
+import type { PickedPoint } from './LocationPickerMap';
 import { saveDraftPhoto, getDraftPhoto, deleteDraftPhoto } from '@/lib/draftStorage';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -18,7 +21,14 @@ type DraftData = {
   status?: AccessibilityStatus;
   note?: string;
   location?: NewLocation;
+  /** True once the contributor actually chose a point (map or device location). */
+  locationSelected?: boolean;
+  /** The Jelajahi map point the draft was started from; null when opened directly. */
+  locationOrigin?: PickedPoint | null;
 };
+
+// Placeholder coordinates while no point is chosen yet; never submitted as-is.
+const UNSET_POINT: PickedPoint = { lat: -7.2575, lng: 112.7521 };
 
 function readLocalDraft(key: string): DraftData | null {
   if (typeof window === 'undefined') return null;
@@ -63,24 +73,87 @@ export function ReportForm({
   const placeId = adding ? '' : String(targetPlace?.id ?? '');
   const draftKey = `naviable_report_draft_v2:${draftOwner}:${mode}:${placeId}`;
   const [draft] = useState(() => readLocalDraft(draftKey));
-  const hasMapCoordinates = Boolean(
-    initialLocation &&
-    typeof initialLocation.lat === 'number' &&
-    typeof initialLocation.lng === 'number'
+  // The Jelajahi map point this form was opened with (the form is keyed on it, so it
+  // is fixed for this mount). Null when "Tambah Lokasi" is opened directly.
+  const [locationOrigin] = useState<PickedPoint | null>(() =>
+    initialLocation && Number.isFinite(initialLocation.lat) && Number.isFinite(initialLocation.lng)
+      ? { lat: initialLocation.lat, lng: initialLocation.lng }
+      : null
+  );
+  // A draft's chosen point (and the address derived from it) only carries over when
+  // the draft started from the same origin — e.g. a page refresh. Picking another
+  // point on the Jelajahi map must win over the old draft's point and address.
+  const [restoreDraftPoint] = useState(() =>
+    Boolean(
+      draft?.locationSelected &&
+      draft.location &&
+      (locationOrigin
+        ? draft.locationOrigin?.lat === locationOrigin.lat && draft.locationOrigin?.lng === locationOrigin.lng
+        : !draft.locationOrigin)
+    )
   );
   const [location, setLocation] = useState<NewLocation>(() => {
-    if (hasMapCoordinates && initialLocation) {
-      return {
-        name: draft?.location?.name ?? initialLocation.name ?? '',
-        category: draft?.location?.category ?? initialLocation.category ?? '',
-        address: draft?.location?.address ?? initialLocation.address ?? '',
-        lat: initialLocation.lat,
-        lng: initialLocation.lng,
-      };
-    }
-    return draft?.location ?? { name: '', category: '', address: '', lat: -7.2575, lng: 112.7521 };
+    if (restoreDraftPoint && draft?.location) return draft.location;
+    const point = locationOrigin ?? UNSET_POINT;
+    return {
+      name: draft?.location?.name ?? initialLocation?.name ?? '',
+      category: draft?.location?.category ?? initialLocation?.category ?? '',
+      address: locationOrigin ? initialLocation?.address ?? '' : draft?.location?.address ?? '',
+      lat: point.lat,
+      lng: point.lng,
+    };
   });
-  const [coordinatesConfirmed, setCoordinatesConfirmed] = useState<boolean>(hasMapCoordinates);
+  const [pointSelected, setPointSelected] = useState<boolean>(Boolean(locationOrigin) || restoreDraftPoint);
+  // Opened from the Jelajahi map without a known address: look it up right away.
+  const [initialLookupPoint] = useState<PickedPoint | null>(() =>
+    adding && (Boolean(locationOrigin) || restoreDraftPoint) && !location.address.trim()
+      ? { lat: location.lat, lng: location.lng }
+      : null
+  );
+  const [addressLookup, setAddressLookup] = useState<'idle' | 'loading' | 'found' | 'failed'>(
+    initialLookupPoint ? 'loading' : 'idle'
+  );
+  const addressLookupRef = useRef<{ controller: AbortController; timer: number } | null>(null);
+
+  const cancelAddressLookup = useCallback(() => {
+    if (!addressLookupRef.current) return;
+    window.clearTimeout(addressLookupRef.current.timer);
+    addressLookupRef.current.controller.abort();
+    addressLookupRef.current = null;
+  }, []);
+
+  // Fills "Alamat lengkap" from the chosen point. Every point change replaces the
+  // address; a short delay lets a burst of pin nudges settle into one request.
+  const requestAddress = useCallback((point: PickedPoint) => {
+    cancelAddressLookup();
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      reverseGeocode(point.lat, point.lng, controller.signal)
+        .then((address) => {
+          if (controller.signal.aborted) return;
+          setLocation((current) => ({ ...current, address: address ?? '' }));
+          setAddressLookup(address ? 'found' : 'failed');
+        })
+        .catch(() => {
+          // Aborted: a newer point superseded this lookup.
+        });
+    }, 350);
+    addressLookupRef.current = { controller, timer };
+  }, [cancelAddressLookup]);
+
+  useEffect(() => {
+    if (!initialLookupPoint) return;
+    requestAddress(initialLookupPoint);
+    return cancelAddressLookup;
+  }, [initialLookupPoint, requestAddress, cancelAddressLookup]);
+  useEffect(() => cancelAddressLookup, [cancelAddressLookup]);
+
+  const handlePointPick = useCallback((point: PickedPoint) => {
+    setLocation((current) => ({ ...current, lat: point.lat, lng: point.lng }));
+    setPointSelected(true);
+    setAddressLookup('loading');
+    requestAddress(point);
+  }, [requestAddress]);
   const [reporterName, setReporterName] = useState<string>(draft?.reporterName ?? '');
   const [elementCode, setElementCode] = useState<ChainElementCode>(
     draft?.elementCode && CHAIN_ELEMENT_MAP[draft.elementCode] ? draft.elementCode : 'E1'
@@ -125,7 +198,7 @@ export function ReportForm({
   const integrityBlocked = analysis?.photoIntegrity?.recommendedAction === 'request_new_capture';
   const missingItems = [
     !photo ? t('reports.missingPhoto') : null,
-    adding && !coordinatesConfirmed ? t('reports.missingCoords') : null,
+    adding && !pointSelected ? t('reports.missingCoords') : null,
     !confirmed ? t('reports.missingConfirm') : null,
   ].filter((item): item is string => Boolean(item));
   const currentElement = targetPlace?.elements.find(element => element.code === elementCode);
@@ -133,7 +206,7 @@ export function ReportForm({
 
   // Persist draft on edit
   useEffect(() => {
-    if (!placeId && !reporterName && !note) return;
+    if (!placeId && !reporterName && !note && !location.name && !pointSelected) return;
     try {
       localStorage.setItem(
         draftKey,
@@ -144,13 +217,15 @@ export function ReportForm({
           status,
           note,
           location,
+          locationSelected: pointSelected,
+          locationOrigin,
           savedAt: new Date().toISOString(),
         })
       );
     } catch {
       // ignore storage quota errors
     }
-  }, [draftKey, placeId, reporterName, elementCode, status, note, location]);
+  }, [draftKey, placeId, reporterName, elementCode, status, note, location, pointSelected, locationOrigin]);
 
   function clearDraft() {
     try {
@@ -211,7 +286,7 @@ export function ReportForm({
     }
     if (!photo || !confirmed) { setError(t('reports.photoAndConfirmationRequired')); return; }
     if (integrityBlocked) { setError(t('reports.integrityBlockedHint')); return; }
-    if (adding && !coordinatesConfirmed) { setError(t('reports.coordsConfirmationRequired')); return; }
+    if (adding && !pointSelected) { setError(t('reports.coordsConfirmationRequired')); return; }
     const evidence = { reporterName, ...photo, humanConfirmed: true as const, elements: [{ element: CHAIN_ELEMENT_MAP[elementCode].codeName, status, note }] };
     const payload: ReportPayload = { placeId, ...evidence };
     const newPayload = { ...evidence, location };
@@ -343,61 +418,35 @@ export function ReportForm({
         <fieldset disabled={busy || analyzing} className="card form-card" style={{ minWidth: 0 }}>
           <h2>{t('reports.step1Title')}</h2>
           {adding ? <>
+            <LocationPicker point={pointSelected ? { lat: location.lat, lng: location.lng } : null} onPick={handlePointPick} />
             <label htmlFor="new-place-name">{t('reports.placeNameLabel')}<input type="text" id="new-place-name" placeholder={t('reports.placeNamePlaceholder')} value={location.name} required minLength={2} maxLength={160} onChange={e => setLocation({ ...location, name: e.target.value })} /></label>
             {similarPlaces.length > 0 && <div className="flow-notice"><p>{t('reports.similarPlacesFound')}</p>{similarPlaces.map(p => <p key={p.id}><Link href={placeHref(String(p.id))}>{p.name} — {p.address}</Link></p>)}</div>}
             <label htmlFor="new-place-category">{t('reports.categoryLabel')}<input type="text" id="new-place-category" placeholder={t('reports.categoryPlaceholder')} list="place-categories" value={location.category} required minLength={2} maxLength={80} onChange={e => setLocation({ ...location, category: e.target.value })} /></label>
             <datalist id="place-categories">{Array.from(new Set(places.map(p => p.category))).map(category => <option key={category} value={category} />)}</datalist>
-            <label htmlFor="new-place-address">{t('reports.fullAddressLabel')}<input type="text" id="new-place-address" placeholder={t('reports.fullAddressPlaceholder')} value={location.address} required minLength={5} maxLength={500} onChange={e => setLocation({ ...location, address: e.target.value })} /></label>
-            {hasMapCoordinates && (
-              <div
-                style={{
-                  background: 'var(--purple-100)',
-                  border: '1px solid #cabaf5',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--purple-700)' }}>
-                  <Icon name="map-pin-plus" size={16} />
-                  <span>
-                    {t('reports.pointSelectedFromMap', { lat: location.lat.toFixed(5), lng: location.lng.toFixed(5) })}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--purple)',
-                    color: 'var(--purple)',
-                    borderRadius: '6px',
-                    padding: '3px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {t('reports.changeOnMap')}
-                </button>
-              </div>
-            )}
-            <div className="coordinate-fields">
-              <label htmlFor="new-place-lat">{t('reports.latitudeLabel')}<input id="new-place-lat" type="number" step="any" min={-90} max={90} value={location.lat} required onChange={e => { setLocation({ ...location, lat: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
-              <label htmlFor="new-place-lng">{t('reports.longitudeLabel')}<input id="new-place-lng" type="number" step="any" min={-180} max={180} value={location.lng} required onChange={e => { setLocation({ ...location, lng: e.target.valueAsNumber }); setCoordinatesConfirmed(false); }} /></label>
-            </div>
-            <p className="flow-help">
-              {hasMapCoordinates
-                ? t('reports.coordAutoHelp')
-                : t('reports.coordCenterHelp')}
+            <label htmlFor="new-place-address">
+              {t('reports.fullAddressLabel')}
+              <input type="text" id="new-place-address" placeholder={t('reports.fullAddressPlaceholder')} value={location.address} required minLength={5} maxLength={500} aria-describedby="new-place-address-help" aria-busy={addressLookup === 'loading'} onChange={e => setLocation({ ...location, address: e.target.value })} />
+            </label>
+            <p id="new-place-address-help" className={`flow-help address-lookup-help is-${addressLookup}`} role="status">
+              {addressLookup === 'loading' && <Icon name="spinner" size={13} />}
+              <span>
+                {addressLookup === 'loading'
+                  ? t('reports.addressLookupLoading')
+                  : addressLookup === 'failed'
+                  ? t('reports.addressLookupFailed')
+                  : pointSelected
+                  ? t('reports.addressAutoFilledHelp')
+                  : t('reports.addressAwaitingPointHelp')}
+              </span>
             </p>
-            <label className="flow-check"><input type="checkbox" required checked={coordinatesConfirmed} onChange={e => setCoordinatesConfirmed(e.target.checked)} />{t('reports.coordConfirmedCheck')}</label>
-          </> : <div className="flow-notice"><strong>{targetPlace?.name}</strong><p>{targetPlace?.address}</p><span>{t('reports.fixedLocationNotice')}</span></div>}
+            <div className="coordinate-fields">
+              <label htmlFor="new-place-lat">{t('reports.latitudeLabel')}<input id="new-place-lat" type="text" inputMode="decimal" readOnly aria-describedby="new-place-coord-help" value={pointSelected ? location.lat.toFixed(6) : ''} placeholder={t('reports.coordNotSetPlaceholder')} /></label>
+              <label htmlFor="new-place-lng">{t('reports.longitudeLabel')}<input id="new-place-lng" type="text" inputMode="decimal" readOnly aria-describedby="new-place-coord-help" value={pointSelected ? location.lng.toFixed(6) : ''} placeholder={t('reports.coordNotSetPlaceholder')} /></label>
+            </div>
+            <p id="new-place-coord-help" className="flow-help">
+              {pointSelected ? t('reports.coordReadOnlyHelp') : t('reports.coordNotSelectedHelp')}
+            </p>
+          </> :<div className="flow-notice"><strong>{targetPlace?.name}</strong><p>{targetPlace?.address}</p><span>{t('reports.fixedLocationNotice')}</span></div>}
           <label htmlFor="reporter-name">
             {t('reports.reporterNameLabel')}
             <input type="text" id="reporter-name" value={reporterName} onChange={e => setReporterName(e.target.value)} maxLength={80} placeholder={t('reports.reporterNamePlaceholder')} required autoComplete="name" />
@@ -466,7 +515,7 @@ export function ReportForm({
           ) : missingItems.length ? (
             <p role="status" style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '16px', lineHeight: 1.5 }}>{t('reports.completeFirst')} {missingItems.join(', ')}.</p>
           ) : null)}
-          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '12px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !coordinatesConfirmed : !placeId)}>{submitting ? t('reports.submittingReport') : adding ? t('reports.submitAddPlace') : t('reports.submitCorrection')}</button>
+          <button id="btn-submit-report" type="submit" className="primary-action" style={{ width: '100%', marginTop: '12px' }} disabled={busy || analyzing || !photo || !confirmed || integrityBlocked || (adding ? !pointSelected : !placeId)}>{submitting ? t('reports.submittingReport') : adding ? t('reports.submitAddPlace') : t('reports.submitCorrection')}</button>
           {error && <p role="alert" style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginTop: '12px', border: '1px solid #fecaca' }}>{error}</p>}
         </section>
       </form>
