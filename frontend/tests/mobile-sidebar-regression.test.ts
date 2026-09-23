@@ -49,9 +49,9 @@ describe('Mobile Sidebar Regression Verification', () => {
     assert.match(mobileSection, /\.sidebar\.collapsed\s+nav,\s*\n\s*\.app-shell\.sidebar-collapsed\s+\.sidebar\s+nav\s*\{[^}]*grid-template-columns:\s*repeat\(4,\s*1fr\)\s*!important;/);
     assert.match(mobileSection, /\.sidebar\.collapsed\s+nav\s+button,\s*\n\s*\.app-shell\.sidebar-collapsed\s+\.sidebar\s+nav\s+button\s*\{[^}]*display:\s*flex\s*!important;/);
 
-    // Mobile labels remain visible and full labels remain hidden
+    // In mobile bottom navigation (icon only), all text labels remain strictly hidden
     assert.match(mobileSection, /\.sidebar\.collapsed\s+nav\s+\.nav-label-full,\s*\n\s*\.app-shell\.sidebar-collapsed\s+\.sidebar\s+nav\s+\.nav-label-full\s*\{[^}]*display:\s*none\s*!important;/);
-    assert.match(mobileSection, /\.sidebar\.collapsed\s+nav\s+\.nav-label-mobile,\s*\n\s*\.app-shell\.sidebar-collapsed\s+\.sidebar\s+nav\s+\.nav-label-mobile\s*\{[^}]*display:\s*inline\s*!important;/);
+    assert.match(mobileSection, /\.sidebar\.collapsed\s+nav\s+\.nav-label-mobile,\s*\n\s*\.app-shell\.sidebar-collapsed\s+\.sidebar\s+nav\s+\.nav-label-mobile\s*\{[^}]*display:\s*none\s*!important;/);
 
     // Workspace on mobile retains zero margin-left / padding-left
     assert.match(mobileSection, /\.app-shell\.sidebar-collapsed\s+\.workspace\s*\{[^}]*margin-left:\s*0\s*!important;/);

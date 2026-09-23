@@ -11,7 +11,7 @@
 /* Account identity visibility is controlled by sidebar collapse state in globals.css */
 @media (max-width: 900px) {
   .sidebar nav button { min-width: 0; }
-  .sidebar nav .nav-label-mobile { display: inline; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar nav .nav-label-mobile { display: none !important; max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .topbar-account-button { max-width: 96px; padding: 4px 6px; gap: 5px; }
   .profile-hero { align-items: flex-start; padding: 18px; gap: 12px; }
   .profile-hero h1 { font-size: 22px; }
