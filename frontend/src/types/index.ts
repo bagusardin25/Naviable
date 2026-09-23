@@ -749,7 +749,10 @@ export type ReviewerAuditItem = {
   reporterName: string;
   createdAt: string;
   photoUrl: string;
+  /** What the contributor reported. */
   elements: Array<{ element: string; status: AccessibilityStatus; note?: string }>;
+  /** The reviewer's corrected statuses from an approval; null when it was approved as reported. */
+  reviewedElements?: Array<{ element: string; status: AccessibilityStatus; note?: string }> | null;
   reviewStatus: ReportReviewStatus;
   reviewedBy?: string | null;
   reviewedAt?: string | null;

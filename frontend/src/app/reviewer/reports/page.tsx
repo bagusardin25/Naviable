@@ -6,6 +6,7 @@ import { Search, Eye } from 'lucide-react';
 import { fetchReviewerReports } from '@/lib/api';
 import type { ReviewerAuditItem } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ReviewerLoadError } from '@/components/reviewer/ReviewerLoadError';
 import styles from '../reviewer.module.css';
 
 export default function ReviewerReportsPage() {
@@ -14,6 +15,11 @@ export default function ReviewerReportsPage() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  // What was actually searched: typing only searches once it pauses (or on Enter), so a
+  // query no longer spends one request per keystroke of the reviewer rate limit.
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
 
   const filterOptions = [
     { id: 'all', label: t('reviewer.filterAll') },
@@ -23,42 +29,51 @@ export default function ReviewerReportsPage() {
     { id: 'REJECTED', label: t('reviewer.filterRejected') },
   ];
 
-  async function handleSearchSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    const next = searchQuery.trim();
+    if (next === appliedSearch) return;
+    const timer = window.setTimeout(() => { setLoading(true); setAppliedSearch(next); }, 400);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery, appliedSearch]);
+
+  function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    try {
-      const data = await fetchReviewerReports({
-        status: activeFilter,
-        search: searchQuery,
-      });
-      setReports(data.reports);
-    } catch (err) {
-      console.error('Error loading reports:', err);
-    } finally {
-      setLoading(false);
-    }
+    setAppliedSearch(searchQuery.trim());
+    setAttempt(n => n + 1);
+  }
+
+  function selectFilter(id: string) {
+    if (id === activeFilter) return;
+    setLoading(true);
+    setActiveFilter(id);
   }
 
   useEffect(() => {
     let active = true;
     fetchReviewerReports({
       status: activeFilter,
-      search: searchQuery,
+      search: appliedSearch,
     })
       .then(data => {
         if (active) {
           setReports(data.reports);
+          setError(null);
           setLoading(false);
         }
       })
       .catch(err => {
         console.error('Error loading reports:', err);
-        if (active) setLoading(false);
+        if (active) {
+          setReports([]);
+          setError(err);
+          setLoading(false);
+        }
       });
     return () => {
       active = false;
     };
-  }, [activeFilter, searchQuery]);
+  }, [activeFilter, appliedSearch, attempt]);
 
   function getBadgeClass(status: string) {
     switch (status) {
@@ -111,7 +126,7 @@ export default function ReviewerReportsPage() {
               role="tab"
               aria-selected={activeFilter === opt.id}
               className={`${styles.filterTab} ${activeFilter === opt.id ? styles.filterTabActive : ''}`}
-              onClick={() => setActiveFilter(opt.id)}
+              onClick={() => selectFilter(opt.id)}
             >
               {opt.label}
             </button>
@@ -134,6 +149,8 @@ export default function ReviewerReportsPage() {
       <div className={styles.tableContainer}>
         {loading ? (
           <div className={styles.emptyState}>{t('common.loading')}</div>
+        ) : error ? (
+          <ReviewerLoadError error={error} onRetry={() => { setLoading(true); setAttempt(n => n + 1); }} />
         ) : reports.length === 0 ? (
           <div className={styles.emptyState}>
             {activeFilter === 'SUBMITTED' || activeFilter === 'all'

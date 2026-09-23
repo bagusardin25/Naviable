@@ -777,6 +777,27 @@
   font-size: 14px;
 }
 
+/* A failed load or expired session: never shown as an empty queue. */
+.errorState {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 36px 24px;
+  text-align: center;
+  color: var(--ink);
+  font-size: 14px;
+}
+.errorState p {
+  margin: 0;
+  max-width: 460px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.errorState a,
+.errorState button {
+  margin-top: 6px;
+}
+
 /* Confirmation Modal Dialog */
 .modalBackdrop {
   position: fixed;

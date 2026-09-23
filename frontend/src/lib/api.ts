@@ -184,9 +184,30 @@ export function exportEvidenceCsvUrl(filters?: {
 // Reviewer calls use an HttpOnly Supabase session through the same-origin server proxy.
 import type { ReviewerAuditItem, ReviewerStats, ReviewDecision } from '@/types';
 
-async function reviewerRequest<T>(path: string, init?: RequestInit): Promise<T> {
+/** The reviewer session is gone (expired, logged out, or the role was removed): sign in again. */
+export class ReviewerSessionError extends Error {}
+
+// Admins who signed in with Google keep a live browser Supabase session that refreshes itself.
+// Trade its current token for a new reviewer cookie instead of sending them to the login page.
+async function renewReviewerSessionFromBrowser(): Promise<boolean> {
+  try {
+    const { data } = await supabaseBrowser().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return false;
+    const res = await fetch('/api/auth/reviewer-session', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function reviewerRequest<T>(path: string, init?: RequestInit, renewed = false): Promise<T> {
   const res = await fetch(`/api/reviewer/${path}`, { cache: 'no-store', signal: AbortSignal.timeout(35_000), ...init });
-  const body = await res.json();
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 || res.status === 403) {
+    if (!renewed && await renewReviewerSessionFromBrowser()) return reviewerRequest<T>(path, init, true);
+    throw new ReviewerSessionError(body.error ?? 'Sesi admin sudah berakhir. Silakan login ulang.');
+  }
   if (!res.ok) throw new Error(body.error ?? `Permintaan reviewer gagal (${res.status})`);
   return body as T;
 }
@@ -209,10 +230,13 @@ export async function fetchReviewerReport(id: string): Promise<{ report: Reviewe
   const res = await reviewerRequest<{ report: ReviewerAuditItem; place: ApiPlace | null }>(`reports/${encodeURIComponent(id)}`);
   return { report: reviewerPhoto(res.report), place: res.place ? toUiPlace(res.place) : null };
 }
-export function submitReportReview(id: string, payload: { decision: ReviewDecision; reviewer: string; note: string; checklist?: Record<string, boolean>; elements?: { element: string; status: AccessibilityStatus; note?: string }[] }) {
-  return reviewerRequest<{ ok: boolean; report: ReviewerAuditItem }>(`reports/${encodeURIComponent(id)}/review`, {
+export async function submitReportReview(id: string, payload: { decision: ReviewDecision; reviewer: string; note: string; checklist?: Record<string, boolean>; elements?: { element: string; status: AccessibilityStatus; note?: string }[] }) {
+  const res = await reviewerRequest<{ ok: boolean; report: ReviewerAuditItem }>(`reports/${encodeURIComponent(id)}/review`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   });
+  // The backend answers with a relative /api/photos path; resolve it like every other reviewer read,
+  // or the photo breaks as soon as a decision is saved.
+  return { ...res, report: reviewerPhoto(res.report) };
 }
 export async function fetchReviewerHistory(options: { limit?: number; offset?: number } = {}) {
   const query = new URLSearchParams();

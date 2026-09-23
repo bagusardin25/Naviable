@@ -6,23 +6,19 @@ import { Eye, CheckCircle2, RotateCcw, XCircle, RefreshCw } from 'lucide-react';
 import { fetchReviewerHistory } from '@/lib/api';
 import type { ReviewerAuditItem } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ReviewerLoadError } from '@/components/reviewer/ReviewerLoadError';
 import styles from '../reviewer.module.css';
 
 export default function ReviewerHistoryPage() {
   const { t, formatDate } = useTranslation();
   const [history, setHistory] = useState<ReviewerAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
 
-  async function handleRefresh() {
+  function handleRefresh() {
     setLoading(true);
-    try {
-      const data = await fetchReviewerHistory({ limit: 100 });
-      setHistory(data.history);
-    } catch (err) {
-      console.error('Error loading reviewer history:', err);
-    } finally {
-      setLoading(false);
-    }
+    setAttempt(n => n + 1);
   }
 
   useEffect(() => {
@@ -31,17 +27,22 @@ export default function ReviewerHistoryPage() {
       .then(data => {
         if (active) {
           setHistory(data.history);
+          setError(null);
           setLoading(false);
         }
       })
       .catch(err => {
         console.error('Error loading reviewer history:', err);
-        if (active) setLoading(false);
+        if (active) {
+          setHistory([]);
+          setError(err);
+          setLoading(false);
+        }
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [attempt]);
 
   function getBadgeClass(status: string) {
     switch (status) {
@@ -111,6 +112,8 @@ export default function ReviewerHistoryPage() {
       <div className={styles.tableContainer}>
         {loading ? (
           <div className={styles.emptyState}>{t('reviewer.loadingHistory')}</div>
+        ) : error ? (
+          <ReviewerLoadError error={error} onRetry={handleRefresh} />
         ) : history.length === 0 ? (
           <div className={styles.emptyState}>{t('reviewer.noHistoryYet')}</div>
         ) : (

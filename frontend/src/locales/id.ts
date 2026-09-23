@@ -791,6 +791,10 @@ export const id: TranslationDictionary = {
     revisionSuccess: 'Status laporan diubah menjadi Perlu Revisi.',
     rejectSuccess: 'Laporan telah ditolak.',
     reviewSaveFailed: 'Review belum berhasil disimpan.',
+    sessionExpiredTitle: 'Sesi admin sudah berakhir',
+    sessionExpiredBody: 'Silakan login ulang untuk melanjutkan. Data laporan tidak berubah dan tidak ada yang hilang.',
+    loginAgainBtn: 'Login ulang',
+    loadFailedTitle: 'Data belum dapat dimuat',
   },
   a11yWidget: {
     regionAria: 'Fitur Aksesibilitas',

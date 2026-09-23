@@ -791,6 +791,10 @@ export const en: TranslationDictionary = {
     revisionSuccess: 'Report status set to Needs Revision.',
     rejectSuccess: 'Report has been rejected.',
     reviewSaveFailed: 'Failed to save review.',
+    sessionExpiredTitle: 'Admin session has ended',
+    sessionExpiredBody: 'Please sign in again to continue. No report data was changed or lost.',
+    loginAgainBtn: 'Sign in again',
+    loadFailedTitle: 'Data could not be loaded',
   },
   a11yWidget: {
     regionAria: 'Accessibility Features',

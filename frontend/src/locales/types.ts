@@ -751,6 +751,10 @@ export interface TranslationDictionary {
     revisionSuccess: string;
     rejectSuccess: string;
     reviewSaveFailed: string;
+    sessionExpiredTitle: string;
+    sessionExpiredBody: string;
+    loginAgainBtn: string;
+    loadFailedTitle: string;
   };
   a11yWidget: {
     regionAria: string;

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import {
   ArrowLeft,
   CheckCircle,
@@ -12,16 +12,18 @@ import {
   Sparkles,
   Camera,
 } from 'lucide-react';
-import { fetchReviewerReport, submitReportReview } from '@/lib/api';
+import { fetchReviewerReport, submitReportReview, ReviewerSessionError } from '@/lib/api';
 import type { ReviewerAuditItem, AccessibilityStatus, ReviewDecision } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ReviewerLoadError, reviewerLoginHref } from '@/components/reviewer/ReviewerLoadError';
 import styles from '../../reviewer.module.css';
 
 export default function ReviewReportDetailPage() {
   const { t, formatDate } = useTranslation();
   const params = useParams();
+  const pathname = usePathname();
   const reportId = String(params.id);
 
   const checklistPoints = [
@@ -42,6 +44,8 @@ export default function ReviewReportDetailPage() {
 
   const [report, setReport] = useState<ReviewerAuditItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
 
   // Verification checks state
   const [checks, setChecks] = useState<Record<string, boolean>>({
@@ -64,6 +68,8 @@ export default function ReviewReportDetailPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmModal, setConfirmModal] = useState<'APPROVED' | 'REJECTED' | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
+  // Saving failed because the admin session ended: offer a sign-in link instead of a retry.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -73,10 +79,14 @@ export default function ReviewReportDetailPage() {
         const data = await fetchReviewerReport(reportId);
         if (active) {
           setReport(data.report);
+          setLoadError(null);
 
-          // Initialize element assessments
+          // Start from what is on the place now: the admin's own correction when this report was
+          // already approved with one, otherwise what the contributor reported. Starting from the
+          // reported statuses would silently undo that correction on a second approval.
+          const applied = data.report.reviewedElements?.length ? data.report.reviewedElements : data.report.elements;
           const initialAssessments: Record<string, AccessibilityStatus> = {};
-          data.report.elements.forEach(el => {
+          applied.forEach(el => {
             initialAssessments[el.element] = el.status;
           });
           setElementAssessments(initialAssessments);
@@ -90,6 +100,7 @@ export default function ReviewReportDetailPage() {
         }
       } catch (err) {
         console.error('Failed to load report for review:', err);
+        if (active) setLoadError(err);
       } finally {
         if (active) setLoading(false);
       }
@@ -98,7 +109,7 @@ export default function ReviewReportDetailPage() {
     return () => {
       active = false;
     };
-  }, [reportId]);
+  }, [reportId, attempt]);
 
   function toggleCheck(pointId: string) {
     setChecks(prev => ({ ...prev, [pointId]: !prev[pointId] }));
@@ -112,6 +123,7 @@ export default function ReviewReportDetailPage() {
     if (!report) return;
     setNoteError('');
     setErrorMessage('');
+    setSessionExpired(false);
 
     // Validation: NEEDS_REVISION and REJECTED require review notes
     if ((decision === 'NEEDS_REVISION' || decision === 'REJECTED') && !reviewerNote.trim()) {
@@ -123,7 +135,7 @@ export default function ReviewReportDetailPage() {
     const reviewedElements = (Object.keys(CHAIN_ELEMENT_MAP) as Array<keyof typeof CHAIN_ELEMENT_MAP>)
       .map(code => {
         const codeName = CHAIN_ELEMENT_MAP[code].codeName;
-        const original = report.elements.find(e => e.element === codeName);
+        const original = report.reviewedElements?.find(e => e.element === codeName) ?? report.elements.find(e => e.element === codeName);
         return { element: codeName, status: elementAssessments[codeName] ?? 'BELUM_DIKETAHUI', note: original?.note ?? '' };
       })
       .filter(e => e.status !== 'BELUM_DIKETAHUI');
@@ -151,8 +163,15 @@ export default function ReviewReportDetailPage() {
       } else {
         setErrorMessage(t('reviewer.reviewSaveFailed'));
       }
-    } catch {
-      setErrorMessage(t('reviewer.reviewSaveFailed'));
+    } catch (err) {
+      setConfirmModal(null);
+      if (err instanceof ReviewerSessionError) {
+        setSessionExpired(true);
+        setErrorMessage(t('reviewer.sessionExpiredBody'));
+      } else {
+        // Say why (e.g. too many requests), not just that it failed.
+        setErrorMessage(err instanceof Error && err.message ? `${t('reviewer.reviewSaveFailed')} ${err.message}` : t('reviewer.reviewSaveFailed'));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -175,7 +194,11 @@ export default function ReviewReportDetailPage() {
         <Link href="/reviewer/reports" className={styles.secondaryButton} style={{ marginBottom: '16px' }}>
           <ArrowLeft size={16} /> {t('reviewer.backToIncoming')}
         </Link>
-        <div className={styles.emptyState}>{t('reviewer.reportNotFound')}</div>
+        {loadError ? (
+          <ReviewerLoadError error={loadError} onRetry={() => setAttempt(n => n + 1)} />
+        ) : (
+          <div className={styles.emptyState}>{t('reviewer.reportNotFound')}</div>
+        )}
       </div>
     );
   }
@@ -255,14 +278,20 @@ export default function ReviewReportDetailPage() {
             <AlertTriangle size={18} />
             <span>{errorMessage}</span>
           </div>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => setErrorMessage('')}
-            style={{ padding: '4px 10px', fontSize: '12px' }}
-          >
-            {t('common.retry')}
-          </button>
+          {sessionExpired ? (
+            <Link href={reviewerLoginHref(pathname)} className={styles.actionButton} style={{ padding: '4px 10px', fontSize: '12px' }}>
+              {t('reviewer.loginAgainBtn')}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => setErrorMessage('')}
+              style={{ padding: '4px 10px', fontSize: '12px' }}
+            >
+              {t('common.retry')}
+            </button>
+          )}
         </div>
       )}
 

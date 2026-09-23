@@ -6,6 +6,7 @@ import { Clock, CheckCircle2, RotateCcw, XCircle, ArrowRight, Eye, RefreshCw } f
 import { fetchReviewerStats, fetchReviewerReports } from '@/lib/api';
 import type { ReviewerStats, ReviewerAuditItem } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ReviewerLoadError } from '@/components/reviewer/ReviewerLoadError';
 import styles from './reviewer.module.css';
 
 export default function ReviewerDashboardPage() {
@@ -13,21 +14,13 @@ export default function ReviewerDashboardPage() {
   const [stats, setStats] = useState<ReviewerStats | null>(null);
   const [pendingReports, setPendingReports] = useState<ReviewerAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed load must never read as "0 waiting" / an empty queue.
+  const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
 
-  async function handleRefresh() {
+  function handleRefresh() {
     setLoading(true);
-    try {
-      const [statsData, reportsData] = await Promise.all([
-        fetchReviewerStats(),
-        fetchReviewerReports({ status: 'SUBMITTED', limit: 5 }),
-      ]);
-      setStats(statsData);
-      setPendingReports(reportsData.reports);
-    } catch (err) {
-      console.error('Error refreshing reviewer dashboard:', err);
-    } finally {
-      setLoading(false);
-    }
+    setAttempt(n => n + 1);
   }
 
   useEffect(() => {
@@ -39,16 +32,23 @@ export default function ReviewerDashboardPage() {
       if (active) {
         setStats(statsData);
         setPendingReports(reportsData.reports);
+        setError(null);
         setLoading(false);
       }
     }).catch(err => {
       console.error('Error loading reviewer dashboard:', err);
-      if (active) setLoading(false);
+      if (active) {
+        setStats(null);
+        setError(err);
+        setLoading(false);
+      }
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [attempt]);
+
+  const statValue = (value: number | undefined) => (loading ? '…' : error ? '–' : value ?? 0);
 
   function getStatusLabel(status: string) {
     switch (status) {
@@ -95,7 +95,7 @@ export default function ReviewerDashboardPage() {
             <span>{t('reviewer.statAwaiting')}</span>
             <Clock size={18} color="var(--orange)" aria-hidden="true" />
           </div>
-          <div className={styles.statCardValue}>{stats?.submitted ?? (loading ? '…' : 0)}</div>
+          <div className={styles.statCardValue}>{statValue(stats?.submitted)}</div>
           <div className={styles.statCardSubtext}>{t('reviewer.statAwaitingSub')}</div>
         </div>
 
@@ -104,7 +104,7 @@ export default function ReviewerDashboardPage() {
             <span>{t('reviewer.statApprovedToday')}</span>
             <CheckCircle2 size={18} color="var(--green)" aria-hidden="true" />
           </div>
-          <div className={styles.statCardValue}>{stats?.approvedToday ?? (loading ? '…' : 0)}</div>
+          <div className={styles.statCardValue}>{statValue(stats?.approvedToday)}</div>
           <div className={styles.statCardSubtext}>{t('reviewer.statApprovedTodaySub')}</div>
         </div>
 
@@ -113,7 +113,7 @@ export default function ReviewerDashboardPage() {
             <span>{t('reviewer.statNeedsRevision')}</span>
             <RotateCcw size={18} color="#a16207" aria-hidden="true" />
           </div>
-          <div className={styles.statCardValue}>{stats?.needsRevision ?? (loading ? '…' : 0)}</div>
+          <div className={styles.statCardValue}>{statValue(stats?.needsRevision)}</div>
           <div className={styles.statCardSubtext}>{t('reviewer.statNeedsRevisionSub')}</div>
         </div>
 
@@ -122,7 +122,7 @@ export default function ReviewerDashboardPage() {
             <span>{t('reviewer.statRejected')}</span>
             <XCircle size={18} color="var(--red)" aria-hidden="true" />
           </div>
-          <div className={styles.statCardValue}>{stats?.rejected ?? (loading ? '…' : 0)}</div>
+          <div className={styles.statCardValue}>{statValue(stats?.rejected)}</div>
           <div className={styles.statCardSubtext}>{t('reviewer.statRejectedSub')}</div>
         </div>
       </section>
@@ -147,6 +147,8 @@ export default function ReviewerDashboardPage() {
         <div className={styles.tableContainer}>
           {loading ? (
             <div className={styles.emptyState}>{t('reviewer.loadingQueue')}</div>
+          ) : error ? (
+            <ReviewerLoadError error={error} onRetry={handleRefresh} />
           ) : pendingReports.length === 0 ? (
             <div className={styles.emptyState}>{t('reviewer.noPendingReports')}</div>
           ) : (
