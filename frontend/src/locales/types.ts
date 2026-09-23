@@ -414,6 +414,7 @@ export interface TranslationDictionary {
     aiManualAlwaysReady: string;
     aiHelpGuidance: string;
     aiNeedsMorePhotos: string;
+    aiPhotoDescriptionLabel: string;
     aiDisclaimerDefault: string;
     aiAnalyzeBtnText: string;
     aiAnalyzingBtnText: string;
@@ -677,8 +678,9 @@ export interface TranslationDictionary {
     reporterNotesPrefix: string;
     noExtraNotes: string;
     aiPhotoCheckBox: string;
-    aiDetectedInPhoto: string;
-    aiConfidence: string;
+    aiPhotoDescriptionLabel: string;
+    photoIntegrityLabel: string;
+    aiAnalysisUnavailable: string;
     aiReviewerNote: string;
     verificationPanelTitle: string;
     step1ReviewCheckTitle: string;

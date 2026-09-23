@@ -753,6 +753,8 @@ export type ReviewerAuditItem = {
     drafts: Array<{ element: string; status: AccessibilityStatus; confidence: string; reason: string }>;
     disclaimer: string;
   } | null;
+  /** The AI's plain-language description of the photo, made at submission; null if unavailable. */
+  aiDescription?: string | null;
   photoIntegrity?: PhotoIntegrityResult;
 };
 

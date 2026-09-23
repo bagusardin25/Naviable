@@ -14,7 +14,9 @@ export type ApiPlace = {
   updatedAt: string | null; photoCount: number; reportCount: number; bottlenecks?: string[];
 };
 export type ApiAnalysis = {
-  drafts: { element: string; status: AccessibilityStatus; confidence: string; reason: string }[];
+  /** Plain-language description of what the AI sees in the photo (may be empty). */
+  description?: string;
+  drafts:{ element: string; status: AccessibilityStatus; confidence: string; reason: string }[];
   needsMorePhotos: string[];
   visualIntegrity: { outcome: 'no_obvious_signs' | 'suspicious' | 'inconclusive'; confidence: 'tinggi' | 'sedang' | 'rendah'; reasons: string[] };
   provider: 'google' | 'openai' | 'openrouter';
