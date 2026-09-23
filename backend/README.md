@@ -80,6 +80,9 @@ Aturan-aturan berikut diverifikasi secara ketat oleh automated tests:
 - **AI Tidak Mengukur Metrologi**: Model tidak melakukan estimasi cm atau kemiringan. Jika keyakinan model bernilai rendah, status otomatis diturunkan menjadi `BELUM_DIKETAHUI`.
 - **Deteksi Gambar AI Bersifat Berlapis**: Content Provenance tepercaya dapat memblokir foto sintetis. Ketiadaan penanda dan penilaian artefak visual selalu dianggap tidak konklusif, bukan bukti bahwa foto asli.
 - **`BELUM_DIKETAHUI` Dikecualikan dari Skor**: Elemen yang belum memiliki bukti lapangan tidak dihitung ke dalam penyebut skor persentase.
+- **Kondisi Akses Diturunkan dari Riwayat Laporan**: Status tiap elemen E1–E8 = laporan *berlaku* terbaru (`SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `PUBLISHED`) yang memberi status pasti; koreksi reviewer menggantikan isi laporan yang dikoreksinya. `BELUM_DIKETAHUI` tidak pernah menimpa bukti yang ada. Laporan `NEEDS_REVISION`/`REJECTED` tidak dihitung dan tidak muncul di `GET /api/places/:id/reports`, sehingga riwayat publik dan kondisi akses selalu sama.
+- **Tanpa Data Contoh**: Penyimpanan lokal tidak lagi membuat review atau laporan demo; database lokal lama dibersihkan otomatis saat backend dijalankan.
+- **Lokasi Baru Menunggu Persetujuan Reviewer**: `POST /api/places` membuat lokasi dengan `pendingApproval: true`. Lokasi itu tidak muncul di endpoint publik mana pun (404 pada detail) sampai sebuah laporannya di-*approve*; kontributor tetap melihatnya di `/api/me` dan reviewer di `/api/reviewer/*`.
 - **Laporan Warga Tidak Menyalakan `verifiedByTeam` Sendiri**: Publikasi kontributor mengunci status elemen (`lockedBy: 'kontributor'`) tetapi tetap `verifiedByTeam: false`. Flag itu baru bernilai `true` ketika seorang reviewer meng-*approve* laporan lewat `POST /api/reviewer/reports/:id/review`.
 - **Aksi Reviewer Dijaga Klaim Role OAuth**: Setiap rute `/api/reviewer/*` melewati guard login biasa plus verifikasi ulang token; token wajib membawa `app_metadata.role === 'REVIEWER'`, jika tidak dikembalikan `403`.
 - **Nama Kecamatan Tidak Boleh Ditebak dari Alamat**: Jika tidak tercantum pada dataset awal, kecamatan tetap disimpan sebagai `null`.
@@ -101,6 +104,8 @@ Urutan migrasi SQL (pada direktori `supabase/migrations/`):
 3. `003_contribution_flows.sql`: Transaksi `create_place_report` (tambah lokasi + laporan pertama secara atomik) serta tabel `reviews` dan RPC `publish_review`.
 4. `004_reviewer_audit.sql`: Kolom siklus review pada `reports`, indeks `review_status`, dan transaksi `review_report` yang merekam keputusan reviewer serta menyalakan `verifiedByTeam` saat `APPROVED`.
 5. `005_reviewer_element_override.sql`: Menambah parameter `p_elements` pada `review_report` sehingga status elemen hasil koreksi reviewer diterapkan saat `APPROVED` (elemen `BELUM_DIKETAHUI` dilewati agar tidak menimpa bukti yang sudah ada).
+6. `006_place_approval.sql`: Kolom `places.pending_approval`. Lokasi baru dari kontributor dibuat `pending_approval = true` dan disembunyikan dari seluruh endpoint publik (peta, detail, observatory, CSV, journey) sampai reviewer meng-*approve* salah satu laporannya. Lokasi kontributor lama yang belum pernah di-*approve* ikut ditandai pending.
+7. `007_place_elements_sync.sql`: Kolom `reports.reviewed_elements` (koreksi reviewer disimpan di laporan) dan fungsi `refresh_place_elements`. `publish_report` dan `review_report` kini menurunkan ulang `place_elements`, `report_count`, dan `photo_count` dari laporan yang masih berlaku, sehingga "Kondisi akses" selalu cocok dengan riwayat publik. Migrasi ini mengisi `reviewed_elements` dari koreksi yang sudah diterapkan lalu menghitung ulang semua lokasi.
 
 ---
 

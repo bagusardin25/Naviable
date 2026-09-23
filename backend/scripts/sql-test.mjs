@@ -104,6 +104,8 @@ async function main() {
     await execute("apply 003_contribution_flows.sql", script("migrations/003_contribution_flows.sql"));
     await execute("apply 004_reviewer_audit.sql", script("migrations/004_reviewer_audit.sql"));
     await execute("apply 005_reviewer_element_override.sql", script("migrations/005_reviewer_element_override.sql"));
+    await execute("apply 006_place_approval.sql", script("migrations/006_place_approval.sql"));
+    await execute("apply 007_place_elements_sync.sql", script("migrations/007_place_elements_sync.sql"));
 
     // 002 needs PostGIS *and* the Supabase `storage` schema, so it is opt-in.
     const { stdout: compatible } = await psql([...connect, "-d", database, "-tAc",
