@@ -47,11 +47,12 @@ We designed **Naviable** as a civic evidence platform:
 
 - **Map + list exploration** — A Leaflet map paired with a synchronized, keyboard-navigable place list. Filter by access need (*Mobilitas*, *Visual*, *Auditori*, *Sensorik*), condition status, category, or popular street corridors.
 - **Search that understands Surabaya** — Matches place names, streets (normalizing *Jl./Jln./Jalan*), districts, and category intent (e.g. *"tempat ngopi"* → cafés). Includes **voice search** (Web Speech API) and surfaces public places not yet in Naviable from OpenStreetMap, each with a one-click "add to Naviable" action.
-- **Place detail drawer** — The E1–E8 chain with per-element evidence, source and license metadata, data freshness, the **citizen correction history** (who changed which element, when, and the evidence photo), **visitor experience reviews**, and Google Maps walking directions.
+- **Place detail drawer** — The E1–E8 chain with per-element evidence, source and license metadata, data freshness, the **citizen correction history** (who changed which element, when, and the evidence photo), and **visitor experience reviews**.
+- **Directions to every place** — Each place card, map popup, and detail drawer has a *Directions (Google Maps)* button for walking directions. Places still waiting for a precise map point fall back to a name + address search.
 - **Add a place / report a change** — New places start with a **Choose Location** step: use the device's location or drop a pin on an inline mini map. The full address is filled in by reverse geocoding, and latitude/longitude are read-only so they always match the pin. Drafts (including the photo) autosave on the device, so contributors can fill the form before signing in.
 - **Automatic photo checks** — On upload, the photo is analyzed for element drafts and provenance (AI-generation) signals. On submit, the server checks that the photo actually shows the chosen element; a photo that does not is sent back for revision with an explanation.
 - **Reviewer portal (`/reviewer`)** — A queue with statistics, report details, *approve / needs revision / reject* decisions with a checklist and notes, element-status corrections, and an audit history.
-- **Contributor profile** — Contributors see the review outcome, reviewer note, and checklist for their own reports (the reviewer's identity is withheld), with a badge for new outcomes.
+- **Contributor notifications & profile** — When a new place or change report is approved, rejected, or sent back for revision, the contributor gets a notification: a bell with an unread count and a list of recent decisions (place, outcome, reviewer note), plus a toast when a new decision arrives. Decisions are re-checked every minute while the app is open. The profile shows the full history with outcome, note, and checklist; the reviewer's identity is withheld.
 - **Accessibility Insights (observatory)** — City-level statistics, data completeness (mapped vs. still needing a map point), status distribution, and a district snapshot.
 - **Built-in accessibility panel** — Dark mode, high contrast, text zoom (100–200%), reduced motion, a dyslexia-friendly font (OpenDyslexic), grayscale mode, link highlighting, a reading guide, larger touch targets (motor mode), and a voice reader. Preferences persist on the device.
 - **Bilingual interface** — Indonesian and English, switchable at any time.
@@ -173,8 +174,9 @@ We engineered the submit flow to survive flaky mobile networks and duplicate tap
    └── On APPROVED, we record the audit trail, apply any reviewer-corrected element
        statuses, and flip the place's verifiedByTeam to true.
    │
-8. The contributor sees the outcome, reviewer note, and checklist in their profile
-   (GET /api/me); the reviewer's identity is not exposed.
+8. The contributor is notified of the decision (bell + toast, polled from GET /api/me)
+   and sees the outcome, reviewer note, and checklist in their profile; the
+   reviewer's identity is not exposed.
 ```
 
 Contributors can also leave a plain-language **experience review** on any venue (`POST /api/reviews`) — short qualitative notes that sit beside the chain, but never feed the element scores.
@@ -311,10 +313,10 @@ Designed and developed by:
 **Tim coba-coba**
 *Undergraduate Students — Telkom University Surabaya*
 
-- **Bagus Ardin**
-- **Ida Bagus**
-- **Hartita**
-- **Muthe**
+- **Bagus Ardin Prayoga**
+- **Ida Bagus Giri Krisnabhawa**
+- **Hartita Wirastri**
+- **Muthi'ah Fadiyah**
 
 *Submitted for GAYATAMA 5 International Web Technology Competition (2026).*
 
