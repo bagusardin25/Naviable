@@ -552,6 +552,8 @@ export const en: TranslationDictionary = {
   auth: {
     signInPageTitle: 'Sign In · NaviAble',
     backToMap: '← Back to Accessibility Map',
+    backToHome: '← Back to Home',
+    reviewerKicker: 'Reviewer Portal',
     welcomeHeading: 'Welcome to Naviable',
     welcomeSub: 'Sign in to contribute. Explore the map and read location details without an account.',
     preparingLogin: 'Preparing sign in page…',

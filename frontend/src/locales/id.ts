@@ -552,6 +552,8 @@ export const id: TranslationDictionary = {
   auth: {
     signInPageTitle: 'Masuk · NaviAble',
     backToMap: '← Kembali ke Peta Akses',
+    backToHome: '← Kembali ke Beranda',
+    reviewerKicker: 'Portal Reviewer',
     welcomeHeading: 'Selamat Datang di Naviable',
     welcomeSub: 'Masuk untuk berkontribusi. Jelajahi peta dan baca informasi lokasi tanpa akun.',
     preparingLogin: 'Menyiapkan halaman masuk…',

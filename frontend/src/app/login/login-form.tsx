@@ -300,7 +300,7 @@ export function LoginForm() {
     return (
       <div className={styles.loginShell}>
         <header className={styles.heading}>
-          <p className={styles.modeKicker}>Portal reviewer</p>
+          <p className={styles.modeKicker}>{t('auth.reviewerKicker')}</p>
           <h1 id="login-heading">{t('auth.reviewerHeading')}</h1>
           <p>{t('auth.reviewerSub')}</p>
         </header>
@@ -410,17 +410,8 @@ export function LoginForm() {
   return (
     <div className={styles.loginShell}>
       <header className={styles.heading}>
-        <p className={styles.modeKicker}>
-          {authMode === "signup" ? "Bergabung dengan komunitas" : "Akun kontribusi Naviable"}
-        </p>
-        <h1 id="login-heading">
-          {authMode === "signup" ? "Mulai berkontribusi" : "Selamat datang kembali"}
-        </h1>
-        <p>
-          {authMode === "signup"
-            ? "Buat akun untuk menambahkan lokasi, mengirim koreksi, dan menulis review."
-            : "Masuk untuk berbagi temuan aksesibilitas. Peta tetap dapat dijelajahi tanpa akun."}
-        </p>
+        <h1 id="login-heading">{t('auth.welcomeHeading')}</h1>
+        <p>{t('auth.welcomeSub')}</p>
       </header>
 
       <form className={styles.form} onSubmit={submit} noValidate aria-busy={busy}>

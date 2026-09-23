@@ -512,6 +512,8 @@ export interface TranslationDictionary {
   auth: {
     signInPageTitle: string;
     backToMap: string;
+    backToHome: string;
+    reviewerKicker: string;
     welcomeHeading: string;
     welcomeSub: string;
     preparingLogin: string;

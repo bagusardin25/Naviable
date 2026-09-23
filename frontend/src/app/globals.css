@@ -4606,20 +4606,20 @@ html[data-a11y-high-contrast="true"] .a11y-stepper-bar {
     min-height: 44px;
   }
 
-  /* Login has no bottom navigation. Keep the compact trigger cleanly in the top corner out of form flow. */
+  /* Login has no bottom navigation. Anchor cleanly at bottom with safe-area spacing and compact touch target. */
   .widget-page-login.widget-pos-left {
     position: fixed;
-    top: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     left: 16px;
-    bottom: auto;
+    top: auto;
     right: auto;
   }
 
   .widget-page-login.widget-pos-right {
     position: fixed;
-    top: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     right: 16px;
-    bottom: auto;
+    top: auto;
     left: auto;
   }
 

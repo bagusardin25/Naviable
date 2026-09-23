@@ -4,16 +4,17 @@ import React, { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/ui/BrandLogo';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { LoginForm } from './login-form';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import styles from './login.module.css';
 
-export function LoginContent({ robotoClass = '', interVar = '' }: { robotoClass?: string; interVar?: string } = {}) {
+export function LoginContent() {
   const { t, locale } = useTranslation();
 
   return (
-    <main className={`${styles.page} ${robotoClass} ${interVar}`.trim()} lang={locale}>
+    <main className={styles.page} lang={locale}>
       <section className={styles.brandPanel} aria-label={t('auth.loginBrandPanelAria')}>
         <div className={styles.brandContent}>
           <Link href="/" className={styles.brand} aria-label={`NaviAble — ${t('nav.backToHome')}`}>
@@ -44,14 +45,13 @@ export function LoginContent({ robotoClass = '', interVar = '' }: { robotoClass?
 
       <section className={styles.formPanel} aria-labelledby="login-heading">
         <div className={styles.formContent}>
-          <Link href="/jelajah" className={styles.backLink}>
-            {t('auth.backToMap')}
-          </Link>
+          <div className={styles.topBar}>
+            <Link href="/" className={styles.backLink}>
+              {t('auth.backToHome')}
+            </Link>
+            <LanguageSwitcher size="sm" />
+          </div>
 
-          <header className={styles.heading}>
-            <h1 id="login-heading">{t('auth.welcomeHeading')}</h1>
-            <p>{t('auth.welcomeSub')}</p>
-          </header>
           <Suspense fallback={<p role="status">{t('auth.preparingLogin')}</p>}>
             <LoginForm />
           </Suspense>

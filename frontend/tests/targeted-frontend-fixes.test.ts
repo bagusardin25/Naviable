@@ -103,15 +103,12 @@ test('OpenDyslexic font has explicit @font-face declarations, linked stylesheet,
   assert.match(layout, /open-dyslexic\.css/);
 });
 
-test('landing renders compact language switcher and login page omits it', () => {
+test('landing and login pages render compact language switcher', () => {
   const landingShell = source('src/components/landing/LandingShell.tsx');
   const loginContent = source('src/app/login/LoginContent.tsx');
-  const loginPage = source('src/app/login/page.tsx');
 
   assert.match(landingShell, /<LanguageSwitcher\b[^>]*size="sm"/);
-  assert.equal(loginContent.includes('<LanguageSwitcher'), false);
-  assert.equal(loginContent.includes('LanguageSwitcher'), false);
-  assert.equal(loginPage.includes('LanguageSwitcher'), false);
+  assert.match(loginContent, /<LanguageSwitcher\b[^>]*size="sm"/);
 });
 
 test('poppins font is applied globally from root layout', () => {

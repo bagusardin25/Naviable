@@ -182,6 +182,6 @@ test('8. Mobile login accessibility button is anchored cleanly without obscuring
   const css = source('src/app/globals.css');
   assert.match(
     css,
-    /\.widget-page-login\.widget-pos-right\s*\{[^}]*position:\s*fixed;[^}]*top:\s*16px;[^}]*right:\s*16px;/
+    /\.widget-page-login\.widget-pos-right\s*\{[^}]*position:\s*fixed;[^}]*bottom:\s*calc\(16px/
   );
 });
