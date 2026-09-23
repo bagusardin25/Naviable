@@ -10,7 +10,13 @@ export const VisualIntegritySchema = z.object({
   reasons: z.array(z.string().max(500)).max(4),
 }).strict();
 
+/** Upper bound for the AI's plain-language photo description (shown to contributors and reviewers). */
+export const PHOTO_DESCRIPTION_MAX = 600;
+
 export const ModelAnalysisSchema = z.object({
+  // Truncated rather than rejected: an over-long description must not fail the whole analysis
+  // and trigger a provider failover. Missing (older/looser models) becomes an empty string.
+  description: z.string().default("").transform(text => text.trim().slice(0, PHOTO_DESCRIPTION_MAX)),
   drafts: z.array(z.object({
     element: z.enum(CHAIN_ELEMENTS),
     status: z.enum(ELEMENT_STATUSES),
@@ -56,6 +62,8 @@ export const MODEL_ANALYSIS_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
+    // First, so the model describes what it sees before drafting element statuses.
+    description: { type: "string" },
     drafts: {
       type: "array",
       minItems: 8,
@@ -84,7 +92,7 @@ export const MODEL_ANALYSIS_JSON_SCHEMA = {
       required: ["outcome", "confidence", "reasons"],
     },
   },
-  required: ["drafts", "needsMorePhotos", "visualIntegrity"],
+  required: ["description", "drafts", "needsMorePhotos", "visualIntegrity"],
 } as const;
 
 export function normalizeModelAnalysis(input: unknown): ModelAnalysis {

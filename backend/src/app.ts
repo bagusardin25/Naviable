@@ -96,15 +96,20 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     return integrity;
   }
   /**
-   * Reads the photo with the vision model and checks it against the element the contributor
-   * picked. Returns null when the analysis is unavailable so an AI outage never blocks a
+   * Reads the photo with the vision model once at submission: checks it against the element the
+   * contributor picked, and keeps the model's plain-language description of the photo for the
+   * reviewer. Both are null when the analysis is unavailable, so an AI outage never blocks a
    * genuine contribution — the report then goes to the human queue as usual.
    */
-  async function photoElementMatch(photo: ReturnType<typeof decodePhoto>, elements: ReportInput["elements"]) {
+  async function submissionPhotoCheck(
+    photo: ReturnType<typeof decodePhoto>,
+    elements: ReportInput["elements"],
+  ): Promise<{ match: PhotoElementMatch | null; description: string | null }> {
     try {
-      return matchPhotoToElements(await analyze(photo.base64, photo.mimeType), elements);
+      const analysis = await analyze(photo.base64, photo.mimeType);
+      return { match: matchPhotoToElements(analysis, elements), description: analysis.description?.trim() || null };
     } catch {
-      return null;
+      return { match: null, description: null };
     }
   }
   /**
@@ -162,12 +167,12 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const body = AddPlaceBody.parse(req.body);
     const requestKey = z.uuid().parse(req.headers["idempotency-key"] ?? randomUUID());
     const photo = decodePhoto(body.image, body.mimeType);
-    const [photoIntegrity, match] = await Promise.all([verifiedPhotoIntegrity(photo), photoElementMatch(photo, body.elements)]);
+    const [photoIntegrity, { match, description }] = await Promise.all([verifiedPhotoIntegrity(photo), submissionPhotoCheck(photo, body.elements)]);
     const place: Place = { ...body.location, id: `place-${randomUUID()}`, city: "Surabaya", kecamatan: null, kelurahan: null,
       preSurvey: {}, sources: [], evidenceLevel: "contributor", verifiedByTeam: false, needsGeocoding: false,
       elements: {}, updatedAt: null, photoCount: 0, reportCount: 0 };
     const inputHash = createHash("sha256").update(JSON.stringify({ kind: "new-place", ...body, image: photo.base64 })).digest("hex");
-    const { report, replayed } = await store.publish({ placeId: place.id, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity }, photo, place);
+    const { report, replayed } = await store.publish({ placeId: place.id, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity, aiDescription: description }, photo, place);
     const reviewed = replayed ? report : await autoFlagMismatch(report, match);
     res.status(replayed ? 200 : 201).json({ reportId: report.id, replayed, reviewStatus: reviewed.reviewStatus, photoCheck: photoCheckResponse(match), place: summarizePlace(await placeById(report.placeId)) });
   });
@@ -193,9 +198,9 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     const requestKey = z.uuid().parse(req.headers["idempotency-key"] ?? randomUUID());
     const photo = decodePhoto(body.image, body.mimeType);
     await placeById(body.placeId);
-    const [photoIntegrity, match] = await Promise.all([verifiedPhotoIntegrity(photo), photoElementMatch(photo, body.elements)]);
+    const [photoIntegrity, { match, description }] = await Promise.all([verifiedPhotoIntegrity(photo), submissionPhotoCheck(photo, body.elements)]);
     const inputHash = createHash("sha256").update(JSON.stringify({ ...body, image: photo.base64 })).digest("hex");
-    const { report, replayed } = await store.publish({ placeId: body.placeId, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity }, photo);
+    const { report, replayed } = await store.publish({ placeId: body.placeId, reporterName: body.reporterName, actorId: res.locals.actorId, requestKey, inputHash, elements: body.elements, photoIntegrity, aiDescription: description }, photo);
     const reviewed = replayed ? report : await autoFlagMismatch(report, match);
     res.status(replayed ? 200 : 201).json({ ok: true, reportId: report.id, replayed, reviewStatus: reviewed.reviewStatus, photoCheck: photoCheckResponse(match), photoUrl: `/api/photos/${report.id}`, report: publicReport(reviewed), place: summarizePlace(await placeById(body.placeId)) });
   });

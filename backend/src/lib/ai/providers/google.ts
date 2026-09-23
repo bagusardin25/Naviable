@@ -26,7 +26,10 @@ export const googleProvider: AIProvider = {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
+          // Describe the photo first, then draft element statuses from that description.
+          propertyOrdering: ["description", "drafts", "needsMorePhotos", "visualIntegrity"],
           properties: {
+            description: { type: Type.STRING },
             drafts: {
               type: Type.ARRAY,
               items: {
@@ -51,7 +54,7 @@ export const googleProvider: AIProvider = {
               required: ["outcome", "confidence", "reasons"],
             },
           },
-          required: ["drafts", "needsMorePhotos", "visualIntegrity"],
+          required: ["description", "drafts", "needsMorePhotos", "visualIntegrity"],
         },
       },
     });

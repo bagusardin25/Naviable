@@ -13,6 +13,9 @@ export type Report = {
   id: string; placeId: string; actorId: string; reporterName: string; requestKey: string; inputHash: string;
   elements: ReportInput["elements"]; photoPath: string; mimeType: string; createdAt: string;
   photoIntegrity?: PhotoIntegrityResult;
+  /** The vision model's plain-language description of the photo, made at submission for the
+   *  reviewer. Null when the AI was unavailable. Not included in public report responses. */
+  aiDescription?: string | null;
   reviewStatus: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "NEEDS_REVISION" | "APPROVED" | "REJECTED" | "PUBLISHED";
   reviewedBy?: string | null;
   reviewedAt?: string | null;
