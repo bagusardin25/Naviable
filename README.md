@@ -6,8 +6,7 @@
 ### *Community-Driven Urban Accessibility Evidence System for Surabaya*
 
 **Engineering Notes & System Architecture**
-Built by **Tim coba-coba (Telkom University Surabaya)** for **GAYATAMA 5 (2026)**
-*Theme: "Innovating for a Sustainable Future: Empowering Communities through Web Technology"*
+Built by **Tim coba-coba (Telkom University Surabaya)**
 
 **🌐 Live Demo: [naviable.vercel.app](https://naviable.vercel.app)**
 
@@ -102,7 +101,7 @@ We designed **Naviable** as a civic evidence platform:
 - **Our Decision**: We built two storage adapters implementing a unified `Store` interface:
   1. `LocalStore`: Backed by a local JSON file (`database.json`) with an in-memory sequential promise queue and atomic temporary renaming (`flag: "wx"` + rename). Photos are persisted to `.local/photos/`. It requires zero external cloud dependencies or Docker containers, and seeds demo correction reports and one demo visitor review per place so a fresh checkout has something to review and display.
   2. `SupabaseStore`: Backed by PostgreSQL transactions via the `publish_report` and `review_report` stored procedures and private Supabase Storage buckets with 5-minute signed URLs. It never seeds demo reports or reviews.
-- **Why**: Zero-friction local development, instant test suite execution, and clean judge demonstrations without cloud credential dependencies. The backend refuses to boot if `NODE_ENV=production` is paired with `DATA_STORE=local`.
+- **Why**: Zero-friction local development, instant test suite execution, and clean demonstrations without cloud credential dependencies. The backend refuses to boot if `NODE_ENV=production` is paired with `DATA_STORE=local`.
 
 ### TRADE-OFF 2: *Directions Hand-Off* vs. *Turn-by-Turn Routing Engine*
 - **Our Decision**: We intentionally **did not** build a turn-by-turn routing engine. Claiming safe pedestrian navigation without comprehensive micro-elevation, curb-cut, and sidewalk surface datasets creates serious safety hazards for disabled users.
@@ -295,7 +294,7 @@ GitHub Actions runs the same pipeline on pushes and pull requests to the main de
 
 ## 9. Known Limitations & Workarounds (WORKAROUND & TODO)
 
-// WORKAROUND & TODO: Deliberate technical boundaries for the competition milestone:
+// WORKAROUND & TODO: Deliberate technical boundaries for the current milestone:
 
 - **WORKAROUND (Photo Streaming)**: The Next.js Image component uses the `unoptimized` property for local media URLs to avoid hardcoding localhost domain whitelists across developer environments.
 - **WORKAROUND (CSV Formula Injection)**: Values beginning with `=`, `+`, `-`, or `@` are prefixed with a single quote (`'`) during Evidence Pack CSV generation.
@@ -317,8 +316,6 @@ Designed and developed by:
 - **Ida Bagus Giri Krisnabhawa**
 - **Hartita Wirastri**
 - **Muthi'ah Fadiyah**
-
-*Submitted for GAYATAMA 5 International Web Technology Competition (2026).*
 
 ---
 
