@@ -733,6 +733,7 @@ export interface TranslationDictionary {
     check5: string;
     step2StandardElementsTitle: string;
     step2StandardElementsSub: string;
+    notInThisReport: string;
     step3ReviewerNotesTitle: string;
     reviewerNotesPlaceholder: string;
     notesRequiredForRejectOrRevise: string;

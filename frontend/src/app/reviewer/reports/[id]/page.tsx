@@ -13,7 +13,7 @@ import {
   Camera,
 } from 'lucide-react';
 import { fetchReviewerReport, submitReportReview, ReviewerSessionError } from '@/lib/api';
-import type { ReviewerAuditItem, AccessibilityStatus, ReviewDecision } from '@/types';
+import type { ReviewerAuditItem, AccessibilityStatus, ReviewDecision, Place } from '@/types';
 import { CHAIN_ELEMENT_MAP } from '@/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -43,6 +43,8 @@ export default function ReviewReportDetailPage() {
   ];
 
   const [report, setReport] = useState<ReviewerAuditItem | null>(null);
+  // The place as it is now, for the elements this report does not cover.
+  const [place, setPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
@@ -79,6 +81,7 @@ export default function ReviewReportDetailPage() {
         const data = await fetchReviewerReport(reportId);
         if (active) {
           setReport(data.report);
+          setPlace(data.place);
           setLoadError(null);
 
           // Start from what is on the place now: the admin's own correction when this report was
@@ -132,13 +135,15 @@ export default function ReviewReportDetailPage() {
     }
 
     // Reviewer-corrected element statuses; unknowns are omitted so they never overwrite existing evidence.
+    // Only the elements this report was submitted for: its photo is not evidence for any other element,
+    // and a status set here would show this photo on that element too.
     const reviewedElements = (Object.keys(CHAIN_ELEMENT_MAP) as Array<keyof typeof CHAIN_ELEMENT_MAP>)
       .map(code => {
         const codeName = CHAIN_ELEMENT_MAP[code].codeName;
         const original = report.reviewedElements?.find(e => e.element === codeName) ?? report.elements.find(e => e.element === codeName);
         return { element: codeName, status: elementAssessments[codeName] ?? 'BELUM_DIKETAHUI', note: original?.note ?? '' };
       })
-      .filter(e => e.status !== 'BELUM_DIKETAHUI');
+      .filter(e => e.status !== 'BELUM_DIKETAHUI' && report.elements.some(r => r.element === e.element));
 
     setSubmitting(true);
     try {
@@ -485,8 +490,11 @@ export default function ReviewReportDetailPage() {
             <div className={styles.standardElements}>
               {(Object.keys(CHAIN_ELEMENT_MAP) as Array<keyof typeof CHAIN_ELEMENT_MAP>).map(code => {
                 const item = CHAIN_ELEMENT_MAP[code];
-                const currentStatus = elementAssessments[item.codeName] ?? 'BELUM_DIKETAHUI';
                 const isReported = report.elements.some(e => e.element === item.codeName);
+                // An element outside this report keeps what the place shows now, from its own report.
+                const currentStatus = isReported
+                  ? elementAssessments[item.codeName] ?? 'BELUM_DIKETAHUI'
+                  : place?.elements.find(el => el.code === code)?.status ?? 'BELUM_DIKETAHUI';
 
                 return (
                   <div
@@ -507,6 +515,7 @@ export default function ReviewReportDetailPage() {
                     <select
                       className={styles.elementSelect}
                       value={currentStatus}
+                      disabled={!isReported}
                       onChange={e =>
                         handleAssessmentChange(item.codeName, e.target.value as AccessibilityStatus)
                       }
@@ -518,6 +527,9 @@ export default function ReviewReportDetailPage() {
                         </option>
                       ))}
                     </select>
+                    {!isReported && (
+                      <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{t('reviewer.notInThisReport')}</span>
+                    )}
                   </div>
                 );
               })}

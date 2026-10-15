@@ -96,6 +96,13 @@ test('the evidence photo survives a decision', async () => {
   });
 });
 
+test('an approval only sets statuses for the reported elements; the others show the place as it is', () => {
+  const detail = source('src/app/reviewer/reports/[id]/page.tsx');
+  assert.match(detail, /\.filter\(e => e\.status !== 'BELUM_DIKETAHUI' && report\.elements\.some\(r => r\.element === e\.element\)\)/);
+  assert.match(detail, /place\?\.elements\.find\(el => el\.code === code\)\?\.status/);
+  assert.match(detail, /disabled=\{!isReported\}/);
+});
+
 test('reopening an approved report starts from the admin correction, and search waits for typing to pause', () => {
   const detail = source('src/app/reviewer/reports/[id]/page.tsx');
   assert.match(detail, /const applied = data\.report\.reviewedElements\?\.length \? data\.report\.reviewedElements : data\.report\.elements;/);

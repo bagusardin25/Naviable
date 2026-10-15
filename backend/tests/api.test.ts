@@ -257,6 +257,24 @@ test('reopening an approved report returns the correction applied, next to what 
   } finally { await f.close(); }
 });
 
+test('approving a report never puts its photo on an element it was not submitted for', async () => {
+  const f = await fixture('local', true);
+  try {
+    const placeId = (await f.store.listPlaces())[0].id;
+    const rampBefore = (await f.store.getPlace(placeId))?.elements.E2_ramp;
+    const submitted = await (await f.post('/api/reports', report(placeId), randomUUID(), 'valid-test-token')).json();
+    const approved = await f.post(`/api/reviewer/reports/${submitted.reportId}/review`, { decision: 'APPROVED', note: '', elements: [
+      { element: 'E5_guiding_block', status: 'UTUH' },
+      { element: 'E2_ramp', status: 'UTUH' },
+    ] });
+    assert.equal(approved.status, 200);
+    const place = await f.store.getPlace(placeId);
+    assert.equal(place?.elements.E5_guiding_block?.status, 'UTUH', 'the reported element takes the correction');
+    assert.deepEqual(place?.elements.E2_ramp, rampBefore, 'the ramp keeps its own evidence, not this photo');
+    assert.deepEqual((await f.store.getReport(submitted.reportId))?.reviewedElements?.map(e => e.element), ['E5_guiding_block']);
+  } finally { await f.close(); }
+});
+
 test('seed, filters, pagination, unknown coordinates and evidence boundaries', async () => {
   const f = await fixture();
   try {

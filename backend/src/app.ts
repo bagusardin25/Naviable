@@ -332,7 +332,13 @@ export function createApp({ store, config, authenticate, authenticateReviewer, a
     });
     const body = ReviewDecisionBody.parse(req.body);
     const reportId = z.uuid().parse(req.params.id);
-    const updated = await store.reviewReport(reportId, { ...body, reviewer: res.locals.reviewerLabel ?? res.locals.actorId });
+    const current = await store.getReport(reportId);
+    if (!current) throw new ApiError(404, "Laporan tidak ditemukan");
+    // A report's photo is evidence only for the elements it was submitted for. A status for any
+    // other element would make this photo that element's evidence too, so it is dropped.
+    const reported = new Set(current.elements.map(e => e.element));
+    const elements = body.elements?.filter(e => reported.has(e.element));
+    const updated = await store.reviewReport(reportId, { ...body, elements: elements?.length ? elements : undefined, reviewer: res.locals.reviewerLabel ?? res.locals.actorId });
     // Mirror the GET /reports/:id shape so the reviewer UI can swap this straight into
     // its state after a decision without losing the place name, address or photo.
     const place = await store.getPlace(updated.placeId);
