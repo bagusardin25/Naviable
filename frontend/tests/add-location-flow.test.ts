@@ -49,6 +49,15 @@ test('Tambah Lokasi starts with "Pilih Lokasi" and keeps coordinates read-only',
   assert.match(form, /adding \? !pointSelected : !placeId/);
 });
 
+test('after a contribution is sent the map drops the search pin and the add draft, so an unapproved place never looks published', () => {
+  const explore = source('src/components/explore/ExploreApp.tsx');
+  const handler = explore.slice(explore.indexOf('function handleSubmitReport'), explore.indexOf('const appClassName'));
+  assert.match(handler, /setExternalPreview\(null\)/);
+  assert.match(handler, /setSearchQuery\(''\)/);
+  assert.match(handler, /for \(const key of \['lat', 'lng', 'name', 'address'\]\) query\.delete\(key\)/);
+  assert.match(handler, /router\.push\(screenHref\('map', query\.toString\(\)\)\)/);
+});
+
 test('"Gunakan Lokasi Saya" falls back to picking on the map when location is denied or unavailable', () => {
   const picker = source('src/components/reports/LocationPicker.tsx');
   assert.match(picker, /navigator\.geolocation\.getCurrentPosition/);

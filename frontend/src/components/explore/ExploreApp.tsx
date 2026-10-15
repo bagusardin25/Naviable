@@ -446,8 +446,15 @@ export default function ExploreApp() {
       setSelectedPlace(updated);
       setDetailPlace(updated);
     }
+    // The search pin, the search text and the add form's prefilled spot have done their job.
+    // Kept, the map would pin the just-sent (still unapproved) place again under its name, as if
+    // it were already published, and the next "Tambah Lokasi" would reopen the same place.
+    setExternalPreview(null);
+    setSearchQuery('');
     setReload(value => value + 1);
-    setScreen('map');
+    const query = new URLSearchParams(searchParams.toString());
+    for (const key of ['lat', 'lng', 'name', 'address']) query.delete(key);
+    router.push(screenHref('map', query.toString()));
   }
 
   const appClassName = `app-shell ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`;
